@@ -22,12 +22,12 @@ const releases: Release[] = [
   },
   {
     version: '0.1',
-    name: { cs: 'První public binary', en: 'First public binary' },
-    target: 'Q1 2027',
-    status: 'planned',
+    name: { cs: 'První public beta — DOSTUPNÝ', en: 'First public beta — AVAILABLE' },
+    target: 'Released 2026-06-06',
+    status: 'preview',
     notes: {
-      cs: 'První download-able DMG. Cuelist Core module + REHEARSAL mode. EventX Bridge ships ve stejném binary. CSV import, JSON .showx export, PDF cue-sheet export. macOS only.',
-      en: 'First downloadable DMG. Cuelist Core module + REHEARSAL mode. EventX Bridge ships in the same binary. CSV import, JSON .showx export, PDF cue-sheet export. macOS only.',
+      cs: 'První download-able DMG dostupný nyní. Cuelist Core module + REHEARSAL mode + 7 dept Operator views + GO button + cue editor. CSV import (QLab/Eos), JSON .showx export, PDF cue-sheet export, Stream Deck Companion module. macOS Apple Silicon (arm64). Unsigned beta — viz instalační instrukce níže.',
+      en: 'First downloadable DMG available now. Cuelist Core module + REHEARSAL mode + 7-department Operator views + GO button + cue editor. CSV import (QLab/Eos), JSON .showx export, PDF cue-sheet export, Stream Deck Companion module. macOS Apple Silicon (arm64). Unsigned beta — see install instructions below.',
     },
   },
   {
@@ -115,6 +115,75 @@ export function Downloads() {
           </div>
         </div>
         <div className="absolute -bottom-10 -right-20 display-serif text-[18rem] leading-none text-accent/[0.08] select-none pointer-events-none">04</div>
+      </section>
+
+      {/* DOWNLOAD v0.1 — LIVE */}
+      <section className="rule-top bg-accent/10">
+        <div className="max-w-[1280px] mx-auto px-6 lg:px-12 py-20">
+          <div className="grid grid-cols-12 gap-8 items-start">
+            <div className="col-span-12 md:col-span-3">
+              <div className="section-label">{cs ? 'Aktuální release' : 'Current release'}</div>
+            </div>
+            <div className="col-span-12 md:col-span-9">
+              <h2 className="display-serif text-display-2 leading-tight">
+                ShowX 0.1.0<br />
+                <em className="text-accent-deep font-light not-italic">
+                  {cs ? 'beta — dostupné nyní' : 'beta — available now'}
+                </em>
+              </h2>
+              <p className="copy mt-6 max-w-2xl">
+                {cs
+                  ? 'První public beta ShowX. Cuelist Core modul + REHEARSAL/SHOW mode + multi-operator collab. macOS Apple Silicon. Unsigned beta — Gatekeeper bypass instrukce dole.'
+                  : 'First public beta of ShowX. Cuelist Core module + REHEARSAL/SHOW mode + multi-operator collab. macOS Apple Silicon. Unsigned beta — Gatekeeper bypass instructions below.'}
+              </p>
+              <div className="mt-8 flex flex-col sm:flex-row gap-4">
+                <a
+                  href="https://github.com/jtrjtrjtr/showX/releases/download/v0.1.0/ShowX-0.1.0-arm64.dmg"
+                  className="btn-primary"
+                  download
+                >
+                  {cs ? 'Stáhnout DMG (arm64, ~96 MB)' : 'Download DMG (arm64, ~96 MB)'}
+                </a>
+                <a
+                  href="https://github.com/jtrjtrjtr/showX/releases/tag/v0.1.0"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm copy underline decoration-1 underline-offset-4 self-center"
+                >
+                  {cs ? 'Release notes na GitHubu' : 'Release notes on GitHub'} →
+                </a>
+              </div>
+
+              <div className="mt-12 border-l-2 border-accent-deep pl-6 max-w-2xl">
+                <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted mb-3">
+                  {cs ? 'Instalace (unsigned beta)' : 'Install (unsigned beta)'}
+                </div>
+                <ol className="copy text-sm space-y-2 list-decimal list-inside">
+                  <li>{cs ? 'Stáhněte DMG (tlačítko výše)' : 'Download the DMG (button above)'}</li>
+                  <li>{cs ? 'Otevřete DMG, přetáhněte ShowX.app do /Applications' : 'Open the DMG, drag ShowX.app into /Applications'}</li>
+                  <li>
+                    {cs
+                      ? 'Při prvním spuštění Gatekeeper zobrazí "ShowX nelze otevřít" — pravý klik na ShowX.app → '
+                      : 'On first launch Gatekeeper will show "ShowX can\'t be opened" — right-click ShowX.app → '}
+                    <code className="font-mono text-xs">Open</code>
+                    {cs ? ' → potvrdit "Open" v dialogu.' : ' → confirm "Open" in the dialog.'}
+                  </li>
+                  <li>
+                    {cs
+                      ? 'Alternativně přes terminal:'
+                      : 'Or via terminal:'}{' '}
+                    <code className="font-mono text-xs">xattr -dr com.apple.quarantine /Applications/ShowX.app</code>
+                  </li>
+                </ol>
+                <p className="copy text-xs text-muted mt-4">
+                  {cs
+                    ? '⚠️ Beta. Žádný Apple cert ani notarizace. Production-grade signing přijde v 0.2.'
+                    : '⚠️ Beta. No Apple cert / notarization yet. Production-grade signing arrives in 0.2.'}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
       </section>
 
       {/* RELEASES */}

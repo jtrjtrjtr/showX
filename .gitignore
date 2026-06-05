@@ -52,3 +52,6 @@ test-results/
 # Local pairing tokens / secrets
 *.token
 secrets.json
+
+# Local Netlify folder
+.netlify
