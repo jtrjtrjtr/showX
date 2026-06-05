@@ -93,7 +93,7 @@
       "reviewed_at": null,
       "review_round": 0,
       "spawned_from": null,
-      "depends_on": ["B001-002", "B001-003"]
+      "depends_on": ["B001-002", "B001-003", "B001-005"]
     },
     {
       "id": "B001-007",

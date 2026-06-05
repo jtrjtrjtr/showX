@@ -45,7 +45,7 @@ ShowX-1 does NOT ship to customers. It is internal scaffolding. The first custom
 | B001-003 | Logger + EventBus + HealthBus services | ~350 | B001-002 | P0 |
 | B001-004 | PersistedStore + SecretStore services | ~400 | B001-002 | P0 |
 | B001-005 | AssetServer + mDNS services | ~400 | B001-002 | P0 |
-| B001-006 | SyncBroker service (embedded y-websocket) | ~400 | B001-002, B001-003 | P0 |
+| B001-006 | SyncBroker service (embedded y-websocket) | ~400 | B001-002, B001-003, B001-005 | P0 |
 | B001-007 | OutputDispatcher infrastructure (OSC + MIDI + DMX) | ~600 | B001-002, B001-003 | P0 |
 | B001-008 | InputRegistrar infrastructure (OSC + MIDI listeners) | ~400 | B001-002, B001-003 | P1 |
 | B001-009 | PairingStore service + pairing flow API | ~500 | B001-002, B001-004 | P0 |
@@ -63,7 +63,8 @@ B001-001 ── B001-002 ── B001-003 ─┬─ B001-006 ─┐
                                   └─ B001-008 ─┤
                        B001-004 ─┬─ B001-009 ─┤
                                  └─ B001-010 ─┤
-                       B001-005 ──────────────┘
+                       B001-005 ──┬───────────┘
+                                  └─ feeds B001-006 (httpServer attach)
 B001-001 ─ B001-012 (parallel)
 B001-001 ─ B001-013 (parallel)
 ```

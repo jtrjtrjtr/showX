@@ -174,9 +174,36 @@ Spec recommends RETIRE all of: `aggregation/`, `calibration/`, `channels/`, `map
 
 ---
 
+---
+
+## From task-spec subagents (B001-012 vs B001-005, B001-006, B001-009)
+
+### Q27. B001-012 references `/_showx/ping` not in B001-005 AssetServer spec
+
+B001-012 PWA discovery probe hits `GET /_showx/ping` for cross-origin LAN probe. B001-005 AssetServer spec does not include this route. Either patch B001-005 to add the route + permissive CORS, or accept Forge adding it inline at B001-012 implementation time with explicit done-report mention.
+
+**Default:** patch B001-005 spec before Forge picks up (cleaner).
+**Needed by:** before B001-005 or B001-012 starts.
+
+### Q28. B001-012 sync URL diverges from protocol_dictionary.md §7.1
+
+B001-012 PWA `syncClient.ts` uses `ws://${host}:${port}/sync`. Canonical protocol_dictionary.md §7.1 specifies `ws://showx.local:5300/yjs/<show_id>?token=...` for Yjs + `/events/<show_id>` for side-channel.
+
+**Default:** patch B001-012 to use canonical URLs (drift = future bug).
+**Needed by:** before B001-012 starts.
+
+### Q29. B001-012 pairing payload simplified vs pairing_auth.md §5.2
+
+B001-012 uses `{ pin, display_name }`. Canonical pairing_auth.md §5.2 requires `{ offer_id, pin, display_name, owned_departments, watched_departments, client_pubkey, ... }`.
+
+**Default:** patch B001-012 to use canonical payload (drift = SHOW mode pairing breakage).
+**Needed by:** before B001-012 starts.
+
+---
+
 ## Summary
 
-26 open questions identified across 5 specs. Approximately 5 need decisions before ShowX-1 Foundation execution can start (Q1-Q3); the rest cascade through ShowX-2 through ShowX-4 bundles. None block bundle-opening; all have sensible spec defaults.
+29 open questions identified across 5 specs + task-spec consistency review. Approximately 5 need decisions before ShowX-1 Foundation execution can start (Q1-Q3, plus Q27-Q29 patches); the rest cascade through ShowX-2 through ShowX-4 bundles. None block bundle-opening; most have sensible spec defaults.
 
 **Recommended morning workflow:**
 1. Read this doc top-to-bottom (~10 min)
