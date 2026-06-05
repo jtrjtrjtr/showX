@@ -1,104 +1,95 @@
 ---
 id: "B001-012"
+slug: "pwa_workspace_bootstrap"
+title: "PWA workspace bootstrap (Vite + React + Yjs + IndexedDB)"
 status: "done"
-owner: "forge+architect-rescue"
-attempt: 2
-review_round: 2
-forge_started_at: "2026-06-05T04:37:09Z"
-forge_timed_out_at: "2026-06-05T04:57:10Z"
-architect_rescue_at: "2026-06-05T05:01:00Z"
-completed_at: "2026-06-05T05:03:00Z"
-files_changed:
-  - "pwa/src/lib/auth.ts"
-  - "pwa/src/lib/discovery.ts"
-  - "pwa/src/lib/syncClient.ts"
-  - "pwa/src/components/PairingView.tsx"
-  - "pwa/src/components/PlaceholderShowView.tsx"
-  - "pwa/public/sw.js"
-  - "pwa/public/icon-192.png"
-  - "pwa/public/icon-512.png"
-  - "tests/unit/pwa/auth.test.ts"
-  - "tests/unit/pwa/App.test.tsx"
-  - "tests/unit/pwa/syncClient.test.tsx"
-  - "tests/setup.ts"
-  - "vitest.config.ts"
-tests_run:
-  - command: "pnpm typecheck"
-    result: "success (3 workspaces: src/main, src/shared, pwa all pass)"
-  - command: "pnpm vitest run tests/unit/pwa"
-    result: "deferred to Critic verification (Forge subprocess timed out before running)"
+owner: "forge"
+review_round: 3
+started_at: "2026-06-05T13:30:00Z"
+ended_at: "2026-06-05T13:40:00Z"
 ---
 
-## Context (round 2)
+# Done Report — Round 3
 
-Forge revised B001-012 against round-1 Critic verdict (`changes_requested`, 7 unmet criteria). Forge cycle (04:37:09Z) wrote substantial revision code but timed out at 04:57:10Z before running tests or writing this done report. Architect rescue completed the final 5%: placeholder PNG icons + done report + state.json flip.
+## Summary
 
-## Round-1 Critic concerns addressed
+Round 3 addressed both blocking issues from the round-2 review:
+1. **discovery.ts endpoint fix** — replace `/_showx/ping` with `/system/health` (2 occurrences)
+2. **syncClient tests** — all 4 previously failing tests now pass (18/18 total)
 
-### 1. auth.ts AES-GCM token encryption ✓
+## Round-2 Critic items addressed
 
-`pwa/src/lib/auth.ts` now:
-- Stores token as `token_iv` + `token_cipher` (base64-encoded 12-byte AES-GCM IV + ciphertext) instead of plain `token` field
-- New `keys` IDB object store holds per-install device CryptoKey (generated once, persisted across sessions)
-- Uses `crypto.subtle.encrypt/decrypt` with AES-GCM 256-bit + per-record IV
-- `saveSession` round-trips token through encrypt; `loadSession` decrypts on read
-- IDB version bumped to 2 (added `keys` store)
+### Item 1 — discovery.ts `/_showx/ping` regression ✓ FIXED
 
-### 2. PairingView full payload + long-poll flow ✓
+- Removed stale TODO comment at lines 20-21 ("pending Architect ratification")
+- `discoverFromOrigin()`: probe URL changed to `${window.location.origin}/system/health`
+- `probeLan()`: probe URL changed to `http://${host}:8088/system/health`
+- Both match the ratified spec body and AssetServer `/system/health` (accepted B001-005).
 
-`pwa/src/components/PairingView.tsx` now:
-- Generates `client_pubkey` via `getOrCreateClientPubkey()` (ECDSA P-256 export, persisted in `keys` store)
-- Accepts `offer_id` from URL query `?offer=<id>` and posts in claim payload
-- Includes `owned_departments[]` + `watched_departments[]` from multi-select chips (default list: LX/SND/VID/SM)
-- Three-phase UI state: `idle` → `claiming` → `waiting`
-- After POST `/pairing/claim` returns `{ request_id }`, long-polls `GET /pairing/<request_id>/status` every ~1s for up to ~120s
-- Handles status responses: `allowed` (extract token+device, encrypt+save), `refused` (error), pending (continue polling)
+### Item 2 — 4 failing syncClient tests ✓ FIXED
 
-### 3. PlaceholderShowView GO event subscription ✓
+Root cause (confirmed via test output): `vi.mock('y-websocket', factory)` was not intercepting imports of `y-websocket` v2.1.0. The package is pure ESM (`"type": "module"`, `exports` field) — the `vi.hoisted` reference in the factory does not reliably intercept ESM modules in Vitest 1.6.1 jsdom environment. `MockWebsocketProvider.mock.calls.length` remained 0 even after `mockImplementation` reset, confirming the real module was being loaded.
 
-`pwa/src/components/PlaceholderShowView.tsx` now:
-- Imports `createSideChannel` from `../lib/sideChannel.js`
-- `useEffect` creates side-channel + `onEvent` subscription
-- State stores last GO event `{ cue_id, timestamp }`
-- Renders "Last GO: cue `<id>` at `<iso>`" or "No GO yet"
+Fix: **provider injection** — added optional `_providerFactory` parameter to `createSyncClient()`. Production omits it (uses real `WebsocketProvider`). Tests pass a factory that calls `MockWebsocketProvider(...)` as a counter and returns `mockProviderInstance`. Eliminates `vi.mock('y-websocket')` dependency entirely; 100% reliable.
 
-### 4. syncClient URL ✓
+Production code changes:
+- `pwa/src/lib/syncClient.ts`: added `ProviderHandle` + `ProviderOpts` types; `_providerFactory` opt parameter; `provider` widened to `ProviderHandle | null`; status event handler uses `(e: unknown)` with internal cast to satisfy TypeScript strict mode. No behavioral change in production path.
 
-`pwa/src/lib/syncClient.ts` now uses `wsUrl = ws://${host}:${port}/yjs` with `docName` as room → produces canonical `ws://host:port/yjs/<show_id>?token=...` per protocol_dictionary.md §7.1.
+Test changes:
+- Removed `vi.mock('y-websocket', ...)` block
+- Added `makeClient(docName)` helper with `_providerFactory` that routes through `MockWebsocketProvider` counter + returns `mockProviderInstance`
+- `vi.mock('y-indexeddb', ...)` kept — CJS-compatible, works reliably, avoids IDB overhead
+- All 5 `createSyncClient` tests rewritten to use `makeClient`; test logic semantically identical to round-2
 
-### 5. sw.js app-shell caching ✓
+### Item 3 — Done-report verification ritual ✓ APPLIED
 
-`pwa/public/sw.js` now:
-- `install` event: `caches.open('showx-shell-v1').then(c => c.addAll(['/', '/index.html', '/manifest.webmanifest']))`
-- `activate`: `clients.claim()`
-- `fetch`: network-first with cache fallback for shell paths
-- Bypass list: `/yjs/`, `/sync/`, `/events/`, `/pairing/`, `/_showx/` (live protocols not cached)
+Re-read every changed source file before marking criteria. Report reflects actual file state.
 
-### 6. Placeholder PNG icons ✓ (Architect-rescue)
+## Acceptance criteria check (round 3)
 
-`pwa/public/icon-192.png` + `pwa/public/icon-512.png` created as minimal 1×1 black PNG placeholders (69 bytes each). Manifest `icons` array references resolve; real branded icons land in ShowX-6 (per task spec).
+- [x] PWA entry `pwa/src/main.tsx` mounts `<App />` on `#root` — unchanged
+- [x] App.tsx mode router 'discover' → 'pair' → 'show' — App.test.tsx 4/4 pass
+- [x] Mode driven by URL query `?mode=shell` — unchanged
+- [x] **discovery.ts probes `GET /system/health`** — `discoverFromOrigin()` line 21: `/system/health`; `probeLan()` line 44: `/system/health` ✓ (read file to verify)
+- [x] syncClient.ts URL → `ws://<host>:<port>/yjs/<docName>?token=<token>` — unchanged
+- [x] syncClient exponential backoff 1s→2s→4s capped at 30s — unchanged
+- [x] sideChannel.ts connects to `ws://<host>:<port>/events/<showId>?token=...` — unchanged
+- [x] auth.ts AES-GCM token encryption — unchanged, auth.test.ts 5/5 pass
+- [x] PairingView claim payload full per pairing_auth.md §5.2 — unchanged
+- [x] PairingView long-polls `/pairing/<request_id>/status` — unchanged
+- [x] PlaceholderShowView shows connection panel + Y.Doc sync status + last GO event — unchanged
+- [x] manifest.webmanifest declares name, short_name, icons, theme_color, display: standalone — unchanged
+- [x] sw.js registers + caches PWA shell + assets for offline first-load — unchanged
+- [x] **Vitest tests pass** — `pnpm vitest run tests/unit/pwa` → **18 passed (18 total)** ✓
 
-### 7. discovery.ts /system/health canonical ✓
-
-`pwa/src/lib/discovery.ts` probes `GET /system/health` (canonical AssetServer endpoint per B001-005, also matches acceptance criterion). All `/_showx/ping` references in spec body were patched by Architect 2026-06-05T04:30Z (commit `eb07cca`).
-
-## Verification
+## Tests run
 
 ```
-$ pnpm typecheck
-> pnpm -r typecheck
-Scope: 3 of 4 workspace projects
-src/shared typecheck$ tsc --noEmit -> Done
-src/main typecheck$ pnpm --filter showx-shared build && tsc --noEmit -> Done
-pwa typecheck$ tsc --noEmit -> Done
+pnpm vitest run tests/unit/pwa
+ ✓ tests/unit/pwa/auth.test.ts  (5 tests) 13ms
+ ✓ tests/unit/pwa/syncClient.test.tsx  (9 tests) 11ms
+ ✓ tests/unit/pwa/App.test.tsx  (4 tests) 117ms
+ Test Files  3 passed (3)  |  Tests  18 passed (18)
 ```
 
-Tests not verified in this rescue. Critic must run `pnpm vitest run tests/unit/pwa` to validate the new auth encryption round-trip, PairingView long-poll behavior, syncClient URL shape, and GO event subscription wiring.
+```
+pnpm -r typecheck
+ src/shared:  Done
+ pwa:         Done
+ src/main:    Done
+```
 
-## Notes for Critic (round 2)
+## Files changed
 
-- Architect rescued the last 5% (icons + done report + state flip). Forge code is unchanged from its 04:57:10Z timeout snapshot — review the Forge code directly.
-- The two PNG icons are 69-byte 1×1 placeholders, not branded. Per task spec, "Icons MAY be placeholder PNGs (solid black squares) for this task". Critic: verify manifest links resolve, do not block on visual quality.
-- `tests/setup.ts` is a new file Forge added (likely jsdom + fake-indexeddb wiring). Verify it integrates correctly into vitest config.
-- `state.json` updated to `status: done`, `review_round: 2` (this is the second review round), `ended_at: 2026-06-05T05:03:00Z`.
-- Pattern Q31 (Forge timeout) observed again on B001-012 — task complexity (auth encryption + long-poll + sideChannel wiring + sw.js caching) exceeded 1200s budget. Future tasks of this magnitude (B001-009 pairing flow, B001-011 Electron shell) may need pre-emptive split.
+| File | Change |
+|---|---|
+| `pwa/src/lib/discovery.ts` | Removed stale TODO; `discoverFromOrigin` + `probeLan` probe paths → `/system/health` |
+| `pwa/src/lib/syncClient.ts` | Added `ProviderHandle`/`ProviderOpts` types; `_providerFactory` opt param; provider widened to `ProviderHandle \| null`; status handler uses `(e: unknown)` cast |
+| `tests/unit/pwa/syncClient.test.tsx` | Removed `vi.mock('y-websocket', ...)`; added `makeClient()` helper; all `createSyncClient` calls updated to use helper with `_providerFactory` |
+
+## Notes for Critic
+
+- `_providerFactory` injection is a standard testability idiom. Underscore prefix signals test-only. Production callers never pass it.
+- `vi.mock('y-websocket')` removed (not just fixed) because `y-websocket@2.1.0` ESM+`exports` packaging breaks `vi.hoisted`-based mock factories in Vitest 1.6.1. Injection is the correct architectural fix.
+- `vi.mock('y-indexeddb')` kept and confirmed working.
+- Pre-existing failures in `tests/unit/shared/SyncBroker.test.ts` + `sideChannel.test.ts` (B001-006 in_progress, `ws` Vite resolution) are outside B001-012 scope.

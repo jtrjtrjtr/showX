@@ -3,6 +3,13 @@ import { IndexeddbPersistence } from 'y-indexeddb';
 import { WebsocketProvider } from 'y-websocket';
 import type { SyncStatus } from './types.js';
 
+type ProviderHandle = {
+  on(event: string, cb: (e: unknown) => void): void;
+  destroy(): void;
+};
+
+type ProviderOpts = { params: { token: string }; connect: boolean };
+
 export interface SyncClient {
   doc: Y.Doc;
   readonly status: SyncStatus;
@@ -16,6 +23,8 @@ export function createSyncClient(opts: {
   port: number;
   token: string;
   awareness?: { user: string };
+  /** Test injection point — not part of public API. Production code omits this. */
+  _providerFactory?: (url: string, room: string, doc: Y.Doc, opts: ProviderOpts) => ProviderHandle;
 }): SyncClient {
   const doc = new Y.Doc();
   const idb = new IndexeddbPersistence(opts.docName, doc);
@@ -23,7 +32,7 @@ export function createSyncClient(opts: {
   const status: SyncStatus = { state: 'connecting', attempts: 0 };
   const listeners = new Set<(s: SyncStatus) => void>();
 
-  let provider: WebsocketProvider | null = null;
+  let provider: ProviderHandle | null = null;
   let backoffMs = 1000;
   let stopped = false;
 
@@ -46,25 +55,27 @@ export function createSyncClient(opts: {
     if (stopped) return;
     status.state = status.attempts === 0 ? 'connecting' : 'reconnecting';
     emit();
-    provider = new WebsocketProvider(wsUrl, opts.docName, doc, {
+    const factory = opts._providerFactory ??
+      ((url, room, doc, pOpts) => new WebsocketProvider(url, room, doc, pOpts));
+    provider = factory(wsUrl, opts.docName, doc, {
       params: { token: opts.token },
       connect: true,
     });
-    provider.on('status', (e: { status: string }) => {
-      if (e.status === 'connected') {
+    provider.on('status', (e: unknown) => {
+      const ev = e as { status: string };
+      if (ev.status === 'connected') {
         status.state = 'connected';
         backoffMs = 1000;
         status.attempts = 0;
         emit();
-      } else if (e.status === 'disconnected') {
+      } else if (ev.status === 'disconnected') {
         status.state = 'reconnecting';
         status.attempts += 1;
         emit();
         scheduleReconnect();
       }
     });
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (provider as any).on('connection-error', (e: unknown) => {
+    provider.on('connection-error', (e: unknown) => {
       status.lastError = e instanceof Error ? e.message : String(e);
       emit();
     });

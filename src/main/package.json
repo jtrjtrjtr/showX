@@ -20,7 +20,11 @@
     "ws": "^8.16.0",
     "yjs": "^13.6.10",
     "y-protocols": "^1.0.6",
-    "lib0": "^0.2.88"
+    "lib0": "^0.2.88",
+    "osc-min": "^1.1.2",
+    "@julusian/midi": "^3.5.0",
+    "dmxnet": "^0.9.0",
+    "e131": "^1.1.2"
   },
   "devDependencies": {
     "tsx": "^4.7.0",
@@ -30,6 +34,7 @@
     "@types/cors": "^2.8.17",
     "supertest": "^6.3.3",
     "@types/supertest": "^6.0.2",
-    "@types/ws": "^8.5.10"
+    "@types/ws": "^8.5.10",
+    "@types/node": "^20.11.0"
   }
 }

@@ -4,23 +4,20 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import * as Y from 'yjs';
 import { createSideChannel } from '../../../pwa/src/lib/sideChannel.js';
 
-// Hoist BOTH the instance and the constructor so vi.mock factory can reference them.
-// MockWebsocketProvider has NO initial implementation — it is re-bound in each beforeEach
-// after vi.clearAllMocks() so mock state never bleeds across tests.
+// Hoist the provider mock objects so vi.mock factories (y-indexeddb) can reference them
 const mocks = vi.hoisted(() => {
   const mockProviderInstance = {
     on: vi.fn(),
     destroy: vi.fn(),
     awareness: null,
   };
+  // MockWebsocketProvider is used as a call counter in _providerFactory — NOT as a vi.mock substitute.
+  // Using provider injection (_providerFactory) avoids vi.mock('y-websocket') ESM unreliability.
   const MockWebsocketProvider = vi.fn();
   return { mockProviderInstance, MockWebsocketProvider };
 });
 
-vi.mock('y-websocket', () => ({
-  WebsocketProvider: mocks.MockWebsocketProvider,
-}));
-
+// y-indexeddb vi.mock works reliably (CJS-compatible export); keeps IDB side-effects out of tests.
 vi.mock('y-indexeddb', () => ({
   IndexeddbPersistence: vi.fn(() => ({ destroy: vi.fn() })),
 }));
@@ -87,11 +84,23 @@ describe('createSyncClient', () => {
   const { mockProviderInstance, MockWebsocketProvider } = mocks;
   let statusHandlers: Record<string, ((e: unknown) => void)[]> = {};
 
+  // Helper: creates a SyncClient using provider injection so tests bypass vi.mock('y-websocket')
+  function makeClient(docName: string) {
+    return createSyncClient({
+      docName,
+      host: '127.0.0.1',
+      port: 8088,
+      token: 'tok',
+      _providerFactory: (url, room, doc) => {
+        MockWebsocketProvider(url, room, doc);
+        return mockProviderInstance;
+      },
+    });
+  }
+
   beforeEach(() => {
     vi.clearAllMocks();
     statusHandlers = {};
-    // Re-bind after clearAllMocks so new WebsocketProvider(...) returns mockProviderInstance
-    MockWebsocketProvider.mockImplementation(() => mockProviderInstance);
     mockProviderInstance.on.mockImplementation((event: string, cb: (e: unknown) => void) => {
       if (!statusHandlers[event]) statusHandlers[event] = [];
       statusHandlers[event].push(cb);
@@ -103,13 +112,13 @@ describe('createSyncClient', () => {
   });
 
   it('creates a real Y.Doc instance', () => {
-    const client = createSyncClient({ docName: 'test', host: '127.0.0.1', port: 8088, token: 'tok' });
+    const client = makeClient('test');
     expect(client.doc).toBeInstanceOf(Y.Doc);
     client.destroy();
   });
 
   it('status transitions to connected on provider status event', () => {
-    const client = createSyncClient({ docName: 'test2', host: '127.0.0.1', port: 8088, token: 'tok' });
+    const client = makeClient('test2');
     const cb = vi.fn();
     client.onStatusChange(cb);
 
@@ -124,7 +133,7 @@ describe('createSyncClient', () => {
 
   it('status transitions to reconnecting on disconnect and schedules reconnect with backoff', () => {
     vi.useFakeTimers();
-    const client = createSyncClient({ docName: 'test3', host: '127.0.0.1', port: 8088, token: 'tok' });
+    const client = makeClient('test3');
     const cb = vi.fn();
     client.onStatusChange(cb);
 
@@ -143,7 +152,7 @@ describe('createSyncClient', () => {
 
   it('backoff doubles and caps at 30s', () => {
     vi.useFakeTimers();
-    const client = createSyncClient({ docName: 'test4', host: '127.0.0.1', port: 8088, token: 'tok' });
+    const client = makeClient('test4');
 
     function disconnect() {
       const cbs = statusHandlers['status'] ?? [];
@@ -169,7 +178,7 @@ describe('createSyncClient', () => {
   });
 
   it('destroy clears listeners and stops reconnect', () => {
-    const client = createSyncClient({ docName: 'test5', host: '127.0.0.1', port: 8088, token: 'tok' });
+    const client = makeClient('test5');
     const cb = vi.fn();
     const unsub = client.onStatusChange(cb);
     unsub();

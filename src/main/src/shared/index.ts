@@ -8,3 +8,6 @@ export type { SyncBrokerOptions, PersistenceHook, PairingValidator } from './Syn
 export { resolvePaths, moduleConfigPath, secretFallbackPath } from './paths.js';
 export type { PathLayout } from './paths.js';
 export type { SecretStoreOptions } from './SecretStore.js';
+export { OutputDispatcher } from './OutputDispatcher.js';
+export type { OutputDispatcherOptions } from './OutputDispatcher.js';
+export * from './dispatcher/index.js';
