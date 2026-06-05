@@ -11,7 +11,7 @@ export interface TransitionContext {
   pkgPath: string;
   byOperatorId: string;
   operatorRole?: 'stage_manager' | 'operator' | 'director' | 'watcher';
-  ctx?: Pick<ModuleContext, 'events' | 'log'>;
+  ctx?: Pick<ModuleContext, 'events'>;
 }
 
 export type TransitionResult =

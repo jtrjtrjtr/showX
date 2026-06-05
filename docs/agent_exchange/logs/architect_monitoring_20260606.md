@@ -185,3 +185,43 @@ Critic is correctly tracking B003-024 cleanup scope. New TS6307 error joined the
 
 **Forge projection:** B003-004 done ~+15 min → B003-006/-007 chain (trigger taxonomy + GO channel — moderate complexity, ~500 LOC each) → may see more Pattern 8 risk on B003-013 (PWA SM master 800 LOC) + B003-016 (cue editor 800 LOC).
 
+
+## Tick 5 — 14:59 CEST — 6/23 milestone approaching
+
+**State at tick:** 17 accepted, 33 queued, 1 changes_requested (B003-004), 1 done (B003-006 awaiting Critic).
+
+**Forge/Critic since tick 4 (+28 min):**
+
+| Task | Status | Notes |
+|---|---|---|
+| B003-004 | done → changes_requested round 1 | Critic catch: TS2304 `SnapshotResult` type not imported (annotation only refs writeSnapshot import). One-line fix |
+| B003-006 | queued → done (awaiting review) | Forge picked B003-006 BEFORE B003-004 changes_requested landed (race condition). Compound cue model + payload ops + invariants. 31 new tests, 262 total |
+
+**Critic in-flight:** Critic just spawned at 12:58Z to review B003-006.
+
+**B003 acceptance ratio (accepted only):**
+- B003-001 round 1 ✅
+- B003-002 round 1 ✅
+- B003-003 round 2 (Critic caught migration bug)
+- B003-005 round 2 (Critic caught DepartmentTag export)
+- Round 1 single accept: 50% (2/4); Round 2 after fix: 50% (2/4)
+
+Healthy ratio — Critic catches real issues, Forge fixes single-cycle, no round 3 wandering.
+
+**Typecheck baseline check (cuelist-core): 9 errors total.**
+
+Original B003-024 scope (4 errors): unchanged.
+B003-004 carryover (TS2304 SnapshotResult): will resolve in Forge revision.
+NEW errors discovered in tick 5 typecheck not in B003-024 original spec:
+- `projections.ts:141 'a','b'` unused (2× TS6133) — B003-003 leftover
+- `showxPackage.ts:7 'projectionsToDoc'` unused (TS6133) — B003-003 leftover
+- `showxPackage.ts:14 migrations/ rootDir` (TS6059 + TS6307) — STRUCTURAL: `migrations/` folder lives OUTSIDE `src/` while tsconfig declares `rootDir: src`
+
+**Architect action:** EXPANDED B003-024 spec to cover all 8 errors (excluding B003-004 in-flight fix). Added preferred fix for rootDir: move `migrations/index.ts` INTO `src/migrations/index.ts`. Spec growth: 60 LOC → ~90 LOC estimated. Still tight.
+
+**B003-024 still waiting for Forge pickup** — lowest-ID queued gate means B003-004 revision (changes_requested = priority) goes next, then B003-007 onwards. B003-024 picks up after B003-023. NOT ideal but Critic robustly tracks scope.
+
+**Mitigation: tighter Architect monitoring of typecheck error count per tick.** If error count grows beyond B003-024 expanded scope (currently 8), file a B003-024b cleanup task.
+
+**Commit gate:** 5 task transitions since last checkpoint commit (B003-003 round 2 accept, B003-005 round 2 accept, B003-004 in_progress → done → changes_requested, B003-006 in_progress → done, expanded B003-024 spec). Triggers checkpoint commit.
+
