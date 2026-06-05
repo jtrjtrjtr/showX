@@ -2,11 +2,10 @@ import * as Y from 'yjs';
 import type { DepartmentTag, Trigger } from 'showx-shared';
 import { detectDialect, type Dialect } from './csvDialects.js';
 import { qlabToCues, eosToCues, genericToCues } from './csvHeuristics.js';
-import { addCue } from '../document/cue.js';
+import { addCue, removeCue } from '../document/cue.js';
 import { addPayload } from '../document/payload.js';
 import { makeCompoundCue } from '../cue/compoundCue.js';
 import { getCuelist, getCues } from '../document/cuelist.js';
-import { removeCue } from '../document/cue.js';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -186,7 +185,7 @@ export async function importCsv(
       const dept = spec.cueOpts.department as DepartmentTag[];
       if (dept.length === 0) {
         warnings.push({ row: spec.row, message: 'No department — skipped' });
-        skipped++;
+        innerSkipped++;
         continue;
       }
       if (dept.length > 1) {

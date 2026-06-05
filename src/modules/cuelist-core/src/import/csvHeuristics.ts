@@ -73,7 +73,7 @@ export function qlabToCues(
         label: label.trim() || `Q${row}`,
         description: name,
         department: [dept],
-        standby_note: notes,
+        standby_note: notes.trim(),
         trigger,
         created_by: opts.createdBy,
       },

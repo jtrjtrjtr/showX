@@ -601,3 +601,54 @@ This race condition keeps repeating but doesn't cause issues — revision priori
 
 **B003-024 cleanup SCOPE STILL STABLE at 13 errors / ~110 LOC.** New errors will fold into next B003-024 revision if not fixed organically.
 
+
+## Tick 16 — 20:01 CEST — 🎯 18/23 (78%) + Critic flagged workspace hygiene
+
+**State at tick:** 31 accepted (13 ShowX-1 + 18 B003), 20 queued, 1 done (B003-019 awaiting Critic).
+
+**Forge/Critic since tick 15 (+27 min):**
+
+| Task | Status | Notes |
+|---|---|---|
+| B003-017 | done → changes_requested round 1 → done → **accepted round 2** | Critic CAUGHT the `csvImport.ts:189 TS2304 'skipped'` undefined bug! Forge fixed: `skipped++` → `innerSkipped++`. Also: notes.trim() + duplicate removeCue import consolidated. 44/44 tests still pass |
+| B003-018 | in_progress → done → **accepted round 1** | JSON export single round (27 tests, 12 ACs, exportShowxPackage delegates to saveShowxPackage, importSingleFile validates format+version pre-applyUpdate, six judgment calls documented) |
+| B003-019 | queued → in_progress → done | PDF cue-sheet (pdf-lib + Latin-1 StandardFonts + ASCII fallback for ⏩/⏱ Unicode glyphs, 14 tests). Awaiting Critic review |
+
+**🎯 18/23 (78%) accepted. Phase 3 (import/export) status: 2/3 + 1 awaiting Critic = essentially DONE.**
+
+**B003 acceptance ratio: 18 accepted (round1=9, round2=9) = 50/50 steady.**
+
+**🚨 CRITIC FLAGGED ARCHITECT (B003-017 review):**
+
+> "the workspace's cuelist-core typecheck script appears to swallow tsc output (confirmed by injecting a deliberate type mismatch and observing no error surfaced) — that's a separate workspace-hygiene issue worth flagging to the Architect"
+
+This is significant. Critic INJECTED a deliberate type mismatch to confirm. Possible interpretations:
+1. cuelist-core's `typecheck` script = `pnpm --filter showx-shared build && tsc --noEmit` — when run from cwd inside cuelist-core via `pnpm typecheck`, output behavior may differ
+2. Forge runs `pnpm test` (vitest passes — esbuild strips TS) and INTERPRETS as clean, skipping `pnpm typecheck` despite Forge prompt MANDATING it
+3. Possible pnpm + workspace + composite project + filter interaction edge case
+
+**Architect investigation deferred to tick 17** — current focus is bundle progress; B003-024 cleanup remains the safety net for accumulated TS dirt.
+
+**Typecheck baseline: 22 errors** (+1 from 21 at tick 15).
+
+NEW errors not yet in B003-024 expanded scope:
+- 6 in B003-018 export files (Dirent<NonSharedBuffer>, ShowJson cast, etc.)
+- Possibly 1-2 in B003-019 PDF code (TBD post-Critic)
+
+B003-024 scope expansion needed eventually. Defer until Phase 3 closes.
+
+**Phase 3 status:**
+- B003-017 ✅ (accepted round 2)
+- B003-018 ✅ (accepted round 1)
+- B003-019 done, awaiting Critic verdict
+→ Phase 3 essentially complete pending Critic of B003-019
+
+**Phase 4-5 outlook:**
+- B003-020 multi-operator E2E — eligible (deps B003-013/-014/-015/-016 all accepted)
+- B003-021 Stream Deck Companion — eligible (deps B003-008/-015 accepted)
+- B003-022 first pilot — blocked on B003-020
+- B003-023 ShowX 0.1 release — blocked on all 22
+- B003-024 cleanup — eligible, lowest-ID rule means Forge picks B003-020 first
+
+**Architect projection:** Bundle closing within 1-2 hours if cadence holds (5 tasks remaining + cleanup). Forge has demonstrated 800 LOC single-cycle capacity; B003-020 (Playwright multi-op E2E ~600 LOC) is the next Pattern 8 candidate.
+

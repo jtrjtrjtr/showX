@@ -15,7 +15,8 @@
   "dependencies": {
     "showx-shared": "workspace:*",
     "yjs": "^13.6.10",
-    "uuid": "^10.0.0"
+    "uuid": "^10.0.0",
+    "pdf-lib": "^1.17.1"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
