@@ -9,6 +9,10 @@ import type { ShellConfigStore } from '../Shell.js';
 
 export type { ShellConfigStore } from '../Shell.js';
 
+export interface IpcMainBridge {
+  handle(channel: string, listener: (...args: unknown[]) => unknown): void;
+}
+
 export interface IpcDeps {
   modules: ModuleLoader;
   health: HealthBus;
@@ -18,8 +22,8 @@ export interface IpcDeps {
   logger: Logger;
 }
 
-export function registerIpcHandlers(deps: IpcDeps): void {
-  ipcMain.handle(IPC.MODULES_LIST, async () =>
+export function registerIpcHandlers(deps: IpcDeps, ipc: IpcMainBridge = ipcMain): void {
+  ipc.handle(IPC.MODULES_LIST, async () =>
     deps.modules.listLoaded().map((m) => ({
       slug: m.slug,
       name: m.manifest.name,
@@ -29,7 +33,7 @@ export function registerIpcHandlers(deps: IpcDeps): void {
     })),
   );
 
-  ipcMain.handle(IPC.MODULES_SET_DISABLED, async (_e, slug: string, disabled: boolean) => {
+  ipc.handle(IPC.MODULES_SET_DISABLED, async (_e, slug: string, disabled: boolean) => {
     const current = deps.shellConfig.getDisabledSlugs();
     const set = new Set<string>(current);
     if (disabled) set.add(slug);
@@ -38,28 +42,28 @@ export function registerIpcHandlers(deps: IpcDeps): void {
     return { ok: true, requiresRestart: true };
   });
 
-  ipcMain.handle(IPC.HEALTH_SNAPSHOT, async () => deps.health.snapshot());
+  ipc.handle(IPC.HEALTH_SNAPSHOT, async () => deps.health.snapshot());
 
   deps.health.observeAggregate(() => {
     const snap = deps.health.snapshot();
     BrowserWindow.getAllWindows().forEach((w) => w.webContents.send(IPC.HEALTH_CHANGE, snap));
   });
 
-  ipcMain.handle(IPC.PAIRING_INITIATE, async () => {
+  ipc.handle(IPC.PAIRING_INITIATE, async () => {
     const rec = deps.pins.generate();
     return { pin: rec.pin, expires_at: rec.expires_at };
   });
 
-  ipcMain.handle(IPC.PAIRING_LIST_DEVICES, async () => deps.pairing.listDevices());
+  ipc.handle(IPC.PAIRING_LIST_DEVICES, async () => deps.pairing.listDevices());
 
-  ipcMain.handle(IPC.PAIRING_REVOKE_DEVICE, async (_e, id: string) => {
+  ipc.handle(IPC.PAIRING_REVOKE_DEVICE, async (_e, id: string) => {
     await deps.pairing.revokeDevice(id);
     return { ok: true };
   });
 
-  ipcMain.handle(IPC.CONFIG_GET, async (_e, key: string) => deps.shellConfig.get(key));
+  ipc.handle(IPC.CONFIG_GET, async (_e, key: string) => deps.shellConfig.get(key));
 
-  ipcMain.handle(IPC.CONFIG_SET, async (_e, key: string, value: unknown) => {
+  ipc.handle(IPC.CONFIG_SET, async (_e, key: string, value: unknown) => {
     await deps.shellConfig.set(key, value);
     return { ok: true };
   });

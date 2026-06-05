@@ -32,7 +32,7 @@ import { ModuleLoader, type SharedServices } from './ModuleLoader.js';
 import { resolvePaths, type PathLayout } from './shared/paths.js';
 import { shellVersion } from './shared/version.js';
 import { createMainWindow } from './ui/window.js';
-import { registerIpcHandlers } from './ipc/index.js';
+import { registerIpcHandlers, type IpcMainBridge } from './ipc/index.js';
 
 // ── Shell config store ──────────────────────────────────────────────────────
 
@@ -196,6 +196,7 @@ export interface ShellDeps {
   output?: OutputDispatcher;
   input?: InputRegistrarImpl;
   modules?: ModuleLoader;
+  ipcBridge?: IpcMainBridge;
   skipWindow?: boolean;
 }
 
@@ -355,7 +356,7 @@ export class Shell {
         pins: this.pinManager,
         shellConfig: this.shellConfig,
         logger: this.logger,
-      });
+      }, this.deps.ipcBridge);
     }
   }
 
@@ -372,7 +373,7 @@ export class Shell {
     await safeCall(() => this.mdns?.stop());
     await safeCall(() => this.assets?.stop());
     // PersistedStore writes are atomic on each save — no explicit flush needed
-    this.logger?.close();
+    await safeCall(() => this.logger?.close());
 
     this.state = 'shut_down';
   }

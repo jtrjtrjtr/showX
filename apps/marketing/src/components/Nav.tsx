@@ -16,9 +16,7 @@ export function Nav() {
     <header className="sticky top-0 z-50 backdrop-blur bg-ground/90 border-b border-rule/60">
       <div className="max-w-[1280px] mx-auto px-6 lg:px-12 h-16 flex items-center justify-between gap-6">
         <Link to="/" className="flex items-center gap-3 group shrink-0">
-          <span className="display-serif text-2xl tracking-tighter font-medium text-ink group-hover:text-accent-deep transition-colors">
-            ShowX
-          </span>
+          <img src="/showx-logo-mark.svg" alt="ShowX" className="h-7 w-auto" />
           <span className="hidden sm:block font-mono text-[10px] uppercase tracking-[0.2em] text-muted mt-1">by XLAB</span>
         </Link>
         <nav className="hidden md:flex items-center gap-7">

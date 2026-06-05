@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 180" fill="none">
+  <!-- "Show" in thin Fraunces-style serif -->
+  <text x="0" y="130" font-family="Fraunces, 'Times New Roman', serif" font-size="120" font-weight="200" fill="#1C1816" letter-spacing="-0.02em">Show</text>
+  <!-- XLAB X mark — bowtie / hourglass-on-side shape -->
+  <g transform="translate(450, 30)">
+    <!-- Left triangle pointing right -->
+    <path d="M 0 0 L 60 60 L 0 120 Z" fill="#1C1816"/>
+    <!-- Right triangle pointing left -->
+    <path d="M 120 0 L 60 60 L 120 120 Z" fill="#1C1816"/>
+  </g>
+</svg>

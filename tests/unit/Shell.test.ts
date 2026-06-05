@@ -3,28 +3,26 @@ import type { Subscription } from 'showx-shared';
 
 // ── Mock electron before any imports that transitively touch it ───────────────
 
-vi.mock('electron', () => {
-  const mockWin = {
+vi.mock('electron', () => ({
+  app: {
+    whenReady: vi.fn().mockResolvedValue(undefined),
+    getPath: vi.fn(() => '/tmp'),
+    on: vi.fn(),
+    exit: vi.fn(),
+    quit: vi.fn(),
+  },
+  BrowserWindow: { getAllWindows: vi.fn().mockReturnValue([]) },
+  ipcMain: { handle: vi.fn(), on: vi.fn() },
+  ipcRenderer: { invoke: vi.fn(), on: vi.fn(), off: vi.fn() },
+  contextBridge: { exposeInMainWorld: vi.fn() },
+}));
+
+vi.mock('../../src/main/src/ui/window.js', () => ({
+  createMainWindow: vi.fn().mockResolvedValue({
     loadURL: vi.fn().mockResolvedValue(undefined),
     webContents: { openDevTools: vi.fn(), send: vi.fn() },
-  };
-  const MockBrowserWindow = Object.assign(vi.fn(() => mockWin), {
-    getAllWindows: vi.fn().mockReturnValue([]),
-  });
-  return {
-    app: {
-      whenReady: vi.fn().mockResolvedValue(undefined),
-      getPath: vi.fn(() => '/tmp'),
-      on: vi.fn(),
-      exit: vi.fn(),
-      quit: vi.fn(),
-    },
-    BrowserWindow: MockBrowserWindow,
-    ipcMain: { handle: vi.fn(), on: vi.fn() },
-    ipcRenderer: { invoke: vi.fn(), on: vi.fn(), off: vi.fn() },
-    contextBridge: { exposeInMainWorld: vi.fn() },
-  };
-});
+  }),
+}));
 
 // ── Now import the code under test ────────────────────────────────────────────
 
@@ -277,11 +275,11 @@ describe('Shell', () => {
   });
 
   it('IPC handlers registered for all 8 invoke channels when skipWindow=false', async () => {
-    const { ipcMain } = await import('electron');
-    const shell = new Shell({ ...mocks, skipWindow: false });
+    const ipcBridge = { handle: vi.fn() };
+    const shell = new Shell({ ...mocks, skipWindow: false, ipcBridge });
     await shell.boot();
 
-    const registered = (ipcMain.handle as unknown as MockInstance).mock.calls.map(
+    const registered = (ipcBridge.handle as unknown as MockInstance).mock.calls.map(
       (c: unknown[]) => c[0],
     ) as string[];
 

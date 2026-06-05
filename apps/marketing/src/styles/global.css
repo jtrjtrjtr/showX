@@ -30,10 +30,10 @@
     @apply text-ink;
   }
   .btn-primary {
-    @apply inline-flex items-center gap-2 bg-ink text-accent font-mono text-[12px] uppercase tracking-[0.18em] px-5 py-3 rounded-sm hover:bg-ink/90 transition-colors;
+    @apply inline-flex items-center gap-2 bg-ink text-cream font-mono text-[12px] uppercase tracking-[0.18em] px-5 py-3 rounded-sm hover:bg-ink/90 transition-colors;
   }
   .btn-ghost {
-    @apply inline-flex items-center gap-2 border border-ink/20 text-ink font-mono text-[12px] uppercase tracking-[0.18em] px-5 py-3 rounded-sm hover:border-ink hover:bg-ink hover:text-accent transition-colors;
+    @apply inline-flex items-center gap-2 border border-ink/30 text-ink font-mono text-[12px] uppercase tracking-[0.18em] px-5 py-3 rounded-sm hover:border-ink hover:bg-ink hover:text-cream transition-colors;
   }
   .rule-top {
     @apply border-t border-rule;
@@ -42,17 +42,19 @@
     @apply border-b border-rule;
   }
   .grid-card {
-    @apply border border-rule rounded-sm p-6 bg-cream/40 hover:bg-cream/80 transition-colors;
+    @apply border border-rule rounded-sm p-6 bg-paper/40 hover:bg-paper/80 transition-colors;
   }
   .tier-card {
-    @apply border border-rule rounded-sm p-8 bg-ground hover:border-ink transition-colors flex flex-col;
+    @apply border border-rule rounded-sm p-8 bg-cream hover:border-ink transition-colors flex flex-col;
   }
   .tier-card.featured {
-    @apply border-ink bg-ink text-ground;
+    @apply border-ink bg-ink text-cream;
   }
-  .tier-card.featured .section-label,
+  .tier-card.featured .section-label {
+    @apply text-cream/70;
+  }
   .tier-card.featured .copy {
-    @apply text-ground/70;
+    @apply text-cream/80;
   }
   .badge {
     @apply inline-block font-mono text-[10px] uppercase tracking-[0.2em] px-2 py-1 border border-current rounded-sm;
