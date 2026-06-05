@@ -755,3 +755,70 @@ B003-020 is the first task this session to consume the full rescue protocol. Rec
 
 **Bundle close projection:** B003-022/-023/-024 remain. Each ~20 min if Forge cadence holds. ~1h to bundle close (likely 21:55-22:30 CEST tonight).
 
+
+## Tick 19 — 21:24 CEST — 🎯🎯🎯 22/23 (96%) + B003-024 cleanup landed + Pattern 8 #4
+
+**State at tick:** 35 accepted (13 ShowX-1 + 22 B003), 16 queued, 1 changes_requested (B003-022 doc-fix), 0 in_progress, 0 done.
+
+**Forge/Critic since tick 18 (+29 min):**
+
+| Task | Status | Notes |
+|---|---|---|
+| B003-020 | architect-rescue → **accepted round 1** | Critic acknowledged anticipated-gap clause + verified 18 data-testid selectors present in PWA + helpers strict-typed. 5 documented gaps for ShowX-1.1 follow-up enumerated in review |
+| B003-021 | done → **accepted round 1** | Stream Deck Companion accepted: URL pattern matches SyncBroker, wire payloads match goEventChannel contracts. Critic flagged 2 non-blocking follow-ups (server-side handlers for stop/pause/resume/goto + heartbeat emitter scope) |
+| B003-024 | queued → in_progress → done → **accepted round 1** | Cleanup task COMPLETED. All 17 ACs verified. `@types/uuid` added, all TS6133/TS6196 unused removed, `_config` rename preserves B003-006+ wiring, `(_a, _b)` projections comparator rename, migrations moved INTO src/, goEventChannel.ts:321 double-cast through unknown. **PURE HYGIENE, zero behavior change** |
+| B003-022 | done → changes_requested round 1 | First-pilot playbook + comms — Critic catch: AC #4 pre-pilot-checklist.md has 22 checkboxes but footer claims "15 items" — self-contradiction in customer-facing doc. Plus AC #5 has 15 questions vs spec 12 (deviation noted). Forge will revise (Option B preferred: keep 22, fix footer claim) |
+
+**🎯🎯🎯 22/23 B003 accepted = 96%. Only B003-022 revision + B003-023 release remain.**
+
+**B003 acceptance ratio: 22 accepted (round1=13, round2=9) = round-1 single accept 59% (up from 52.6%).**
+
+**🔥 TYPECHECK BASELINE DROPPED 22 → 10 errors after B003-024 cleanup.**
+
+Reduction: 12 errors cleared by Forge cleanup task:
+- 4 original (config, getPayloads, PayloadType, uuid)
+- 2 React unused × 3 = 3 (all 3 UI tsx)
+- 1 projections.ts a, b unused (× 2 = counted as 2)
+- 1 projectionsToDoc unused
+- 2 migrations rootDir
+- 1 goEventChannel.ts:321 TS2352
+
+Remaining 10 errors NOT in B003-024 scope (drift from B003-017 + B003-018 + later):
+- B003-017 csvHeuristics.ts:14 'warnings' unused (per spec not cleaned in B003-024)
+- B003-018 export files (6 Dirent<NonSharedBuffer> + ShowJson cast)
+- Possibly B003-019 PDF or other later drift
+
+**Architect: defer these 10 → ShowX-1.1 cleanup or B003-024-followup post-bundle close.** Not blocking ship.
+
+**B003-022 next:** Forge will revise (doc fix, ~5 min). Should land next tick.
+
+**🚨 B003-023 RELEASE = ARCHITECT/HUMAN TASK, not Forge:**
+
+Forge correctly identified at 19:17Z+19:22Z: "B003-023 is a DMG signing/notarization task which is out of Forge scope regardless."
+
+B003-023 requires:
+- Apple Developer ID signing (Jindřich's cert)
+- Apple Notary Service notarization (network + tooling)
+- GitHub Release creation
+- DMG download URL on marketing site (showx.xlabproject.net)
+- Release notes
+
+**Decision: defer B003-023 to dedicated Architect/Jindřich session post-bundle close.** Trying to autonomously sign DMG would require live Apple ID auth, which is explicit human-only.
+
+**Pattern 8 timeouts this session: 4/22 (18%):**
+1. B003-002 cycle 2 succeeded
+2. B003-009 self-rescued
+3. B003-020 cycle 2 timed out → Architect rescue
+4. (none new this tick — Forge cadence stable)
+
+**Forge cadence final stretch:**
+- B003-021 done (Forge tick 18:53Z)
+- B003-022 done (Forge tick ~19:05Z based on Critic 19:21Z review)
+- B003-024 done (some tick between 18:53Z and 19:11Z)
+- Multiple tasks parallel in flight
+
+**Bundle close projection:**
+- B003-022 revision next tick (~+10 min) → 23/23 except B003-023
+- B003-023 = human session deliverable (DMG sign + GitHub Release)
+- **Effectively bundle complete tonight ~21:35 CEST except shipping logistics**
+

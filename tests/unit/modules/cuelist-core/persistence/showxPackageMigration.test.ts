@@ -21,7 +21,7 @@ interface TestMigration {
 
 const activeMigrations: TestMigration[] = [];
 
-vi.mock('../../../../../src/modules/cuelist-core/migrations/index.js', () => ({
+vi.mock('../../../../../src/modules/cuelist-core/src/migrations/index.js', () => ({
   runMigrations: async (input: { show: Record<string, unknown>; cuelists: unknown[] }) => {
     const alreadyApplied = new Set(
       (input.show['applied_migrations'] as string[] | undefined) ?? [],

@@ -318,7 +318,7 @@ export class GoEventChannel {
 
       const missed = ring.since(since, (item) => (item as { _seq: number })._seq);
       for (const item of missed) {
-        const { _seq, ...payload } = item as { _seq: number } & Record<string, unknown>;
+        const { _seq, ...payload } = item as unknown as { _seq: number } & Record<string, unknown>;
         this.deps.publishToStation(req.station_id, envelope(topic, _seq, payload));
       }
     }

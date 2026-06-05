@@ -1,5 +1,5 @@
 import * as Y from 'yjs';
-import type { Cue, Payload, PayloadType, OscPayload, WebhookPayload, WaitPayload, MscPayload, LxRefPayload, MidiPayload, GroupPayload } from 'showx-shared';
+import type { Cue, Payload, OscPayload, WebhookPayload, WaitPayload, MscPayload, LxRefPayload, MidiPayload, GroupPayload } from 'showx-shared';
 import { uuidv7 } from './uuid.js';
 import { getCuelist, getCues } from './cuelist.js';
 import { assertEditAllowed } from '../mode/lockGuards.js';

@@ -1,4 +1,4 @@
-import type { ShowJson, CuelistJson } from '../src/persistence/projections.js';
+import type { ShowJson, CuelistJson } from '../persistence/projections.js';
 
 export interface MigrationInput {
   show: ShowJson;

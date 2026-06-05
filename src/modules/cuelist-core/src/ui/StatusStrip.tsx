@@ -1,4 +1,3 @@
-import React from 'react';
 import { tokens } from './tokens.js';
 
 export type HealthLevel = 'healthy' | 'warning' | 'error' | 'unknown';

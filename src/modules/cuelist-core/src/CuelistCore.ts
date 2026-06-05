@@ -3,12 +3,12 @@ import { configSchema, type CuelistCoreConfig } from './config/schema.js';
 
 export class CuelistCore implements Module {
   private ctx?: ModuleContext;
-  private config?: CuelistCoreConfig;
+  private _config?: CuelistCoreConfig;
   private state: 'idle' | 'inited' | 'started' | 'stopped' = 'idle';
 
   async init(context: ModuleContext): Promise<void> {
     this.ctx = context;
-    this.config = await context.persisted.load(configSchema);
+    this._config = await context.persisted.load(configSchema);
     context.log.info('cuelist-core init complete');
     this.state = 'inited';
   }
@@ -29,7 +29,7 @@ export class CuelistCore implements Module {
 
   async teardown(): Promise<void> {
     this.ctx = undefined;
-    this.config = undefined;
+    this._config = undefined;
   }
 
   getConfigSchema(): ConfigSchemaDescriptor<CuelistCoreConfig> {

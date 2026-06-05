@@ -1,4 +1,3 @@
-import React from 'react';
 import { tokens } from './tokens.js';
 
 interface ShowFilePickerProps {

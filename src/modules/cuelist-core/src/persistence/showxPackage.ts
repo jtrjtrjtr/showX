@@ -4,14 +4,13 @@ import path from 'node:path';
 import { atomicWriteFile, cleanOrphanTmps } from './atomicWrite.js';
 import {
   docToProjections,
-  projectionsToDoc,
   type ShowJson,
   type CuelistJson,
 } from './projections.js';
 import { appendHistoryEvent, rotateHistoryIfNeeded } from './historyJsonl.js';
 import { writeInfoPlist } from './infoPlist.js';
 import { rebuildDocFromJson } from './recovery.js';
-import { runMigrations } from '../../migrations/index.js';
+import { runMigrations } from '../migrations/index.js';
 
 // ── Errors ────────────────────────────────────────────────────────────────────
 

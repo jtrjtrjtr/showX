@@ -2,7 +2,7 @@ import * as Y from 'yjs';
 import type { Cue, DepartmentTag, Trigger } from 'showx-shared';
 import { uuidv7 } from './uuid.js';
 import { getCuelist, getCues } from './cuelist.js';
-import { ValidationError, getPayloads } from './payload.js';
+import { ValidationError } from './payload.js';
 import { assertEditAllowed } from '../mode/lockGuards.js';
 import { assertCueInvariants } from '../cue/invariants.js';
 

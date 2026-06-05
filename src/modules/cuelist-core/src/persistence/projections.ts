@@ -138,7 +138,7 @@ function cuelistMapToJson(clMap: Y.Map<unknown>): CuelistJson {
       cues.push(cueMapToJson(cueMap));
     }
     // Sort by sort_key for consistent JSON output
-    cues.sort((a, b) => {
+    cues.sort((_a, _b) => {
       // sort_key is not in CueJson but is on the Y.Map — retrieve it inline
       return 0; // sort handled by getCuesSorted in display; JSON export preserves insertion order
     });
