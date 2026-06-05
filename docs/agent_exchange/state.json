@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "project": "showX",
-  "phase": "bundle_ShowX-3_complete",
-  "updated_at": "2026-06-06T19:55:00Z",
-  "active_bundle": "ShowX-3",
+  "phase": "bundle_ShowX-3.1_hotfix",
+  "updated_at": "2026-06-06T22:30:00Z",
+  "active_bundle": "ShowX-3.1",
   "tasks": [
     {
       "id": "B001-001",
@@ -973,6 +973,51 @@
       "depends_on": [
         "B003-002"
       ]
+    },
+    {
+      "id": "B003-101",
+      "slug": "routing_devices_ui",
+      "title": "Routing + Devices UI in Cuelist Core panel",
+      "status": "queued",
+      "owner": null,
+      "task_path": "docs/agent_exchange/queued/B003-101_routing_devices_ui.md",
+      "created_at": "2026-06-06T22:30:00Z",
+      "started_at": null,
+      "ended_at": null,
+      "reviewed_at": null,
+      "review_round": 0,
+      "spawned_from": "ShowX-3.1 hotfix bundle architect-filed",
+      "depends_on": []
+    },
+    {
+      "id": "B003-102",
+      "slug": "playhead_awareness_broadcast",
+      "title": "Real-time playhead broadcast via Yjs awareness",
+      "status": "queued",
+      "owner": null,
+      "task_path": "docs/agent_exchange/queued/B003-102_playhead_awareness_broadcast.md",
+      "created_at": "2026-06-06T22:30:00Z",
+      "started_at": null,
+      "ended_at": null,
+      "reviewed_at": null,
+      "review_round": 0,
+      "spawned_from": "ShowX-3.1 hotfix bundle architect-filed",
+      "depends_on": []
+    },
+    {
+      "id": "B003-103",
+      "slug": "demo_show_and_first_launch",
+      "title": "Demo show fixture + first-launch picker (Demo / Open / New)",
+      "status": "queued",
+      "owner": null,
+      "task_path": "docs/agent_exchange/queued/B003-103_demo_show_and_first_launch.md",
+      "created_at": "2026-06-06T22:30:00Z",
+      "started_at": null,
+      "ended_at": null,
+      "reviewed_at": null,
+      "review_round": 0,
+      "spawned_from": "ShowX-3.1 hotfix bundle architect-filed",
+      "depends_on": []
     }
   ]
 }
