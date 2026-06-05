@@ -2,11 +2,9 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "outDir": "dist",
+    "rootDir": "src",
     "module": "NodeNext",
-    "moduleResolution": "NodeNext",
-    "paths": {
-      "showx-shared": ["../shared/src/index.ts"]
-    }
+    "moduleResolution": "NodeNext"
   },
   "include": ["src/**/*"]
 }

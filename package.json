@@ -38,7 +38,9 @@
     "typescript": "^5.4.0",
     "vitest": "^1.4.0",
     "yjs": "^13.6.10",
-    "zod": "^3.22.0"
+    "zod": "^3.22.0",
+    "supertest": "^6.3.3",
+    "@types/supertest": "^6.0.2"
   },
   "packageManager": "pnpm@8.15.0",
   "engines": {
