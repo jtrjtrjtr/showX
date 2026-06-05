@@ -130,4 +130,58 @@ Allow SM to admit a new station while show is locked? Risk: rogue admit mid-show
 
 ---
 
-(Final batch — bridgex_absorption — pending.)
+---
+
+## From bridgex_absorption.md (2026-06-05 night)
+
+### Q22. `outputs/html-renderer.ts` (~134 LOC) fate
+
+Ambiguous — Supabase Realtime broadcast output target. EventX engine may or may not still rely on it for dashboard live-state. Spec defers decision pending cross-check with EventX repo (out of audit scope).
+
+**Default in spec:** flagged as Open Q1 in absorption doc. **Cross-check needed:** EventX dashboard subscription to `html-renderer` channel — does it exist? If yes → migrate as `shared/output-dispatcher/supabase-broadcast.ts`. If no → retire.
+**Needed by:** before EventX Bridge module migration (ShowX-2 Phase 1).
+
+### Q23. `auth-manager.ts` placement
+
+Genuinely unclear. Three options:
+- (A) Module-local in EventX Bridge until Cloud Sync absorbs Q3 2027 — spec's default
+- (B) Move to shell SecretStore + Cloud Sync precursor service from day one
+- (C) Ship as tiny new "Identity" core service
+
+**Default in spec:** (A) — module-local; Architect should rule before Step 3 of migration (EventX Bridge module skeleton in ShowX-2).
+**Needed by:** ShowX-2 Phase 2 (EventX Bridge module shell).
+
+### Q24. TesterX dev tool / category K
+
+`packages/testerx-contract/` + `tools/testerx/` don't fit Module/Shared/Retired/Replaced taxonomy. Spec created 5th category K (Kept-in-BridgeX) for these. Implication: ShowX development-time injection needs a fresh affordance later.
+
+**Default in spec:** keep frozen with BridgeX 0.3.x; ShowX dev-mode injection re-designed in ShowX-4+ if needed.
+**Needed by:** ShowX-3 (Cuelist Core) if Forge needs a dev-time cue-injection harness.
+
+### Q25. OSC packet ordering nondeterminism
+
+Parity test harness uncertainty: if BridgeX 0.3.x has nondeterministic OSC packet ordering across multiple adapters writing in parallel, byte-diff comparator fails. Order-insensitive comparator adds ~300 LOC.
+
+**Default in spec:** byte-diff first; switch to order-insensitive comparator if parity tests reveal nondeterminism.
+**Needed by:** ShowX-2 parity test pass.
+
+### Q26. Migration scope: legacy YAML-profile pipeline (~2,800 LOC) really retired?
+
+Spec recommends RETIRE all of: `aggregation/`, `calibration/`, `channels/`, `mapping/`, `outputs/` (profile-side), `coalesce/`, `patterns/`, `cli/`, `dev/`, `inputs/` (cloud + sensor-raw + ingestion-pipeline + local-inject). Customers run the event-driven path (`event-runtime.ts` → `event_bridge_outputs` → `adapters/`), not YAML profiles.
+
+**Default in spec:** retire all ~2,800 LOC.
+**Risk:** if even ONE customer uses YAML profile mode, retire = breakage. **Customer interview pre-Kongres:** ask 3-5 BridgeX customers if they use YAML profiles.
+
+---
+
+## Summary
+
+26 open questions identified across 5 specs. Approximately 5 need decisions before ShowX-1 Foundation execution can start (Q1-Q3); the rest cascade through ShowX-2 through ShowX-4 bundles. None block bundle-opening; all have sensible spec defaults.
+
+**Recommended morning workflow:**
+1. Read this doc top-to-bottom (~10 min)
+2. Confirm defaults for Q1-Q3 (Module Loader) — needed for B001-010 implementation
+3. Confirm Q16-Q18 (Protocol) — needed for B001-007 + B001-008
+4. Confirm Q19-Q21 (Pairing) — needed for B001-009
+5. Defer Q4-Q15 (Data model lower priority) + Q22-Q26 (BridgeX absorption) to follow-up sessions — not on ShowX-1 critical path
+6. Enable scope, start Forge on B001-001
