@@ -152,14 +152,14 @@ describe('SMMasterView', () => {
     expect(rows[1]).toHaveAttribute('aria-selected', 'true');
   });
 
-  it('ArrowUp from first cue stays on first cue', async () => {
+  it('ArrowUp from first cue wraps to last cue', async () => {
     const conn = makeTestConnection();
     addCuelist(conn.doc, 'cl1');
     addCue(conn.doc, 'cl1', 'q1', 'First Cue');
     addCue(conn.doc, 'cl1', 'q2', 'Second Cue');
     render(<Wrapper cuelistId="cl1" conn={conn} />);
 
-    // Move to first cue then up
+    // Move to first cue then up — wrapping behavior: goes to last cue
     await act(async () => {
       fireEvent.keyDown(window, { code: 'ArrowDown' });
     });
@@ -168,7 +168,7 @@ describe('SMMasterView', () => {
     });
 
     const rows = screen.getAllByRole('row');
-    expect(rows[0]).toHaveAttribute('aria-selected', 'true');
+    expect(rows[1]).toHaveAttribute('aria-selected', 'true');
   });
 
   it('Q key calls sendArmRequest for playhead cue', async () => {

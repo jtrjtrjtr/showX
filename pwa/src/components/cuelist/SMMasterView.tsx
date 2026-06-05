@@ -1,14 +1,19 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import type { Cue } from 'showx-shared';
 import { useCuelist } from '../../hooks/useCuelist.js';
 import { useMode } from '../../hooks/useMode.js';
 import { useStations } from '../../hooks/useStations.js';
 import { useGoChannel } from '../../hooks/useGoChannel.js';
+import { usePlayhead } from '../../hooks/usePlayhead.js';
 import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts.js';
+import { useConnection } from '../../lib/ConnectionProvider.js';
 import { tokens } from './tokens.js';
 import { CueRow } from './CueRow.js';
 import { StandbyPanel } from './StandbyPanel.js';
 import { CallingText } from './CallingText.js';
+import { GoButton } from './GoButton.js';
+import { GoConfirmDialog } from './GoConfirmDialog.js';
+import { HelpOverlay } from './HelpOverlay.js';
 
 interface SMMasterViewProps {
   cuelistId: string;
@@ -54,93 +59,43 @@ function EmptyState() {
   );
 }
 
-function HelpOverlay({ onClose }: { onClose: () => void }) {
-  return (
-    <div
-      role="dialog"
-      aria-label="Keyboard shortcuts"
-      style={{
-        position: 'fixed',
-        inset: 0,
-        background: 'rgba(27,26,24,0.7)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 100,
-      }}
-      onClick={onClose}
-    >
-      <div
-        style={{
-          background: tokens.color.cream,
-          padding: tokens.space.xxl,
-          borderRadius: tokens.radius.l,
-          minWidth: 300,
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <h2 style={{ marginTop: 0 }}>Keyboard shortcuts</h2>
-        <table style={{ borderCollapse: 'collapse', width: '100%' }}>
-          <tbody>
-            {[
-              ['Space', 'GO (fire armed cue)'],
-              ['Q', 'Standby next cue'],
-              ['↑ / ↓', 'Navigate playhead'],
-              ['Enter', 'Focus selected cue'],
-              ['?', 'Show this help'],
-            ].map(([key, desc]) => (
-              <tr key={key}>
-                <td style={{ padding: '4px 12px 4px 0', fontFamily: tokens.font.mono, fontWeight: 600 }}>{key}</td>
-                <td style={{ padding: '4px 0', color: tokens.color.gray_700 }}>{desc}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        <button
-          onClick={onClose}
-          style={{
-            marginTop: tokens.space.l,
-            padding: `${tokens.space.s}px ${tokens.space.l}px`,
-            background: tokens.color.teal,
-            color: '#fff',
-            border: 'none',
-            borderRadius: tokens.radius.s,
-            cursor: 'pointer',
-          }}
-        >
-          Close
-        </button>
-      </div>
-    </div>
-  );
-}
-
 export function SMMasterView({ cuelistId }: SMMasterViewProps) {
+  const conn = useConnection();
   const { cuelist, cues } = useCuelist(cuelistId);
   const { mode } = useMode();
   const stations = useStations();
   const { go, standby, lastDispatched } = useGoChannel(cuelistId);
+  const { playheadCueId, armedCueId, setPlayhead, advance, retreat, arm, unarm } =
+    usePlayhead(cuelistId);
 
-  const [playheadCueId, setPlayheadCueId] = useState<string | null>(
-    cuelist?.playhead?.cue_id ?? null,
-  );
-  const [armedCueId, setArmedCueId] = useState<string | null>(
-    cuelist?.playhead?.armed_cue_id ?? null,
-  );
   const [search, setSearch] = useState('');
   const [showHelp, setShowHelp] = useState(false);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [rejectedReason, setRejectedReason] = useState<string | null>(null);
+  const rejectionSeqRef = useRef(0);
 
-  const navPlayhead = useCallback(
-    (delta: number) => {
-      setPlayheadCueId((prev) => {
-        if (cues.length === 0) return prev;
-        const idx = prev ? cues.findIndex((c) => c.id === prev) : -1;
-        const next = Math.max(0, Math.min(cues.length - 1, idx + delta));
-        return cues[next]?.id ?? prev;
-      });
-    },
-    [cues],
-  );
+  // Subscribe to go.rejected events — encode seq so even same reason re-triggers shake
+  useEffect(() => {
+    return conn.sideChannel.on('go.rejected', (event) => {
+      rejectionSeqRef.current += 1;
+      const key = `${event.reason}:${rejectionSeqRef.current}`;
+      setRejectedReason(key);
+      const t = setTimeout(() => setRejectedReason(null), 2000);
+      return () => clearTimeout(t);
+    });
+  }, [conn.sideChannel]);
+
+  // Cmd+Shift+G emergency override shortcut
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.metaKey && e.shiftKey && e.code === 'KeyG') {
+        e.preventDefault();
+        if (armedCueId) setShowConfirmDialog(true);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [armedCueId]);
 
   const shortcuts = useMemo(
     () => ({
@@ -150,17 +105,15 @@ export function SMMasterView({ cuelistId }: SMMasterViewProps) {
       KeyQ: () => {
         if (playheadCueId) {
           standby(playheadCueId);
-          setArmedCueId(playheadCueId);
+          arm(playheadCueId);
         }
       },
-      ArrowUp: () => navPlayhead(-1),
-      ArrowDown: () => navPlayhead(+1),
-      Enter: () => {
-        // focus event already handled by onClick on CueRow; here just a noop
-      },
+      ArrowUp: () => retreat(),
+      ArrowDown: () => advance(),
+      Escape: () => unarm(),
       Slash: () => setShowHelp((v) => !v),
     }),
-    [armedCueId, playheadCueId, go, standby, navPlayhead],
+    [armedCueId, playheadCueId, go, standby, arm, unarm, advance, retreat],
   );
 
   useKeyboardShortcuts(shortcuts);
@@ -172,6 +125,17 @@ export function SMMasterView({ cuelistId }: SMMasterViewProps) {
       (c) => c.label.toLowerCase().includes(q) || c.description.toLowerCase().includes(q),
     );
   }, [cues, search]);
+
+  const armedCue = armedCueId ? (cues.find((c) => c.id === armedCueId) ?? null) : null;
+
+  const handleGoOverride = useCallback(() => {
+    if (armedCueId) setShowConfirmDialog(true);
+  }, [armedCueId]);
+
+  const handleConfirmOverride = useCallback(() => {
+    if (armedCueId) go(armedCueId, true);
+    setShowConfirmDialog(false);
+  }, [armedCueId, go]);
 
   return (
     <div
@@ -248,7 +212,7 @@ export function SMMasterView({ cuelistId }: SMMasterViewProps) {
                 lastDispatched?.cue_id === cue.id &&
                 Date.now() - new Date(lastDispatched.dispatched_at).getTime() < 2000
               }
-              onSelect={() => setPlayheadCueId(cue.id)}
+              onSelect={() => setPlayhead(cue.id)}
               stations={stations.filter((s) => s.cursor.cue_id === cue.id)}
               mode={mode}
             />
@@ -260,13 +224,32 @@ export function SMMasterView({ cuelistId }: SMMasterViewProps) {
         nextCues={getNextCues(cues, playheadCueId, 3)}
         armedCueId={armedCueId}
         cues={cues}
+        onStandby={(cueId) => {
+          standby(cueId);
+          arm(cueId);
+        }}
       />
-      <CallingText
-        armedCue={armedCueId ? (cues.find((c) => c.id === armedCueId) ?? null) : null}
-        lastFired={lastDispatched}
-      />
+      <CallingText armedCue={armedCue} lastFired={lastDispatched} />
+      <div style={{ padding: tokens.space.m, flexShrink: 0 }}>
+        <GoButton
+          armedCueId={armedCueId}
+          cueLabel={armedCue?.label}
+          mode={mode}
+          onGo={() => (armedCueId ? go(armedCueId) : '')}
+          onOverride={handleGoOverride}
+          rejectedReason={rejectedReason}
+          isAuthoritative={true}
+        />
+      </div>
 
       {showHelp && <HelpOverlay onClose={() => setShowHelp(false)} />}
+      {showConfirmDialog && armedCue && (
+        <GoConfirmDialog
+          cue={armedCue}
+          onConfirm={handleConfirmOverride}
+          onCancel={() => setShowConfirmDialog(false)}
+        />
+      )}
     </div>
   );
 }

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-import { describe, it, expect, afterEach } from 'vitest';
-import { render, screen, cleanup } from '@testing-library/react';
+import { describe, it, expect, vi, afterEach } from 'vitest';
+import { render, screen, cleanup, fireEvent } from '@testing-library/react';
 import React from 'react';
 import type { Cue } from 'showx-shared';
 import { StandbyPanel } from '../../../../../pwa/src/components/cuelist/StandbyPanel.js';
@@ -71,6 +71,52 @@ describe('StandbyPanel', () => {
       <StandbyPanel nextCues={[]} armedCueId="q1" cues={cues} />,
     );
     expect(screen.getByText(/House to half/)).toBeInTheDocument();
+  });
+
+  it('has role="status" for accessibility', () => {
+    const { container } = render(
+      <StandbyPanel nextCues={[cues[0]]} armedCueId={null} cues={cues} />,
+    );
+    const section = container.querySelector('[role="status"]');
+    expect(section).toBeTruthy();
+  });
+
+  it('has aria-live="polite" for screen reader announcements', () => {
+    const { container } = render(
+      <StandbyPanel nextCues={[cues[0]]} armedCueId={null} cues={cues} />,
+    );
+    const liveRegion = container.querySelector('[aria-live="polite"]');
+    expect(liveRegion).toBeTruthy();
+  });
+
+  it('renders tappable buttons for next cues when onStandby is provided', () => {
+    const onStandby = vi.fn();
+    render(
+      <StandbyPanel
+        nextCues={[cues[0], cues[1]]}
+        armedCueId={null}
+        cues={cues}
+        onStandby={onStandby}
+      />,
+    );
+    const btn = screen.getByRole('button', { name: /Arm cue Overture/i });
+    expect(btn).toBeInTheDocument();
+    fireEvent.click(btn);
+    expect(onStandby).toHaveBeenCalledWith('q1');
+  });
+
+  it('clicking a next-cue button calls onStandby with cueId', () => {
+    const onStandby = vi.fn();
+    render(
+      <StandbyPanel
+        nextCues={[cues[0], cues[1]]}
+        armedCueId={null}
+        cues={cues}
+        onStandby={onStandby}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: /Arm cue Act 1/i }));
+    expect(onStandby).toHaveBeenCalledWith('q2');
   });
 });
 
