@@ -1,0 +1,8 @@
+{
+  "enabled": false,
+  "bundle_id": "ShowX-1",
+  "allowed_task_ids": [],
+  "rationale": "Bootstrap phase — Forge stays disabled until ShowX-1 Foundation bundle is fully specced and queued. Architect populates allowed_task_ids when tasks are ready for Forge pickup.",
+  "updated_at": "2026-06-05T22:00:00Z",
+  "updated_by": "architect"
+}

@@ -1,0 +1,5 @@
+packages:
+  - "src/main"
+  - "src/modules/*"
+  - "src/shared"
+  - "pwa"

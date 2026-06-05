@@ -1,0 +1,51 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build outputs
+dist/
+build/
+out/
+*.tsbuildinfo
+
+# Electron
+release/
+dist-electron/
+
+# IDEs
+.vscode/*
+!.vscode/settings.example.json
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+docs/agent_exchange/logs/*.log
+!docs/agent_exchange/logs/.gitkeep
+
+# Local config
+.env
+.env.local
+.env.*.local
+
+# Test artefacts
+coverage/
+.nyc_output/
+playwright-report/
+test-results/
+
+# Forge / Critic runner artefacts
+/tmp-runner/
+.runner-state/
+
+# Backup files
+*.bak
+*.tmp
+*~
+
+# Local pairing tokens / secrets
+*.token
+secrets.json
