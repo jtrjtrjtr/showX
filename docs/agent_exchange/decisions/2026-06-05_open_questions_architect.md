@@ -243,3 +243,37 @@ Subagent reviewing B001-007 flagged real type-signature mismatch: showx-shared's
 4. Confirm Q19-Q21 (Pairing) — needed for B001-009
 5. Defer Q4-Q15 (Data model lower priority) + Q22-Q26 (BridgeX absorption) to follow-up sessions — not on ShowX-1 critical path
 6. Enable scope, start Forge on B001-001
+
+---
+
+## Architect rulings — ShowX-3 data model questions (2026-06-06)
+
+Applied as defaults per Jindřich's "max autonomy" delegation 2026-06-06. Each ruling lifts the spec-recommended default to binding for ShowX-3 (B003-001..023) execution. Forge MUST treat these as authoritative; Critic enforces.
+
+**Q4 — Payload-level `department` field.** RULING: infer from `cue.department` + tag heuristic in 0.1. First-class `payload.department` field deferred to 0.2 (follow-up bundle). Applies to B003-002 (Cue/Payload factories — no `department` field on Payload type yet), B003-005 (view filter algorithm reads cue-level), B003-006 (compound cues inherit cue department), B003-009 (dispatch resolves via cue context).
+
+**Q5 — `auto_follow` with null `duration_hint_ms`.** RULING: fire immediately on previous-cue start (equivalent to `auto_continue(0)`). Applies to B003-007 trigger engine. Rationale: matches QLab/Eos auto-follow semantics, predictable for SM mental model.
+
+**Q6 — Per-cue lock granularity in SHOW mode.** RULING: cuelist-level lock only in MVP. Per-cue locking deferred to 0.3. Applies to B003-004 REHEARSAL state machine.
+
+**Q7 — Y.Text vs strings for label/notes + label LWW in SHOW.** RULING: plain strings (Y.Map values, not Y.Text). Label LWW allowed in SHOW mode (per protocol_dictionary §7.6 conflict-free convention). Applies to B003-002, B003-004, B003-016.
+
+**Q8 — Group nesting depth + cycle detection.** RULING: 4 levels max + cycle detection on insert. Reject deeper. Applies to B003-009 (dispatch traversal) + B003-002 (group factory validation).
+
+**Q9 — Idempotency LRU sizing.** RULING: default 1000 entries, configurable via `cuelist-core.idempotency_lru_size`. Applies to B003-001 config schema + B003-008 GO event channel.
+
+**Q10 — Snapshot retention policy.** RULING: keep last 50 snapshots per cuelist + size cap 100 MB. Configurable. Applies to B003-002 / B003-003.
+
+**Q11 — Presence color palette.** RULING: null in 0.1 (no fixed palette). Operator color = SM-assignable at pairing time. Follow-up task post-ShowX-3 for default palette. Applies to B003-001 config + B003-013/B003-014 PWA presence indicators.
+
+**Q12 — UTI registration for `.showx` package.** RULING: register `cz.xlab.showx.package` in Info.plist during packaging (B003-023). Applies to B003-003 + B003-023.
+
+**Q13 — Postgres UUID privacy in cloud-sync.** RULING: defer — cloud-sync module is out of ShowX-3 scope. Document as open Q for ShowX-4.
+
+**Q14 — History rotation.** RULING: 50 MB or 10 days, whichever hits first (matches B003-001 config defaults). Applies to B003-001, B003-002.
+
+**Q15 — Compound cue payload ordering semantics.** RULING: payloads dispatch in array order, no inter-payload await (fire-and-forget per payload). Compound = atomic from cue PoV; payload delivery races are dispatcher-side, not cue-engine concern. Applies to B003-006, B003-009.
+
+**Pre-emptive split decision (Pattern 8 advisory ≥700 LOC):** SKIPPED — let Forge attempt B003-002 (800), B003-013 (800), B003-016 (800) as-written first. Architect rescues if Forge times out 2× consecutively (pattern from ShowX-1 B001-001 / B001-012). Splitting pre-emptively burns Architect tokens without proof of need; reactive split is cheaper.
+
+**Status:** All Q4-Q15 rulings binding. Forge may pick up B003-001 on next scope-enabled tick. Q13 explicitly deferred (out of scope). Q16-Q17 already ruled in protocol_dictionary block above (OFF, defer to 0.2).

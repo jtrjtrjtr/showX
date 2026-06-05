@@ -7,9 +7,13 @@ goal: "Build the Cuelist Core module (REHEARSAL mode + per-department views + GO
 target_completion: "2027-03-31"  # Q1 2027
 depends_on:
   - "ShowX-1"          # Foundation services
-  - "ShowX-2"          # EventX Bridge module (must ship in same binary)
   - "spec:data_model.md"
   - "spec:protocol_dictionary.md"
+# NOTE: ShowX-2 dependency removed by Architect ruling 2026-06-06 — was about
+# SHIPPING the same binary (Kongres migration narrative), not development order.
+# Module loader treats modules independently; Cuelist Core development has zero
+# code dependency on EventX Bridge module. Cuelist demo is Jindřich's visual
+# product target; ShowX-2 stays parked until post-Kongres customer migration.
 tasks_planned:
   - "B003-001 — Cuelist Core module manifest + skeleton"
   - "B003-002 — Yjs document model (Show / Cuelist / Cue / Payload per data_model.md §2)"
@@ -38,7 +42,7 @@ tasks_planned:
 
 # ShowX-3 Cuelist Core Module + ShowX 0.1 Public — Bundle Outline
 
-> **Status:** PLANNED. Opens when ShowX-2 accepts.
+> **Status:** ACTIVE. Opened 2026-06-06 by Architect ruling — ShowX-3 runs before ShowX-2 because Cuelist Core is the first visual demo target.
 > **Target:** Q1 2027 — first public release of ShowX with cuelist capability.
 > **The product becomes a product** in this bundle.
 
@@ -110,3 +114,54 @@ Most decisions cascade from data_model.md + protocol_dictionary.md open question
 - Spec: `../../specs/module_loader.md`
 - Bundle parent: `ShowX-1-foundation.md`, `ShowX-2-eventx-bridge-module.md`
 - Strategy: `../../../../xlab-strategy/docs/showx_mvp_scope.md`
+
+---
+
+## Spec writing status — appended 2026-06-05
+
+**Status:** All 23 task specs written and queued in `docs/agent_exchange/queued/B003-001..023_*.md`.
+
+**Total estimated_size_lines across 23 specs:** 11,700 LOC (production + tests).
+
+**Distribution by size:**
+- 200 LOC: 1 task (B003-023 release)
+- 300 LOC: 4 tasks (B003-001, -010, -018, -022)
+- 400 LOC: 5 tasks (B003-005, -007, -008, -015, -017)
+- 500 LOC: 3 tasks (B003-004, -006, -021)
+- 600 LOC: 6 tasks (B003-003, -009, -011, -019, -020, plus a couple others) — at Pattern 8 advisory threshold
+- 700 LOC: 2 tasks (B003-012, -014)
+- 800 LOC: 3 tasks (B003-002, -013, -016) — exceed Pattern 8 advisory; Architect should consider pre-emptive split
+
+**Pre-emptive split candidates (≥700 LOC, Pattern 8 advisory):**
+- **B003-002 (800)** Yjs document model — splittable into 002a (show + cuelist + meta factories), 002b (cue + payload factories + validation), 002c (CRDT merge tests). Recommend split before Forge picks up; specs cleanly separable along the file boundaries already documented.
+- **B003-013 (800)** PWA SM master view — splittable into 013a (SMMasterView shell + CueRow + tokens), 013b (StandbyPanel + CallingText + OperatorPresenceIndicators + keyboard shortcuts). Recommend split; UI components have natural boundary.
+- **B003-016 (800)** PWA cue editor — splittable into 016a (CueEditor shell + CueMetaFields + DepartmentSelector + TriggerEditor), 016b (per-payload-type editors — OSC/MSC/LXRef/MIDI/Webhook/Wait/Group). Recommend split; payload editors are 7 distinct components.
+- **B003-012 (700)** PWA cuelist data layer — borderline; arguably splittable into 012a (connection + sideChannel + provider stack) and 012b (hooks). Forge may handle as-is; flag if Forge times out.
+- **B003-014 (700)** PWA operator view — borderline; 7 variant components is the bulk; could split as 014a (OperatorView selector + OperatorCueRow + GenericOperatorView + 3 variants) and 014b (remaining 4 variants + payloadSummaries). Forge may handle as-is; flag if Forge times out.
+
+**Cross-task dependencies surfaced beyond bundle outline:**
+- B003-004 (REHEARSAL state) requires modifying B003-002's mutators to call `assertEditAllowed` — this is a cross-task coupling that Forge must be aware of when implementing B003-004 (touches files outside its direct target_files list).
+- B003-007 (trigger engine) requires CuelistCore class integration in B003-001 — `start()` instantiates engine. B003-001 must include a `// TODO B003-007` hook OR Forge of B003-007 patches B003-001's CuelistCore.
+- B003-008 (GO channel) similar pattern — CuelistCore.start() instantiates GoEventChannel. Same pattern.
+- B003-009 (dispatch) subscribes to cue-fire EventBus — depends on B003-008 publisher. Confirm event order: B003-009 must wait for B003-008 to publish cue-fire before iterating payloads.
+- B003-010 (catalog) requires `pkgPath` — comes from B003-003's open result; cuelist-core must thread it through. Forge documents the wiring.
+- B003-011 (shell panel UI) assumes IPC bridge from shell (ShowX-1 B001-016 likely); Forge should validate IPC channel availability in done report.
+- B003-012 (PWA data layer) assumes pairing token already obtained via ShowX-1 B001-012/B001-018 pairing flow.
+- B003-013/-014/-015/-016 (PWA components) require `data-testid` attributes consistent with B003-020 E2E test selectors. Forge of B003-020 should sanity-check selectors exist after each PWA UI task lands.
+
+**Open questions referenced + spec defaults applied:**
+- **Q4 (payload department field):** MVP infers from cue.department + tag heuristic; first-class field deferred to 0.2. Default in B003-002, B003-005, B003-006, B003-009.
+- **Q5 (auto_follow with null duration_hint):** fire immediately on prev start. Default in B003-007.
+- **Q6 (per-cue lock granularity):** cuelist-level only in MVP. Default in B003-004.
+- **Q7 (Y.Text vs strings + label LWW in SHOW):** plain strings; label LWW allowed in SHOW. Default in B003-002, B003-004, B003-016.
+- **Q8 (group nesting depth):** 4 levels max + cycle detection. Default in B003-009.
+- **Q9 (idempotency LRU size):** 1000 default, configurable. Default in B003-001 config + B003-008.
+- **Q11 (presence color palette):** null in 0.1, TBD follow-up task. Default in B003-001 config.
+- **Q12 (UTI registration):** Info.plist with cz.xlab.showx.package. Default in B003-003.
+- **Q16 (/showx/cue/fire IN in SHOW mode):** OFF by default, opt-in per show. Documented in B003-008 (out of scope) + B003-009 dispatch validates.
+- **Q17 (direct DMX in 0.1):** Deferred to 0.2. Default in B003-009.
+
+**Specs ready for Forge upon scope activation.** Architect should:
+1. Confirm pre-emptive splits for B003-002, B003-013, B003-016 before scope opens (≤30 min Architect work each).
+2. Update `claude_runner_scope.json` when ShowX-3 opens (post ShowX-1 + ShowX-2 acceptance).
+3. Activate task IDs incrementally — start with B003-001 (skeleton, no deps), then B003-002 sub-tasks, then phase 1 (B003-003 through B003-010), then phase 2 (B003-011 through B003-016 PWA), then phases 3-5.

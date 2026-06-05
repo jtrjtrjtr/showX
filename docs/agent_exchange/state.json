@@ -2,7 +2,7 @@
   "schema_version": 1,
   "project": "showX",
   "phase": "bundle_ShowX-1_foundation",
-  "updated_at": "2026-06-06T10:30:00Z",
+  "updated_at": "2026-06-06T12:10:00Z",
   "active_bundle": "ShowX-1",
   "tasks": [
     {
@@ -507,6 +507,430 @@
       "depends_on": [
         "B002-013",
         "B002-014"
+      ]
+    },
+    {
+      "id": "B003-001",
+      "slug": "cuelist_core_module_skeleton",
+      "title": "Cuelist Core module manifest + skeleton + Module class",
+      "status": "queued",
+      "owner": null,
+      "task_path": "docs/agent_exchange/queued/B003-001_cuelist_core_module_skeleton.md",
+      "created_at": "2026-06-06T12:10:00Z",
+      "started_at": null,
+      "ended_at": null,
+      "reviewed_at": null,
+      "review_round": 0,
+      "spawned_from": null,
+      "depends_on": []
+    },
+    {
+      "id": "B003-002",
+      "slug": "yjs_document_model",
+      "title": "Yjs document model \u2014 Show / Cuelist / Cue / Payload factories + accessors",
+      "status": "queued",
+      "owner": null,
+      "task_path": "docs/agent_exchange/queued/B003-002_yjs_document_model.md",
+      "created_at": "2026-06-06T12:10:00Z",
+      "started_at": null,
+      "ended_at": null,
+      "reviewed_at": null,
+      "review_round": 0,
+      "spawned_from": null,
+      "depends_on": [
+        "B003-001"
+      ]
+    },
+    {
+      "id": "B003-003",
+      "slug": "showx_package_read_write",
+      "title": ".showx package read/write \u2014 atomic save + recovery fallback",
+      "status": "queued",
+      "owner": null,
+      "task_path": "docs/agent_exchange/queued/B003-003_showx_package_read_write.md",
+      "created_at": "2026-06-06T12:10:00Z",
+      "started_at": null,
+      "ended_at": null,
+      "reviewed_at": null,
+      "review_round": 0,
+      "spawned_from": null,
+      "depends_on": [
+        "B003-002"
+      ]
+    },
+    {
+      "id": "B003-004",
+      "slug": "rehearsal_mode_state_machine",
+      "title": "REHEARSAL mode state machine + SHOW-mode lock primitives + snapshot writer",
+      "status": "queued",
+      "owner": null,
+      "task_path": "docs/agent_exchange/queued/B003-004_rehearsal_mode_state_machine.md",
+      "created_at": "2026-06-06T12:10:00Z",
+      "started_at": null,
+      "ended_at": null,
+      "reviewed_at": null,
+      "review_round": 0,
+      "spawned_from": null,
+      "depends_on": [
+        "B003-002",
+        "B003-003"
+      ]
+    },
+    {
+      "id": "B003-005",
+      "slug": "per_department_view_filter",
+      "title": "Per-department view filter logic + actionable/highlighted computation",
+      "status": "queued",
+      "owner": null,
+      "task_path": "docs/agent_exchange/queued/B003-005_per_department_view_filter.md",
+      "created_at": "2026-06-06T12:10:00Z",
+      "started_at": null,
+      "ended_at": null,
+      "reviewed_at": null,
+      "review_round": 0,
+      "spawned_from": null,
+      "depends_on": [
+        "B003-002"
+      ]
+    },
+    {
+      "id": "B003-006",
+      "slug": "compound_cue_payloads",
+      "title": "Compound cue model \u2014 multi-department payload helpers + invariants",
+      "status": "queued",
+      "owner": null,
+      "task_path": "docs/agent_exchange/queued/B003-006_compound_cue_payloads.md",
+      "created_at": "2026-06-06T12:10:00Z",
+      "started_at": null,
+      "ended_at": null,
+      "reviewed_at": null,
+      "review_round": 0,
+      "spawned_from": null,
+      "depends_on": [
+        "B003-002",
+        "B003-005"
+      ]
+    },
+    {
+      "id": "B003-007",
+      "slug": "trigger_taxonomy",
+      "title": "Trigger taxonomy \u2014 manual / auto_follow / auto_continue scheduler",
+      "status": "queued",
+      "owner": null,
+      "task_path": "docs/agent_exchange/queued/B003-007_trigger_taxonomy.md",
+      "created_at": "2026-06-06T12:10:00Z",
+      "started_at": null,
+      "ended_at": null,
+      "reviewed_at": null,
+      "review_round": 0,
+      "spawned_from": null,
+      "depends_on": [
+        "B003-002"
+      ]
+    },
+    {
+      "id": "B003-008",
+      "slug": "go_event_side_channel",
+      "title": "GO event side-channel publish \u2014 pub/sub on /events/<show_id> with idempotency + replay window",
+      "status": "queued",
+      "owner": null,
+      "task_path": "docs/agent_exchange/queued/B003-008_go_event_side_channel.md",
+      "created_at": "2026-06-06T12:10:00Z",
+      "started_at": null,
+      "ended_at": null,
+      "reviewed_at": null,
+      "review_round": 0,
+      "spawned_from": null,
+      "depends_on": [
+        "B003-002",
+        "B003-007"
+      ]
+    },
+    {
+      "id": "B003-009",
+      "slug": "cue_payload_dispatch",
+      "title": "Cue payload dispatch \u2014 resolve routing + call OutputDispatcher per payload type",
+      "status": "queued",
+      "owner": null,
+      "task_path": "docs/agent_exchange/queued/B003-009_cue_payload_dispatch.md",
+      "created_at": "2026-06-06T12:10:00Z",
+      "started_at": null,
+      "ended_at": null,
+      "reviewed_at": null,
+      "review_round": 0,
+      "spawned_from": null,
+      "depends_on": [
+        "B003-006",
+        "B003-007"
+      ]
+    },
+    {
+      "id": "B003-010",
+      "slug": "cue_catalog_publishing",
+      "title": "Cue catalog publishing \u2014 emit cue-catalog-updated events + cache write",
+      "status": "queued",
+      "owner": null,
+      "task_path": "docs/agent_exchange/queued/B003-010_cue_catalog_publishing.md",
+      "created_at": "2026-06-06T12:10:00Z",
+      "started_at": null,
+      "ended_at": null,
+      "reviewed_at": null,
+      "review_round": 0,
+      "spawned_from": null,
+      "depends_on": [
+        "B003-009"
+      ]
+    },
+    {
+      "id": "B003-011",
+      "slug": "module_panel_ui_shell",
+      "title": "Cuelist Core module panel UI in Electron shell",
+      "status": "queued",
+      "owner": null,
+      "task_path": "docs/agent_exchange/queued/B003-011_module_panel_ui_shell.md",
+      "created_at": "2026-06-06T12:10:00Z",
+      "started_at": null,
+      "ended_at": null,
+      "reviewed_at": null,
+      "review_round": 0,
+      "spawned_from": null,
+      "depends_on": [
+        "B003-001",
+        "B003-002"
+      ]
+    },
+    {
+      "id": "B003-012",
+      "slug": "pwa_cuelist_data_layer",
+      "title": "PWA cuelist data layer \u2014 Yjs hooks, awareness, reconnect",
+      "status": "queued",
+      "owner": null,
+      "task_path": "docs/agent_exchange/queued/B003-012_pwa_cuelist_data_layer.md",
+      "created_at": "2026-06-06T12:10:00Z",
+      "started_at": null,
+      "ended_at": null,
+      "reviewed_at": null,
+      "review_round": 0,
+      "spawned_from": null,
+      "depends_on": [
+        "B003-002"
+      ]
+    },
+    {
+      "id": "B003-013",
+      "slug": "pwa_sm_master_view",
+      "title": "PWA SM master view \u2014 full cuelist + standby panel + calling text",
+      "status": "queued",
+      "owner": null,
+      "task_path": "docs/agent_exchange/queued/B003-013_pwa_sm_master_view.md",
+      "created_at": "2026-06-06T12:10:00Z",
+      "started_at": null,
+      "ended_at": null,
+      "reviewed_at": null,
+      "review_round": 0,
+      "spawned_from": null,
+      "depends_on": [
+        "B003-005",
+        "B003-012"
+      ]
+    },
+    {
+      "id": "B003-014",
+      "slug": "pwa_operator_view",
+      "title": "PWA per-department operator view + variants (LX, SX, VIDEO, AUTO, PYRO, FS)",
+      "status": "queued",
+      "owner": null,
+      "task_path": "docs/agent_exchange/queued/B003-014_pwa_operator_view.md",
+      "created_at": "2026-06-06T12:10:00Z",
+      "started_at": null,
+      "ended_at": null,
+      "reviewed_at": null,
+      "review_round": 0,
+      "spawned_from": null,
+      "depends_on": [
+        "B003-005",
+        "B003-012"
+      ]
+    },
+    {
+      "id": "B003-015",
+      "slug": "pwa_go_button_standby",
+      "title": "PWA GO button + standby panel \u2014 SM authoritative dispatch UI",
+      "status": "queued",
+      "owner": null,
+      "task_path": "docs/agent_exchange/queued/B003-015_pwa_go_button_standby.md",
+      "created_at": "2026-06-06T12:10:00Z",
+      "started_at": null,
+      "ended_at": null,
+      "reviewed_at": null,
+      "review_round": 0,
+      "spawned_from": null,
+      "depends_on": [
+        "B003-008",
+        "B003-013"
+      ]
+    },
+    {
+      "id": "B003-016",
+      "slug": "pwa_cue_editor_rehearsal",
+      "title": "PWA cue editor \u2014 REHEARSAL mode + per-payload-type editors",
+      "status": "queued",
+      "owner": null,
+      "task_path": "docs/agent_exchange/queued/B003-016_pwa_cue_editor_rehearsal.md",
+      "created_at": "2026-06-06T12:10:00Z",
+      "started_at": null,
+      "ended_at": null,
+      "reviewed_at": null,
+      "review_round": 0,
+      "spawned_from": null,
+      "depends_on": [
+        "B003-006",
+        "B003-013"
+      ]
+    },
+    {
+      "id": "B003-017",
+      "slug": "csv_import",
+      "title": "CSV import \u2014 QLab / Eos / generic cue list ingestion",
+      "status": "queued",
+      "owner": null,
+      "task_path": "docs/agent_exchange/queued/B003-017_csv_import.md",
+      "created_at": "2026-06-06T12:10:00Z",
+      "started_at": null,
+      "ended_at": null,
+      "reviewed_at": null,
+      "review_round": 0,
+      "spawned_from": null,
+      "depends_on": [
+        "B003-006"
+      ]
+    },
+    {
+      "id": "B003-018",
+      "slug": "json_showx_export",
+      "title": "JSON .showx export + single-file portable export",
+      "status": "queued",
+      "owner": null,
+      "task_path": "docs/agent_exchange/queued/B003-018_json_showx_export.md",
+      "created_at": "2026-06-06T12:10:00Z",
+      "started_at": null,
+      "ended_at": null,
+      "reviewed_at": null,
+      "review_round": 0,
+      "spawned_from": null,
+      "depends_on": [
+        "B003-003"
+      ]
+    },
+    {
+      "id": "B003-019",
+      "slug": "pdf_cue_sheet_export",
+      "title": "PDF cue-sheet export \u2014 per-department + SM master, A4 printable",
+      "status": "queued",
+      "owner": null,
+      "task_path": "docs/agent_exchange/queued/B003-019_pdf_cue_sheet_export.md",
+      "created_at": "2026-06-06T12:10:00Z",
+      "started_at": null,
+      "ended_at": null,
+      "reviewed_at": null,
+      "review_round": 0,
+      "spawned_from": null,
+      "depends_on": [
+        "B003-005",
+        "B003-013"
+      ]
+    },
+    {
+      "id": "B003-020",
+      "slug": "multi_operator_integration_tests",
+      "title": "Multi-operator collab integration tests \u2014 shell + 2 PWA sessions",
+      "status": "queued",
+      "owner": null,
+      "task_path": "docs/agent_exchange/queued/B003-020_multi_operator_integration_tests.md",
+      "created_at": "2026-06-06T12:10:00Z",
+      "started_at": null,
+      "ended_at": null,
+      "reviewed_at": null,
+      "review_round": 0,
+      "spawned_from": null,
+      "depends_on": [
+        "B003-013",
+        "B003-014",
+        "B003-015",
+        "B003-016"
+      ]
+    },
+    {
+      "id": "B003-021",
+      "slug": "streamdeck_companion_module",
+      "title": "Stream Deck \u2014 Bitfocus Companion community module",
+      "status": "queued",
+      "owner": null,
+      "task_path": "docs/agent_exchange/queued/B003-021_streamdeck_companion_module.md",
+      "created_at": "2026-06-06T12:10:00Z",
+      "started_at": null,
+      "ended_at": null,
+      "reviewed_at": null,
+      "review_round": 0,
+      "spawned_from": null,
+      "depends_on": [
+        "B003-008",
+        "B003-015"
+      ]
+    },
+    {
+      "id": "B003-022",
+      "slug": "first_paid_pilot_deployment",
+      "title": "First paid pilot deployment \u2014 playbook + customer comms drafts",
+      "status": "queued",
+      "owner": null,
+      "task_path": "docs/agent_exchange/queued/B003-022_first_paid_pilot_deployment.md",
+      "created_at": "2026-06-06T12:10:00Z",
+      "started_at": null,
+      "ended_at": null,
+      "reviewed_at": null,
+      "review_round": 0,
+      "spawned_from": null,
+      "depends_on": [
+        "B003-020"
+      ]
+    },
+    {
+      "id": "B003-023",
+      "slug": "showx_0_1_public_release",
+      "title": "ShowX 0.1 public release \u2014 DMG signed + notarized + release notes",
+      "status": "queued",
+      "owner": null,
+      "task_path": "docs/agent_exchange/queued/B003-023_showx_0_1_public_release.md",
+      "created_at": "2026-06-06T12:10:00Z",
+      "started_at": null,
+      "ended_at": null,
+      "reviewed_at": null,
+      "review_round": 0,
+      "spawned_from": null,
+      "depends_on": [
+        "B003-001",
+        "B003-002",
+        "B003-003",
+        "B003-004",
+        "B003-005",
+        "B003-006",
+        "B003-007",
+        "B003-008",
+        "B003-009",
+        "B003-010",
+        "B003-011",
+        "B003-012",
+        "B003-013",
+        "B003-014",
+        "B003-015",
+        "B003-016",
+        "B003-017",
+        "B003-018",
+        "B003-019",
+        "B003-020",
+        "B003-021",
+        "B003-022"
       ]
     }
   ]
