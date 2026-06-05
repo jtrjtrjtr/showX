@@ -107,5 +107,9 @@ export type ShowxEvent =
   | ModuleStateChangedEvent
   | HealthChangedEvent
   | PairingChangedEvent
-  | ShowModeChangeEvent;
+  | ShowModeChangeEvent
+  | CueFireEvent
+  | CueCompleteEvent
+  | CuelistGoEvent
+  | SystemErrorEvent;
 

@@ -21,5 +21,5 @@ export const manifest: ModuleManifest = {
   default_enabled: true,
   persistedConfigSchemaVersion: 1,
   entry: CuelistCore,
-  // uiPanel registered in B003-011; statusBadge optional, deferred
+  uiPanel: () => import('./ui/index.js'),
 };

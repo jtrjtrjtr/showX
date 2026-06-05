@@ -261,3 +261,73 @@ NO new error accumulation since tick 5 — cleanup task scope is correctly sized
 
 **No Architect action this tick beyond commit checkpoint.**
 
+
+## Tick 7 — 15:54 CEST
+
+**State at tick:** 19 accepted, 31 queued, 1 in_progress (B003-007 revision), 1 done (B003-011 awaiting review).
+
+**Forge/Critic since tick 6 (+27 min):**
+
+| Task | Status | Notes |
+|---|---|---|
+| B003-007 | queued → done → changes_requested round 1 | 35 new tests, full suite 568 green. Critic catch: AC #1 + #9 require info log `"timecode trigger deferred to 0.2"` when timecode trigger encountered; impl silently returns null. ~10 LOC fix |
+| B003-007 (round 2) | in_progress (Forge cycle 13:54Z) | currently writing revision |
+| B003-011 | queued → in_progress → done | Module panel UI shell — Forge SKIPPED B003-008/-009/-010 (blocked by B003-007 not yet accepted) and jumped to B003-011 (depends only on B003-001). 25 tests, React tsx UI |
+
+**Critic in-flight:** Reviewing B003-011 (started 13:50Z, ~4 min in at tick time).
+
+**Concurrent processes:**
+- Critic PID 37294 reviewing B003-011
+- Forge PID 37926 revising B003-007
+
+Both running ✅ (no rescue needed).
+
+**Typecheck baseline: 12 errors** (up 4 from 8).
+
+NEW errors from B003-011:
+- `ui/CuelistCorePanel.tsx:1 'React' unused` (TS6133)
+- `ui/ShowFilePicker.tsx:1 'React' unused` (TS6133)
+- `ui/StatusStrip.tsx:1 'React' unused` (TS6133)
+
+Cause: Forge added `jsx: "react-jsx"` to tsconfig (correct, modern React 17+) but kept legacy `import React from 'react'` lines. With new JSX runtime, default React import is no longer needed.
+
+ALSO: uuid error transformed TS2307 → TS7016 (module found via pnpm symlink, but no .d.ts) — progress actually. Same B003-024 root cause (missing @types/uuid).
+
+**Architect call:** WAIT for Critic verdict on B003-011 before deciding. Critic has been running typecheck per task (caught B003-004 SnapshotResult, B003-007 missing log). Likely to flag the 3 React imports → Forge fixes round 2. If Critic accepts B003-011 without typecheck (Critic occasionally skips strict typecheck), Architect files follow-up cleanup post-accept.
+
+**Pattern observation:** Critic's typecheck discipline IS the architectural safeguard against baseline drift. As long as Critic stays vigilant, B003-024 scope doesn't need expansion. Architect just monitors.
+
+**No commit this tick** — Critic + Forge writing state.json concurrently; commit at tick 8 after both finish.
+
+
+## Tick 8 — 16:21 CEST — 8/23 B003 accepted (35% bundle)
+
+**State at tick:** 21 accepted (13 ShowX-1 + 8 B003), 29 queued, 1 in_progress (B003-008), 1 changes_requested (B003-012).
+
+**Forge/Critic since tick 7 (+27 min):**
+
+| Task | Status | Notes |
+|---|---|---|
+| B003-007 | round 2 accepted | Info log + new test + makeMockLog vi.fn() upgrade per Critic spec |
+| B003-011 | round 1 accepted | UI panel shell, 25 tests — Critic accepted WITHOUT flagging 3 React unused imports (TS6133) — typecheck wasn't run for this task |
+| B003-008 | in_progress | Forge picked at 14:12Z — GO event channel work |
+| B003-012 | done → changes_requested round 1 | Critic catch (BIG, 5 issues): (1) useCue + useStations violate useSyncExternalStore snapshot-cache contract; (2) SideChannelClient ships zero tests despite ~115 LOC + AC requiring 6 tests; (3) missing test files; (4) useDepartment memoization doesn't assert referential identity; (5) yProviders.ts unused — Forge will revise next cycle |
+
+**Notable:** Forge tick 13:54Z completed BOTH B003-007 revision + B003-012 in same subprocess (rule says "one task per subprocess" but Forge handled the small B003-007 fix then claimed B003-012). Worked, but minor protocol drift.
+
+**B003 acceptance ratio: 8 accepted (round1=3, round2=5).**
+
+**Typecheck baseline: 12 errors** (unchanged from tick 7). React unused imports persisted through Critic acceptance.
+
+**Architect action: EXPANDED B003-024 spec again** to include 3 React unused imports from B003-011. Title updated to "B003-001..011" scope. Total cleanup spec now ~100 LOC estimated.
+
+**Critic typecheck discipline pattern:** Critic catches typecheck errors when they're in tested files OR central to AC. Catches missed:
+- B003-011 React imports (UI files, not central to logic)
+- B003-001/-002/-003 unused fields (passed individual Critic reviews; baseline drift)
+
+Architect = backstop. B003-024 cleanup task is the discharge of accumulated debt.
+
+**Forge cadence:** ~15-20 min per task. B003-008 + B003-012 revision both in pipeline next cycle. Phase 1 finish (B003-010) within ~1.5h if cadence holds.
+
+**Decision: commit checkpoint NOW** despite Forge in_progress on B003-008. Commit only DONE/ACCEPTED stable files + B003-024 expansion. Skip in_progress/ B003-008 state to avoid race.
+

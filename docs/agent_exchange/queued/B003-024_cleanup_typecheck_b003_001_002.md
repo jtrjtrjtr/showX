@@ -1,8 +1,8 @@
 ---
 id: "B003-024"
-title: "Cleanup: resolve TypeScript strict-mode errors from B003-001..006"
+title: "Cleanup: resolve TypeScript strict-mode errors from B003-001..011"
 type: "cleanup"
-estimated_size_lines: 90
+estimated_size_lines: 100
 priority: "P1"
 depends_on:
   - "B003-002"
@@ -17,6 +17,9 @@ target_files:
   - "src/modules/cuelist-core/src/persistence/projections.ts"
   - "src/modules/cuelist-core/src/persistence/showxPackage.ts"
   - "src/modules/cuelist-core/migrations/index.ts"
+  - "src/modules/cuelist-core/src/ui/CuelistCorePanel.tsx"
+  - "src/modules/cuelist-core/src/ui/ShowFilePicker.tsx"
+  - "src/modules/cuelist-core/src/ui/StatusStrip.tsx"
 acceptance_criteria:
   - "`@types/uuid: ^10.0.0` added to `src/modules/cuelist-core/package.json` devDependencies (uuid@10 ships NO .d.ts files; types live in separate package)"
   - "`pnpm install` executed; lockfile updated"
@@ -27,6 +30,9 @@ acceptance_criteria:
   - "`src/modules/cuelist-core/src/persistence/projections.ts` line 141: remove unused `a` and `b` parameter names (TS6133 × 2) — either rename to `_a`/`_b` if used as positional placeholders or drop the params entirely if the comparator doesn't need them"
   - "`src/modules/cuelist-core/src/persistence/showxPackage.ts` line 7: remove unused `projectionsToDoc` import (TS6133)"
   - "`src/modules/cuelist-core/migrations/index.ts` lives OUTSIDE `src/modules/cuelist-core/src/` while `tsconfig.json` declares `rootDir: src` — causes TS6059 + TS6307 on `showxPackage.ts:14` import. **PREFERRED FIX:** move file to `src/modules/cuelist-core/src/migrations/index.ts`, update the import in `showxPackage.ts` to `./migrations/index.js`. Migration registry stays empty-stub for MVP; no logic change. **ALTERNATIVE (NOT preferred):** widen tsconfig to `include: ['src/**/*', '../migrations/**/*']` — but this leaks the boundary"
+  - "`src/modules/cuelist-core/src/ui/CuelistCorePanel.tsx` line 1: `import React from 'react'` is unused (tsconfig has `jsx: react-jsx`, modern JSX runtime — no explicit React import needed). REMOVE the line. Keep any other named imports (`useState`, `useEffect`, etc.) on their own line if present"
+  - "`src/modules/cuelist-core/src/ui/ShowFilePicker.tsx` line 1: same — remove unused default `React` import"
+  - "`src/modules/cuelist-core/src/ui/StatusStrip.tsx` line 1: same — remove unused default `React` import"
   - "`pnpm --filter @showx/module-cuelist-core typecheck` → exit 0, zero errors"
   - "`pnpm --filter @showx/module-cuelist-core test` → all existing tests still pass (no behavioral change expected; this is pure cleanup)"
   - "`pnpm -r typecheck` → cuelist-core no longer contributes ANY errors to workspace typecheck"
