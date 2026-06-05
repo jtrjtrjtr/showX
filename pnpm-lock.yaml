@@ -132,9 +132,21 @@ importers:
       keytar:
         specifier: ^7.9.0
         version: 7.9.0
+      lib0:
+        specifier: ^0.2.88
+        version: 0.2.117
       showx-shared:
         specifier: workspace:*
         version: link:../shared
+      ws:
+        specifier: ^8.16.0
+        version: 8.21.0
+      y-protocols:
+        specifier: ^1.0.6
+        version: 1.0.7(yjs@13.6.31)
+      yjs:
+        specifier: ^13.6.10
+        version: 13.6.31
       zod:
         specifier: ^3.22.0
         version: 3.25.76
@@ -148,6 +160,9 @@ importers:
       '@types/supertest':
         specifier: ^6.0.2
         version: 6.0.3
+      '@types/ws':
+        specifier: ^8.5.10
+        version: 8.18.1
       supertest:
         specifier: ^6.3.3
         version: 6.3.4
@@ -1386,6 +1401,12 @@ packages:
     dependencies:
       '@types/methods': 1.1.4
       '@types/superagent': 8.1.10
+    dev: true
+
+  /@types/ws@8.18.1:
+    resolution: {integrity: sha512-ThVF6DCVhA8kUGy+aazFQ4kXQ7E1Ty7A3ypFOe0IcJV8O/M511G99AW24irKrW56Wt44yG9+ij8FaqoBGkuBXg==}
+    dependencies:
+      '@types/node': 20.19.41
     dev: true
 
   /@typescript-eslint/eslint-plugin@7.18.0(@typescript-eslint/parser@7.18.0)(eslint@8.57.1)(typescript@5.9.3):
@@ -4654,7 +4675,6 @@ packages:
         optional: true
       utf-8-validate:
         optional: true
-    dev: true
 
   /xml-name-validator@5.0.0:
     resolution: {integrity: sha512-EvGK8EJ3DhaHfbRlETOWAS5pO9MZITeauHKJyb8wyajUfQUenkIg2MvLDTZ4T/TgIcm3HU0TFBgWWboAZ30UHg==}

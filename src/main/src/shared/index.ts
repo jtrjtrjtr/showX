@@ -3,6 +3,8 @@ export { EventBus } from './EventBus.js';
 export { HealthBus } from './HealthBus.js';
 export { PersistedStore } from './PersistedStore.js';
 export { SecretStore } from './SecretStore.js';
+export { SyncBroker, PermissiveValidator } from './SyncBroker.js';
+export type { SyncBrokerOptions, PersistenceHook, PairingValidator } from './SyncBroker.js';
 export { resolvePaths, moduleConfigPath, secretFallbackPath } from './paths.js';
 export type { PathLayout } from './paths.js';
 export type { SecretStoreOptions } from './SecretStore.js';

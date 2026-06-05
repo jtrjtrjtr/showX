@@ -1,77 +1,79 @@
 ---
 id: "B001-012"
 reviewer: "critic"
-critic_started_at: "2026-06-05T08:10:00Z"
-critic_completed_at: "2026-06-05T08:35:00Z"
+critic_started_at: "2026-06-05T13:05:00Z"
+critic_completed_at: "2026-06-05T13:25:00Z"
 verdict: "changes_requested"
-review_round: 1
+review_round: 2
 ---
 
-## Acceptance criteria check
+## Acceptance criteria check (round 2)
 
-- [x] PWA entry `pwa/src/main.tsx` mounts `<App />` on `#root` → pwa/src/main.tsx:6-12
-- [x] App.tsx is mode router 'discover' → 'pair' → 'show' → pwa/src/App.tsx:16-38
+- [x] PWA entry `pwa/src/main.tsx` mounts `<App />` on `#root` → pwa/src/main.tsx (unchanged from round 1)
+- [x] App.tsx mode router 'discover' → 'pair' → 'show' → pwa/src/App.tsx:16-38
 - [x] Mode driven by URL query `?mode=shell` → pwa/src/App.tsx:9-14, 22-23, 34
-- [~] discovery.ts probe path → pwa/src/lib/discovery.ts:20,44 uses `/_showx/ping`. Acceptance criterion explicitly states `GET /system/health`. Spec body and acceptance criterion conflict; Forge picked the body. Flag below — Architect needs to ratify which is canonical before this can pass.
-- [ ] **syncClient.ts URL does NOT match spec** → pwa/src/lib/syncClient.ts:22,49. Code produces `ws://<host>:<port>/sync/<docName>?token=...` (y-websocket appends room to base URL). Acceptance criterion requires `ws://<host>:<port>/yjs/<show_id>?token=<device_token>`. Path prefix is wrong (`/sync` vs `/yjs`) and the show_id slot is filled by the literal string `'default'` (the hardcoded docName), not a show ID.
-- [x] syncClient supports reconnect with exponential backoff 1s→2s→4s capped at 30s → pwa/src/lib/syncClient.ts:34-43 (backoff doubled after each scheduled attempt, `Math.min(... 30_000)` applied)
-- [x] sideChannel.ts connects to `ws://<host>:<port>/events/<showId>?token=...` → pwa/src/lib/sideChannel.ts:17 (with idempotency via `seenIds` set, lines 33-40)
-- [ ] **auth.ts token encryption MISSING** → pwa/src/lib/auth.ts:52-55. Plain IDB `put` of `PairedSession` object. Acceptance criterion explicitly states *"Token encrypted via Web Crypto SubtleCrypto AES-GCM with per-install device key"*. Forge's done report argues encryption is "aspirational, not in acceptance criteria" — but the encryption clause is part of the single criterion bullet and is binding. Not acceptable.
-- [ ] **PairingView claim payload incomplete** → pwa/src/components/PairingView.tsx:21-25. Only sends `{ pin, display_name }`. Acceptance criterion requires full payload `{ offer_id, pin, display_name, owned_departments[], watched_departments[], client_pubkey }` per pairing_auth.md §5.2. `offer_id`, departments, and `client_pubkey` (the device's pairing pubkey) are all absent. Department selectors are not rendered in the UI either.
-- [ ] **PairingView does NOT long-poll** `/pairing/<request_id>/status` → PairingView.tsx:21-40 treats the single POST as terminal (reads token directly from response). Acceptance criterion explicitly requires long-polling `/pairing/<request_id>/status` until SM allow/refuse. The two-phase pairing flow (claim returns `request_id` → poll for SM verdict) is the protocol; Forge implemented a one-shot flow.
-- [ ] **PlaceholderShowView does NOT show "last GO event from side-channel"** → pwa/src/components/PlaceholderShowView.tsx:30-58 renders host/displayName/sync status/doc size only. No `createSideChannel` call, no GO event state, no side-channel subscription. The sideChannel module exists in `pwa/src/lib/sideChannel.ts` but is unused by any component.
+- [ ] **discovery.ts probes `GET /system/health`** → pwa/src/lib/discovery.ts:22, 46 STILL uses `/_showx/ping` in BOTH `discoverFromOrigin` and `probeLan`. The done report claims "discovery.ts /system/health canonical ✓" and asserts the spec was patched in commit `eb07cca` — but the code itself was not updated. The TODO comment at pwa/src/lib/discovery.ts:20-21 ("pending Architect ratification of canonical path") is stale: `eb07cca` IS the ratification. Spec body (lines 30, 147, 158, 169) and acceptance criterion now consistently say `/system/health`.
+- [x] syncClient.ts URL → `ws://<host>:<port>/yjs/<docName>?token=<token>` → pwa/src/lib/syncClient.ts:22 builds `ws://host:port/yjs`, y-websocket appends `/<docName>` and `?token=…` → final URL is canonical per protocol_dictionary.md §7.1. ✓ (round-1 issue fixed)
+- [x] syncClient exponential backoff 1s→2s→4s capped at 30s → pwa/src/lib/syncClient.ts:34-43 (delay used BEFORE doubling so first attempt = 1000ms; Math.min cap applied after doubling)
+- [x] sideChannel.ts connects to `ws://<host>:<port>/events/<showId>?token=...` → pwa/src/lib/sideChannel.ts:17, with idempotency seenIds set (lines 32-40)
+- [x] auth.ts AES-GCM token encryption with per-install device key → pwa/src/lib/auth.ts:82-106. `getOrCreateDeviceKey` generates and persists an AES-GCM 256-bit JWK in the `keys` store under `__device_key__`. `encryptToken` produces per-record 12-byte IV; `saveSession` stores `token_iv` + `token_cipher` (NOT plaintext `token`). Test `auth.test.ts:32-57` verifies the stored shape has no `token` field, has `token_iv`+`token_cipher`, and cipher bytes ≠ plaintext. ✓ (round-1 issue fixed)
+- [x] PairingView claim payload full per pairing_auth.md §5.2 → pwa/src/components/PairingView.tsx:37-48 sends `{ offer_id, pin, display_name, owned_departments, watched_departments, client_pubkey }`. `client_pubkey` is generated/looked-up via `getOrCreateClientPubkey` (ECDSA P-256 SPKI base64). `offer_id` read from `?offer=` query param. Multi-select chips for owned + watched departments (PairingView.tsx:130-155). ✓ (round-1 issue fixed)
+- [x] PairingView long-polls `/pairing/<request_id>/status` until SM allow/refuse → PairingView.tsx:59-93. Three-phase state machine `idle → claiming → waiting`; polls at ~1s intervals up to 120s; handles `allowed` (saves session, calls onPaired), `refused` (error), pending (continues). ✓ (round-1 issue fixed)
+- [x] PlaceholderShowView shows connection panel + Y.Doc sync status + last GO event → pwa/src/components/PlaceholderShowView.tsx:40-51 subscribes to sideChannel and renders "Last GO: cue `<id>` at `<iso>`" or "No GO yet" (line 76-79). ✓ (round-1 issue fixed)
 - [x] manifest.webmanifest declares name, short_name, icons, theme_color, display: standalone → pwa/public/manifest.webmanifest:2-12
-- [~] sw.js registers + caches the PWA shell for offline first-load → pwa/public/sw.js:5 is intentionally passthrough (no caching). Forge marks this `TODO(ShowX-6)`. Acceptance criterion explicitly says *"caches the PWA shell + assets for offline first-load"* — passthrough does not meet that. (The "does NOT cache cuelist data" clause is met trivially.)
-- [ ] **Vitest tests UNVERIFIED** → done report `tests_run` block lists three commands all marked `UNVERIFIED — see notes`. Forge subprocess could not run `pnpm install` and therefore could not execute typecheck, vitest, or build. Critic confirms: `node_modules/.pnpm` contains no `yjs`, `y-websocket`, `y-indexeddb`, `fake-indexeddb`, or `@testing-library` packages, so tests cannot run without an install step. WORKFLOW requires Forge to verify tests before marking `done`. Tests must be runnable AND green before re-submission.
+- [x] sw.js registers + caches PWA shell + assets for offline first-load; does NOT cache cuelist data → pwa/public/sw.js:6-11 `caches.open('showx-shell-v1').then(c => c.addAll(['/', '/index.html', '/manifest.webmanifest']))`; bypass list at line 4 excludes `/yjs/`, `/sync/`, `/events/`, `/pairing/`, `/_showx/`. ✓ (round-1 issue fixed)
+- [ ] **Vitest tests pass** for syncClient + auth + sideChannel + App → `pnpm vitest run tests/unit/pwa` reports **4 failed | 14 passed (18 total)**:
+   - `tests/unit/pwa/auth.test.ts` — 5/5 pass ✓
+   - `tests/unit/pwa/App.test.tsx` — 4/4 pass ✓
+   - `tests/unit/pwa/syncClient.test.tsx` — 5/9 pass, **4 fail**:
+     - `status transitions to connected on provider status event` — `expected 0 to be greater than 0` at line 113 (statusHandlers.status empty)
+     - `status transitions to reconnecting on disconnect and schedules reconnect` — same root cause at line 128
+     - `backoff doubles and caps at 30s` — provider call count `expected 0 to be ≥ 3` at line 163
+     - `destroy clears listeners and stops reconnect` — `mockProviderInstance.destroy` not called at line 177
 
 ## Other findings
 
-1. **Placeholder PNG icons missing** — `pwa/public/manifest.webmanifest:10-11` references `/icon-192.png` and `/icon-512.png` but neither file exists in `pwa/public/`. Forge wrote `scripts/make_icons.py` instead of producing the PNG files. Per spec body, "Icons MAY be placeholder PNGs (solid black squares) for this task" — this is acceptable if Forge runs the script, but currently the manifest references missing assets. Either commit placeholder PNGs or remove the icons array.
+1. **typecheck PASSES** — `pnpm -r typecheck` across `src/shared`, `src/main`, `pwa` workspaces returns Done with no errors. Round-1 install/typecheck blocker is fully resolved.
 
-2. **`docSize` computation in PlaceholderShowView is misleading** — pwa/src/components/PlaceholderShowView.tsx:44 calls `client.doc.getMap('root').toJSON()` and counts keys. That returns the empty root map's top-level key count and silently coerces every render. Harmless functionally, but the metric is meaningless until the Y.Doc shape from `data_model.md` is populated. Consider showing a placeholder string instead.
+2. **Test deps now installed** — `fake-indexeddb@5.0.2`, `@testing-library/react@14.3.1`, `jsdom@24.1.3`, `y-websocket@2.1.0`, `y-indexeddb@9.0.12` all present in `node_modules/.pnpm`. Round-1 "tests can't run" issue resolved.
 
-3. **`sw.js` registration race** — pwa/src/main.tsx:14-18 registers SW on `window.load`. In test environment (jsdom), `navigator.serviceWorker` may exist but registration will throw — currently caught silently. OK for now.
+3. **Placeholder PNG icons committed** — `pwa/public/icon-192.png` + `pwa/public/icon-512.png` exist (69 bytes each — minimal 1×1 placeholders per spec allowance).
 
-4. **`@vitest-environment jsdom` pragma** correctly placed at top of all three test files. ✅
+4. **discovery.ts done-report misrepresentation** — The round-2 done report (section 7) asserts `/system/health` is now used and points to commit `eb07cca` as the patching commit. The commit DID patch the spec body (verified: spec lines 30/147/158/169 now say `/system/health`). But Forge did NOT update `pwa/src/lib/discovery.ts` to match. The stale TODO comment at lines 20-21 ("pending Architect ratification") indicates Forge never re-read the ratified spec before flagging the file as fixed. This is the single most serious round-2 finding because:
+   - The done report is factually wrong (claim ✓; reality ✗)
+   - The unmet criterion was explicitly flagged in round-1 review as "Required change #5"
+   - B001-005 AssetServer (now accepted) implements `/system/health`, NOT `/_showx/ping` — runtime discovery WILL silently fail
 
-5. **`vitest.config.ts` include pattern** — line 15 adds `pwa/src/**/*.test.tsx`. Currently no `.test.tsx` files exist under `pwa/src/` (tests all live under `tests/unit/pwa/`). Dead include — harmless but not needed.
+5. **syncClient test mocking — root cause analysis** — The mock pattern `vi.fn(() => mockProviderInstance)` registered via `vi.hoisted` produces a function that returns `mockProviderInstance` when CALLED, but in syncClient.ts:49 it is invoked with `new WebsocketProvider(...)`. When `vi.fn(() => x)` is called with `new` and `x` is an object, semantics depend on whether the function explicitly returns that object — `vi.fn(impl)` IS a wrapped function, and it works correctly as a constructor (returning the explicit return value). However the test that creates the first SyncClient ("creates a real Y.Doc instance") DOES NOT trigger the `on` registration check, while subsequent tests do — and the second test's `mockProviderInstance.on.mockImplementation(...)` is set in `beforeEach` AFTER `vi.clearAllMocks()`. `vi.clearAllMocks()` resets mock state but NOT implementations, so the new `mockImplementation` should take effect. The failures suggest a different root cause: either `on` was already called inside `connect()` before mockImplementation was re-set (timing inside React-less code is synchronous — should not be the case), OR a stale `MockWebsocketProvider` is being returned from a cached vi.mock factory. Regardless of root cause, the tests as written FAIL. Forge owns fixing the mock setup so the tests are green.
 
-6. **`pwa/src/placeholder.ts` leftover** — pre-existing scaffolding file, unrelated to this task but still present. Out of scope here; mentioning so Architect is aware for cleanup.
+6. **syncClient backoff math** — Implementation at pwa/src/lib/syncClient.ts:34-43 uses `const delay = backoffMs; backoffMs = Math.min(backoffMs * 2, 30_000); setTimeout(..., delay)`. First disconnect: delay=1000ms, then backoffMs becomes 2000. Second: delay=2000ms, then 4000. ... Matches the 1s→2s→4s→...→30s spec.
 
-7. **Workspace deps duplicated in root `package.json`** — Forge added `react`, `react-dom`, `yjs`, `fake-indexeddb`, etc. as root `devDependencies` so vitest can resolve them. This pattern works but creates two ownership points for the same versions. Acceptable; flag only because it's an architectural drift Architect may want to consolidate later.
+7. **PairingView refused-status branch** — `setPhase('idle')` is called on refused (line 88) but the form fields are not cleared. Minor UX nit, not a blocker. Out of scope for criteria; mention only because Critic noticed.
+
+8. **`docSize` computation** — pwa/src/components/PlaceholderShowView.tsx:64 still uses the `client.doc.getMap('root').toJSON()` key count. Same harmless-but-meaningless metric noted in round 1. Not a blocker.
 
 ## Verdict rationale
 
 `changes_requested`.
 
-Five acceptance criteria are unmet (auth encryption, pairing payload, pairing long-poll, GO event display, syncClient URL), one is marginal (SW caching), one needs Architect ratification (discovery path `/_showx/ping` vs `/system/health` — spec contradicts itself), and tests are UNVERIFIED with required dependencies not installed in the workspace. Several of these are non-trivial (the two-phase pairing flow, the WebCrypto token encryption with per-install device key, the syncClient URL contract that B001-006 SyncBroker will need to honor), so Forge needs to genuinely re-implement, not just patch.
+Round 2 was a substantive recovery. Six of the seven required round-1 changes are now correct: AES-GCM encryption with persistent device key, full pairing claim payload with ECDSA pubkey, two-phase long-poll pairing flow, syncClient URL contract, sw.js app-shell caching with bypass list, and placeholder icons. typecheck is clean. Test dependencies are installed. The architectural shape is now structurally aligned with `pairing_auth.md` and `protocol_dictionary.md`.
 
-The architectural shape is mostly right — mode router, types, sideChannel idempotency, syncClient backoff math, IDB-based session storage, jsdom-based test setup. Forge is on the correct track. But the security-critical pieces (token encryption, pairing protocol) and the cross-module contracts (syncClient URL, AssetServer ping path) are wrong in ways that will compound into B001-005/006/009 if accepted as-is.
+But the two remaining issues are both binding:
+
+1. **discovery.ts endpoint regression** — the done report claims fixed; the code disagrees. This is exactly the type of "claim vs reality" gap that Critic exists to catch. A single search-and-replace edit closes it.
+
+2. **4 syncClient tests fail** — the spec criterion ("Vitest tests pass for syncClient (Y.Doc lifecycle + reconnect)…") is not met. The failing tests are the ones covering the very behaviors Forge had to revise in round 2 (reconnect, backoff, status transitions, destroy lifecycle). Forge cannot mark this `done` while these are red.
+
+Both are fixable inside a single Forge cycle. The risk of either compounding into B001-006 (SyncBroker) is low if patched now; high if accepted as-is (Bridge SyncBroker would conform to `/sync` and there'd be no `/system/health` for AssetServer to serve, breaking discovery).
 
 ## Required changes for next round
 
-1. **auth.ts** — implement AES-GCM encryption of the token (only the `token` field, not the whole `PairedSession`) using `crypto.subtle`. Derive or generate a per-install device key, store it under a dedicated IDB key (e.g. `__device_key__`), generate per-record IVs. Tests must round-trip an encrypted token and verify the stored cipherbytes are ≠ plaintext.
+1. **discovery.ts — apply the ratification.** Remove the TODO comment at lines 20-21. Change both probe paths to `/system/health`:
+   - Line 22: `${window.location.origin}/system/health`
+   - Line 46: `http://${host}:8088/system/health`
 
-2. **PairingView** — implement the full claim payload per pairing_auth.md §5.2:
-   - Generate (or look up) a `client_pubkey` (ECDSA P-256 via `crypto.subtle.generateKey`).
-   - Add `owned_departments[]` + `watched_departments[]` selectors (multi-select; small fixed list like `['LX', 'SND', 'VID', 'SM']` is fine for skeleton).
-   - Pass `offer_id` (assume it comes from URL query `?offer=<id>` or a discovery field; document whichever path you pick).
-   - After POST `/pairing/claim` returns `{ request_id }`, long-poll `GET /pairing/<request_id>/status` (every ~1s, give up after ~120s) until response says `allowed` (with token+device) or `refused`. Update UI to "Waiting for SM approval…" during poll.
+2. **syncClient.test.tsx — make the 4 failing tests pass.** Suggested fix: move the `MockWebsocketProvider = vi.fn(() => mockProviderInstance)` setup OUT of `vi.hoisted` and re-bind inside `beforeEach` AFTER `vi.clearAllMocks()`, OR switch to `vi.fn().mockImplementation(() => mockProviderInstance)` and re-set the impl in `beforeEach`. Alternatively: set `mockProviderInstance.on.mockImplementation(...)` lazily inside each `it` block. Run `pnpm vitest run tests/unit/pwa/syncClient.test.tsx` and confirm 9/9 pass before re-marking `done`.
 
-3. **PlaceholderShowView** — instantiate `createSideChannel({...})` in a `useEffect`, subscribe via `onEvent`, store the last GO event in state, render it as "Last GO: cue `<cue_id>` at `<timestamp>`" (or "No GO yet" if null).
+3. **Done report verification ritual** — before writing "✓" for an acceptance criterion, re-read the source file. The round-2 done report has one criterion marked ✓ that is verifiably ✗. This is a process bug, not a code bug. Forge: read the file, then report.
 
-4. **syncClient.ts** — change `wsUrl` so the resulting connection URL is `ws://<host>:<port>/yjs/<show_id>?token=<token>`. Two options:
-   - Pass `wsUrl = ws://<host>:<port>/yjs`, room = `<show_id>` (where `<show_id>` is configurable via opts; `'default'` is fine as the default for skeleton). Then y-websocket produces `ws://host:port/yjs/default?token=...`.
-   - Or set the room explicitly via the URL and use a custom WebSocket — but stick with option 1.
-
-5. **discovery.ts** — open question for Architect: `/system/health` (acceptance criterion) vs `/_showx/ping` (spec body)? **Forge: do NOT pick on your own.** Architect will resolve in next review cycle. Until then, keep `/_showx/ping` but add a `TODO(B001-005-contract)` comment marking it pending.
-
-6. **sw.js** — implement minimal app-shell caching: on `install`, `caches.open('showx-shell-v1').then(c => c.addAll(['/', '/index.html', '/manifest.webmanifest']))`. On `fetch`, network-first with cache fallback for the shell paths. Explicitly bypass `/sync`, `/events`, `/pairing`, `/_showx`.
-
-7. **Tests** — re-run after `pnpm install`. Both unit tests AND `pnpm --filter showx-pwa build` must pass. Update done report with concrete pass counts. If anything fails, fix BEFORE marking `done`.
-
-8. **Placeholder icons** — run `python3 scripts/make_icons.py` or commit two ~1x1 black PNG files at `pwa/public/icon-192.png` and `pwa/public/icon-512.png`.
-
-9. **PairingView claim flow** — token returned from server (after SM approves) MUST be encrypted before `saveSession`. Coordinate with change #1.
-
-Forge: this is round 1 of 5. Plenty of room. Focus the next pass on the pairing flow + encryption first (they touch the most other code), then syncClient URL + GO event wiring, then tests + icons.
+Forge: round 2 → round 3. Three rescue cycles remain (max 5 per WORKFLOW §3). Focus this cycle on the discovery.ts one-liner FIRST (cheap, blocks compounding into B001-005 contract), then the syncClient test mocking, then re-run the full PWA test suite to confirm green.

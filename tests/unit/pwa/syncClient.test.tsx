@@ -4,14 +4,16 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import * as Y from 'yjs';
 import { createSideChannel } from '../../../pwa/src/lib/sideChannel.js';
 
-// Hoist BOTH the instance and the constructor so vi.mock factory can reference them
+// Hoist BOTH the instance and the constructor so vi.mock factory can reference them.
+// MockWebsocketProvider has NO initial implementation — it is re-bound in each beforeEach
+// after vi.clearAllMocks() so mock state never bleeds across tests.
 const mocks = vi.hoisted(() => {
   const mockProviderInstance = {
     on: vi.fn(),
     destroy: vi.fn(),
     awareness: null,
   };
-  const MockWebsocketProvider = vi.fn(() => mockProviderInstance);
+  const MockWebsocketProvider = vi.fn();
   return { mockProviderInstance, MockWebsocketProvider };
 });
 
@@ -88,6 +90,8 @@ describe('createSyncClient', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     statusHandlers = {};
+    // Re-bind after clearAllMocks so new WebsocketProvider(...) returns mockProviderInstance
+    MockWebsocketProvider.mockImplementation(() => mockProviderInstance);
     mockProviderInstance.on.mockImplementation((event: string, cb: (e: unknown) => void) => {
       if (!statusHandlers[event]) statusHandlers[event] = [];
       statusHandlers[event].push(cb);

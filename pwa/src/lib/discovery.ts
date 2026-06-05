@@ -17,9 +17,7 @@ async function fetchWithTimeout(url: string, ms: number): Promise<Response> {
 
 export async function discoverFromOrigin(): Promise<DiscoveryResult | null> {
   try {
-    // TODO(B001-005-contract): acceptance criterion says /system/health; spec body says /_showx/ping.
-    // Using /_showx/ping pending Architect ratification of canonical path.
-    const r = await fetchWithTimeout(`${window.location.origin}/_showx/ping`, 1500);
+    const r = await fetchWithTimeout(`${window.location.origin}/system/health`, 1500);
     if (!r.ok) return null;
     return {
       hosts: [{
@@ -43,7 +41,7 @@ const DEFAULT_LAN_HINTS = [
 export async function probeLan(hints: string[] = DEFAULT_LAN_HINTS): Promise<DiscoveredHost[]> {
   const probes = hints.map(async (host) => {
     try {
-      const r = await fetchWithTimeout(`http://${host}:8088/_showx/ping`, 800);
+      const r = await fetchWithTimeout(`http://${host}:8088/system/health`, 800);
       if (r.ok) {
         const body = await r.json() as { port?: number; name?: string };
         return { host, port: body.port ?? 8088, name: body.name, pairingAvailable: true } as DiscoveredHost;
