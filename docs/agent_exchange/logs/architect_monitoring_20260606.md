@@ -518,3 +518,42 @@ Round-1 single-accept rate: **50%** (up from 46% at tick 12). Forge cadence shar
 
 **Cuelist demo target estimate:** B003-015 + B003-016 land = full cuelist UI operational. Realistic ~1-1.5h.
 
+
+## Tick 14 — 19:07 CEST — 🚀 Phase 2 6/6 in-flight + B003-016 NO Pattern 8
+
+**State at tick:** 27 accepted (13 ShowX-1 + 14 B003), 23 queued, 1 changes_requested (B003-015 round 2), 1 done (B003-016 awaiting Critic).
+
+**Forge/Critic since tick 13 (+27 min):**
+
+| Task | Status | Notes |
+|---|---|---|
+| B003-015 | in_progress → done → **changes_requested round 2** | Critic catch: AC #6 partial — shake animation works on rejection but "toast + reason from `go.rejected` envelope" missing in DOM. `rejectedReason` only used to re-key shake useEffect, never rendered. 12/13 ACs met |
+| B003-016 | queued → in_progress → **done** | 🔥 **PWA cue editor 800 LOC — NO PATTERN 8 TIMEOUT**. Forge claimed at 16:46Z (between B003-015 Critic ticks), powered through in ~19 min. 896 tests pass. Forge's third 800 LOC task this bundle, second clean single-cycle (B003-002 had cycle 1 timeout, B003-013 + B003-016 clean) |
+
+**🚀 Pattern 8 risk assessment update:** 800 LOC tasks now landing single-cycle. B003-013 + B003-016 both clean. Only B003-002 (the very first 800 LOC task) had timeout. Forge has internal discipline pattern locked.
+
+**Phase 2 (PWA UI) status: 4/6 accepted + B003-015 revision + B003-016 awaiting review = 6/6 IN-FLIGHT.**
+
+**B003 acceptance ratio: 14 accepted (round1=7, round2=7).** Counter resets next tick when B003-015 + B003-016 land.
+
+**Why Forge picked B003-016 instead of B003-015 revision:**
+At Forge tick 16:46Z, Critic was still finalizing B003-015 changes_requested (Critic tick done 16:48Z, after Forge spawn). Forge saw B003-015 as `done`, not changes_requested. Picked next eligible queued: B003-016 (deps B003-013 ✓).
+
+This race condition keeps repeating but doesn't cause issues — revision priority simply waits one tick.
+
+**Typecheck baseline: 13 errors UNCHANGED.** B003-016 (800 LOC PWA tsx) zero new errors. Forge typecheck discipline on PWA-side tracks Electron-side discipline. Excellent.
+
+**B003-024 cleanup STILL queued.** Lowest-ID rule means Forge picks B003-015 (revision) → B003-016 review chain → B003-017/-018/-019 → B003-024. Cleanup runs ~5 tasks from now, ~1.5h projected.
+
+**Phase 3-5 deps check (post-B003-015 + B003-016 accept):**
+- B003-017 CSV import → eligible (deps B003-006 ✓)
+- B003-018 JSON export → eligible (deps B003-003 ✓)
+- B003-019 PDF cue-sheet → eligible (deps B003-005 + B003-013 ✓)
+- B003-020 multi-operator E2E → BLOCKED (needs B003-015/-016 accept)
+- B003-021 Stream Deck → BLOCKED (needs B003-015 accept)
+- B003-022 first pilot → BLOCKED (needs B003-020 accept)
+- B003-023 ShowX 0.1 release → BLOCKED (needs all 22)
+- B003-024 cleanup → eligible (deps B003-002 ✓)
+
+**Cuelist demo target:** B003-015 round 2 + B003-016 accept = **full cuelist UI operational**. Realistic next tick or 2. We're in the final stretch.
+

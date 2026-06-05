@@ -264,5 +264,20 @@ export function setCueNotes(
   });
 }
 
+export function setCueDurationHint(
+  doc: Y.Doc,
+  cuelistId: string,
+  cueId: string,
+  durationMs: number | null,
+  modifiedBy: string,
+): void {
+  assertEditAllowed(doc, 'meta');
+  const cue = findCue(doc, cuelistId, cueId);
+  doc.transact(() => {
+    cue.set('duration_hint_ms', durationMs);
+    touchModified(cue, modifiedBy);
+  });
+}
+
 // Re-export for convenience
 export { getPayloads } from './payload.js';
