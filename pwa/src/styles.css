@@ -1,0 +1,54 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  background: #0a0a0a;
+  color: #e0e0e0;
+  min-height: 100vh;
+  padding: 1.5rem;
+}
+
+h1, h2 { margin-bottom: 0.75rem; }
+
+p { margin-bottom: 0.5rem; }
+
+input {
+  background: #1a1a1a;
+  border: 1px solid #333;
+  color: #e0e0e0;
+  padding: 0.4rem 0.6rem;
+  border-radius: 4px;
+}
+
+button {
+  background: #2a2a2a;
+  border: 1px solid #444;
+  color: #e0e0e0;
+  padding: 0.4rem 0.8rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+button:disabled { opacity: 0.5; cursor: default; }
+
+.discovery-view button { display: block; margin-bottom: 0.5rem; }
+
+.app-shell {
+  display: flex;
+  height: 100vh;
+}
+
+.shell-sidebar {
+  width: 220px;
+  background: #111;
+  border-right: 1px solid #222;
+  padding: 1rem;
+}
+
+.shell-logo { font-size: 1.2rem; font-weight: 700; margin-bottom: 1rem; }
+
+.shell-modules-placeholder { color: #555; font-size: 0.85rem; }
+
+.shell-content { flex: 1; padding: 1.5rem; }
+
+.show-view button { margin-top: 0.75rem; }

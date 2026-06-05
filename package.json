@@ -22,13 +22,22 @@
     "dashboard": "python3 scripts/render_dashboard.py"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.4.0",
+    "@testing-library/react": "^14.2.0",
     "@types/node": "^20.11.0",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
     "@typescript-eslint/eslint-plugin": "^7.0.0",
     "@typescript-eslint/parser": "^7.0.0",
     "eslint": "^8.57.0",
+    "fake-indexeddb": "^5.0.2",
+    "jsdom": "^24.0.0",
     "playwright": "^1.42.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
     "typescript": "^5.4.0",
-    "vitest": "^1.4.0"
+    "vitest": "^1.4.0",
+    "yjs": "^13.6.10"
   },
   "packageManager": "pnpm@8.15.0",
   "engines": {
