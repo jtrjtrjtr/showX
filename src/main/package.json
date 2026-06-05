@@ -24,7 +24,8 @@
     "osc-min": "^1.1.2",
     "@julusian/midi": "^3.5.0",
     "dmxnet": "^0.9.0",
-    "e131": "^1.1.2"
+    "e131": "^1.1.2",
+    "qrcode": "^1.5.3"
   },
   "devDependencies": {
     "tsx": "^4.7.0",
@@ -35,6 +36,7 @@
     "supertest": "^6.3.3",
     "@types/supertest": "^6.0.2",
     "@types/ws": "^8.5.10",
-    "@types/node": "^20.11.0"
+    "@types/node": "^20.11.0",
+    "@types/qrcode": "^1.5.5"
   }
 }

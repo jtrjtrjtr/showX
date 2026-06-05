@@ -1,0 +1,138 @@
+import * as crypto from 'node:crypto';
+import type express from 'express';
+import QRCode from 'qrcode';
+import type { Logger } from 'showx-shared';
+import type { PairingStore } from '../PairingStore.js';
+import type { PinManager } from './pinManager.js';
+import type { TokenManager } from './tokenManager.js';
+import { ClaimRequest, PinInvalidError, TokenInvalidError } from './types.js';
+
+export interface PairingApiDeps {
+  pairing: PairingStore;
+  pins: PinManager;
+  tokens: TokenManager;
+  hostInfo: { host: string; port: number };
+  logger: Logger;
+  // Optional: local-call bypass secret. When a request presents
+  // x-showx-local-secret: <value> matching this, it is treated as admin.
+  // Populated by the Electron shell for its own internal HTTP calls.
+  // TODO(B001-011): wire up a real random-per-boot local secret.
+  localSecret?: string;
+}
+
+function authAdmin(deps: PairingApiDeps) {
+  return (
+    req: express.Request,
+    res: express.Response,
+    next: express.NextFunction,
+  ): void => {
+    // Local bypass: Electron shell passes a per-boot secret header
+    if (deps.localSecret) {
+      const localHdr = req.headers['x-showx-local-secret'];
+      if (typeof localHdr === 'string' && localHdr === deps.localSecret) {
+        next();
+        return;
+      }
+    }
+
+    const authHeader = req.headers.authorization;
+    if (!authHeader?.startsWith('Bearer ')) {
+      res.status(401).json({ error: 'missing_token' });
+      return;
+    }
+
+    const token = authHeader.slice(7);
+    let payload;
+    try {
+      payload = deps.tokens.validate(token);
+    } catch (e) {
+      const reason = e instanceof TokenInvalidError ? e.reason : 'bad_sig';
+      res.status(401).json({ error: 'token_invalid', reason });
+      return;
+    }
+
+    // v1: admin = no owned_departments (stage manager / system account)
+    if (payload.owned_departments.length !== 0) {
+      res.status(401).json({ error: 'insufficient_privileges' });
+      return;
+    }
+
+    next();
+  };
+}
+
+export function mountPairingRoutes(
+  router: express.Router,
+  deps: PairingApiDeps,
+): void {
+  const admin = authAdmin(deps);
+
+  router.post('/pairing/initiate', async (_req: express.Request, res: express.Response) => {
+    try {
+      const rec = deps.pins.generate();
+      const { host, port } = deps.hostInfo;
+      const pairUrl = `showx://pair?pin=${rec.pin}&host=${encodeURIComponent(host)}&port=${port}`;
+      const qrDataUrl = await QRCode.toDataURL(pairUrl, { width: 256 });
+      res.json({
+        pin: rec.pin,
+        expires_at: rec.expires_at,
+        qr_data_url: qrDataUrl,
+        pair_url: pairUrl,
+      });
+    } catch (err) {
+      deps.logger.error('pairing.initiate.error', { error: String(err) });
+      res.status(500).json({ error: 'internal_error' });
+    }
+  });
+
+  router.post('/pairing/claim', async (req: express.Request, res: express.Response) => {
+    try {
+      const { pin, display_name, owned_departments = [] } = req.body as ClaimRequest;
+      const sourceIp = req.ip ?? 'unknown';
+
+      deps.pins.claim(pin, sourceIp);
+
+      const device_id = crypto.randomUUID();
+      const tier = 'free' as const;
+      const token = deps.tokens.sign({ device_id, display_name, owned_departments, tier });
+      const token_hash = deps.tokens.hashToken(token);
+
+      const device = await deps.pairing.addDevice({
+        device_id,
+        display_name,
+        owned_departments,
+        tier,
+        token_hash,
+        revoked_at: undefined,
+      });
+
+      deps.logger.info('pairing.claim.ok', { device_id, display_name });
+      res.json({ token, device });
+    } catch (e) {
+      if (e instanceof PinInvalidError) {
+        res.status(401).json({ error: e.reason });
+        return;
+      }
+      deps.logger.error('pairing.claim.error', { error: String(e) });
+      res.status(500).json({ error: 'internal_error' });
+    }
+  });
+
+  router.get('/pairing/devices', admin, (_req: express.Request, res: express.Response) => {
+    res.json(deps.pairing.listDevices());
+  });
+
+  router.delete(
+    '/pairing/devices/:id',
+    admin,
+    async (req: express.Request, res: express.Response) => {
+      try {
+        await deps.pairing.revokeDevice(req.params['id']);
+        res.json({ ok: true });
+      } catch (err) {
+        deps.logger.error('pairing.revoke.error', { error: String(err) });
+        res.status(500).json({ error: 'internal_error' });
+      }
+    },
+  );
+}
