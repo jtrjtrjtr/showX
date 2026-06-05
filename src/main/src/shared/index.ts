@@ -11,3 +11,5 @@ export type { SecretStoreOptions } from './SecretStore.js';
 export { OutputDispatcher } from './OutputDispatcher.js';
 export type { OutputDispatcherOptions } from './OutputDispatcher.js';
 export * from './dispatcher/index.js';
+export { InputRegistrarImpl } from './InputRegistrar.js';
+export type { InputRegistrar } from './InputRegistrar.js';

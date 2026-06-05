@@ -125,21 +125,24 @@ describe('SideChannel', () => {
   it('late joiner receives recent buffer (5 messages → joiner sees 5)', async () => {
     const { ch, wsUrl, stop } = await makeSideChannelServer();
 
-    // Push 5 messages before connecting
     for (let i = 0; i < 5; i++) {
       ch.publish('show-late', { topic: 'go', payload: { seq: i } });
     }
 
-    const ws = await connectAndWait(wsUrl('show-late'));
+    // Attach message listener BEFORE open so replay frames emitted in the
+    // same I/O callback as the 101 upgrade response aren't missed.
+    const ws = new WebSocket(wsUrl('show-late'));
     const replayed: unknown[] = [];
-    const done = new Promise<void>(r => {
+    const done = new Promise<void>((res, rej) => {
       ws.on('message', (d: Buffer) => {
         const m = JSON.parse(d.toString('utf8'));
         if (m._replay) replayed.push(m);
-        if (replayed.length >= 5) r();
+        if (replayed.length >= 5) res();
       });
+      ws.on('error', rej);
     });
 
+    await new Promise<void>((res, rej) => { ws.on('open', res); ws.on('error', rej); });
     await done;
     expect(replayed).toHaveLength(5);
 
@@ -154,17 +157,16 @@ describe('SideChannel', () => {
       ch.publish('show-cap', { topic: 'go', payload: { seq: i } });
     }
 
-    const ws = await connectAndWait(wsUrl('show-cap'));
+    // Attach message listener BEFORE open for the same reason as above.
+    const ws = new WebSocket(wsUrl('show-cap'));
     const replayed: unknown[] = [];
-    const settled = new Promise<void>(r => {
-      // wait a bit after connection to collect all replayed messages
-      ws.on('message', (d: Buffer) => {
-        const m = JSON.parse(d.toString('utf8'));
-        if (m._replay) replayed.push(m);
-      });
-      setTimeout(r, 100);
+    ws.on('message', (d: Buffer) => {
+      const m = JSON.parse(d.toString('utf8'));
+      if (m._replay) replayed.push(m);
     });
-    await settled;
+
+    await new Promise<void>((res, rej) => { ws.on('open', res); ws.on('error', rej); });
+    await new Promise(r => setTimeout(r, 100));
 
     expect(replayed).toHaveLength(100);
     // First replayed should be seq=50 (150 - 100)
