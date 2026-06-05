@@ -45,4 +45,6 @@
 
 ---
 
-*15 items. If any item is unchecked on install day, flag to Jindřich before proceeding.*
+*22 items across 5 categories. If any item is unchecked on install day, flag to Jindřich before proceeding.*
+
+> **Note:** Spec target was 15 items. Expanded to 22 to cover real venue setup issues encountered during BridgeX deployments (split network/hardware items into specific rows for traceability; added comms+backup as fifth category).

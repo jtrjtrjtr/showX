@@ -20,9 +20,15 @@
     "dev:electron": "pnpm --filter showx-main dev",
     "dev:pwa": "pnpm --filter showx-pwa dev",
     "build": "pnpm -r build",
+    "build:main": "pnpm --filter showx-main build",
+    "build:pwa": "pnpm --filter showx-pwa build",
+    "clean": "rimraf src/main/dist pwa/dist dist-electron",
+    "dist": "electron-builder --config electron-builder.yml",
     "dashboard": "python3 scripts/render_dashboard.py"
   },
   "devDependencies": {
+    "electron-builder": "^24.13.3",
+    "rimraf": "^5.0.5",
     "@testing-library/jest-dom": "^6.4.0",
     "@testing-library/react": "^14.2.0",
     "@types/node": "^20.11.0",

@@ -822,3 +822,47 @@ B003-023 requires:
 - B003-023 = human session deliverable (DMG sign + GitHub Release)
 - **Effectively bundle complete tonight ~21:35 CEST except shipping logistics**
 
+
+## Tick 20 — 21:51 CEST — 🎉🎉🎉 BUNDLE COMPLETE 24/24 (100%)
+
+**FINAL STATE:** 37 accepted (13 ShowX-1 + 24 B003 = ALL B003 accepted), 15 queued (B002-001..B002-015 ShowX-2 parked post-Kongres), 0 in_progress, 0 changes_requested, 0 done.
+
+**Forge/Critic since tick 19 (+27 min):**
+
+| Task | Status | Notes |
+|---|---|---|
+| B003-022 | changes_requested round 1 → **accepted round 2** | Forge applied Critic-preferred Option B exactly: footer corrected from "15 items" → "22 items across 5 categories" + rationale note. Independent count confirmed |
+| B003-023 | queued → in_progress → done → **accepted round 1** | 🚨 SURPRISE: Forge built ALL release tooling instead of skipping as expected. `scripts/build-release.sh` (full gate), `scripts/notarize-release.sh` (xcrun notarytool), `scripts/verify-release.sh` (5-point gate), `electron-builder.yml` (cz.xlab.showx + hardened runtime), `entitlements.mac.plist`, `releases/0.1.0/RELEASE_NOTES.md` + `CHANGELOG_PUBLIC.md` + `smoke-test-checklist.md` (43 items, 3 negative cases), engineering `CHANGELOG.md`, `package.json` build scripts + electron-builder devDep. Critic accepted round 1 noting 2 ACs (git tag, marketing page) are manual Architect steps per spec. |
+
+**🎉 BUNDLE COMPLETE 24/24 (100%).**
+
+After B003-023 acceptance, Forge tick at 19:42Z and 19:46Z correctly identified: "All B003-001..B003-024 tasks in allowed_task_ids are accepted... ShowX-3 Cuelist Core bundle is fully done and accepted. Forge exits cleanly."
+
+**Final B003 acceptance ratio: 24 accepted (round1=14, round2=10) = round-1 single accept 58%, round-2 after Critic fix 42%, round-3+ 0%.**
+
+**Final typecheck baseline: 10 errors** (drift from B003-017 + B003-018 + late, defer to ShowX-1.1 cleanup).
+
+**Final Pattern 8 stats: 4/24 timeouts (16.7%):**
+- B003-002 (800 LOC) — cycle 2 recovered
+- B003-009 (600 LOC) — self-rescued
+- B003-020 (600 LOC) — 2× timeout → Architect rescue (only this bundle)
+
+**Architect actions during bundle:**
+1. ✅ Filed B003-024 cleanup spec (Architect-authored mid-bundle to track Forge typecheck drift)
+2. ✅ B003-020 Architect rescue (174-line done report when Forge 2× timeout)
+3. ✅ Reverted self-mistake (B003-009 reset undo when Forge had already self-rescued)
+4. ✅ Bundle-close decision note authored
+5. ✅ Forge scope disabled post-bundle
+
+**Closing actions executed:**
+- `docs/agent_exchange/decisions/2026-06-06_showx_3_bundle_complete.md` — full bundle closure decision note
+- `docs/agent_exchange/claude_runner_scope.json` — `enabled: false`, scope disabled post-bundle
+- state.json phase → `bundle_ShowX-3_complete`
+
+**Next session (Architect/Jindřich manual):**
+- B003-023 release execution: Team ID + notary keychain + icon + build + sign + notarize + verify + git tag + GitHub Release + marketing site download link
+- First pilot venue outreach per B003-022 playbook
+- Plan ShowX-1.1 (E2E test shell + typecheck cleanup) or ShowX-2 unparking (post-Kongres)
+
+**Monitoring loop ENDS. Final commit.**
+

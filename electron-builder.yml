@@ -1,0 +1,52 @@
+appId: cz.xlab.showx
+productName: ShowX
+copyright: "Copyright © 2026 XLAB s.r.o."
+
+# Build inputs
+files:
+  - from: src/main/dist
+    to: .
+    filter:
+      - "**/*"
+  - from: pwa/dist
+    to: pwa
+    filter:
+      - "**/*"
+
+directories:
+  buildResources: build
+  output: dist-electron
+
+# macOS target — signed DMG for Apple Developer ID distribution
+mac:
+  category: public.app-category.productivity
+  # Replace XXXXXXXXXX with the actual XLAB Apple Developer Team ID
+  identity: "Developer ID Application: XLAB s.r.o. (XXXXXXXXXX)"
+  hardenedRuntime: true
+  gatekeeperAssess: false
+  entitlements: build/entitlements.mac.plist
+  entitlementsInherit: build/entitlements.mac.plist
+  target:
+    - target: dmg
+      arch:
+        - x64
+        - arm64
+
+dmg:
+  title: "ShowX ${version}"
+  background: build/dmg-background.png
+  icon: build/icon.icns
+  iconSize: 128
+  contents:
+    - x: 130
+      y: 220
+    - x: 410
+      y: 220
+      type: link
+      path: /Applications
+  window:
+    width: 540
+    height: 380
+
+# No auto-update for 0.1 (direct DMG distribution only)
+publish: null
