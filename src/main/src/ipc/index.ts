@@ -10,7 +10,8 @@ import type { ShellConfigStore } from '../Shell.js';
 export type { ShellConfigStore } from '../Shell.js';
 
 export interface IpcMainBridge {
-  handle(channel: string, listener: (...args: unknown[]) => unknown): void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  handle(channel: string, listener: (...args: any[]) => unknown): void;
 }
 
 export interface IpcDeps {

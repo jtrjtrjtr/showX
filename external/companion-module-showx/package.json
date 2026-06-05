@@ -1,0 +1,31 @@
+{
+  "name": "companion-module-showx",
+  "version": "1.0.0",
+  "description": "Bitfocus Companion module for ShowX — XLAB live show cuelist platform",
+  "keywords": ["companion-module"],
+  "private": false,
+  "license": "MIT",
+  "author": "XLAB s.r.o.",
+  "main": "dist/index.js",
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "lint": "eslint src"
+  },
+  "dependencies": {
+    "@companion-module/base": "^1.8.0",
+    "ws": "^8.16.0"
+  },
+  "devDependencies": {
+    "@types/ws": "^8.5.10",
+    "typescript": "^5.4.0"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "companion": {
+    "legacy-module": false
+  }
+}

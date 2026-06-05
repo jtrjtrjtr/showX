@@ -2,7 +2,6 @@ import os from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 import { z } from 'zod';
-import type { BrowserWindow } from 'electron';
 import type {
   PairingStore as ShowxPairingStore,
   PairingClaims,
@@ -91,7 +90,6 @@ class ShellConfigStoreImpl implements ShellConfigStore {
 class PairingStoreAdapter implements ShowxPairingStore {
   constructor(
     private readonly store: PairingStore,
-    private readonly tokens: TokenManager,
   ) {}
 
   async validateToken(token: string): Promise<PairingClaims | null> {
@@ -220,7 +218,6 @@ export class Shell {
   private output!: OutputDispatcher;
   private input: InputRegistrarImpl | null = null;
   private modules: ModuleLoader | null = null;
-  private window: BrowserWindow | null = null;
 
   constructor(private readonly deps: ShellDeps = {}) {}
 
@@ -334,7 +331,7 @@ export class Shell {
       sync: this.sync,
       assets: this.assets as unknown as SharedServices['assets'],
       mdns: this.mdns,
-      pairing: new PairingStoreAdapter(this.pairing, this.tokenManager),
+      pairing: new PairingStoreAdapter(this.pairing),
     };
     this.modules =
       this.deps.modules ??
@@ -354,7 +351,7 @@ export class Shell {
         process.env['SHOWX_DEV'] === '1'
           ? `http://localhost:5174/?mode=shell`
           : `http://localhost:${this.assets.port()}/?mode=shell`;
-      this.window = await createMainWindow({
+      await createMainWindow({
         pwaUrl,
         preloadPath: preloadFilePath(),
       });
@@ -378,7 +375,7 @@ export class Shell {
     await safeCall(() => this.modules?.teardownAll());
     await safeCall(() => this.input?.shutdown());
     // OutputDispatcher has no stop — pools release resources on GC
-    await safeCall(() => this.sync?.stop());
+    await safeCall(() => (this.sync as unknown as { stop?: () => Promise<void> })?.stop?.());
     await safeCall(() => this.mdns?.stop());
     await safeCall(() => this.assets?.stop());
     // PersistedStore writes are atomic on each save — no explicit flush needed
@@ -407,7 +404,7 @@ export class Shell {
       sync: this.sync,
       assets: this.assets as unknown as SharedServices['assets'],
       mdns: this.mdns,
-      pairing: new PairingStoreAdapter(this.pairing, this.tokenManager),
+      pairing: new PairingStoreAdapter(this.pairing),
     };
   }
 }

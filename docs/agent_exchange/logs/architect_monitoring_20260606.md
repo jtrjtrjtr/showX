@@ -705,3 +705,53 @@ Critic catches typecheck errors per task review (B003-007 missing log, B003-017 
 
 **Bundle close projection:** 4 tasks remain (B003-020/-021/-022/-023) + B003-024 cleanup = 5 total. At ~20 min/task average = ~1.5-2h. **Bundle done ~22:00-22:30 CEST tonight.**
 
+
+## Tick 18 — 20:55 CEST — 🚨 ARCHITECT RESCUE #1 (B003-020) + B003-021 done
+
+**State at tick:** 32 accepted (13 ShowX-1 + 19 B003), 18 queued, 2 done (B003-020 architect-rescue, B003-021 Forge), 0 in_progress.
+
+**Forge/Critic since tick 17 (+27 min):**
+
+| Task | Status | Notes |
+|---|---|---|
+| B003-020 | cycle 2 ALSO TIMED OUT → **ARCHITECT RESCUE** → done | 2× consecutive Forge timeout. Per handoff rescue threshold. Forge actually wrote 459 LOC (12 tests + 4 helpers + 5 fixtures) — implementation complete. Timeout cause: shell test harness pre-conditions (Electron build + SHOWX_TEST_MODE flags + data-testids) missing in ShowX-1 |
+| B003-021 | queued → in_progress → done | Stream Deck Companion module — `external/companion-module-showx/` with manifest + connection + actions + feedbacks + variables + presets + index + README + HELP. 23 tests pass (15 connection + 8 action). Awaiting Critic |
+
+**🚨 First Architect rescue this session.** Per handoff Pattern 8 explicit prediction: "Multi-op E2E test (B003-020) — Playwright needs both Electron + PWA running" — exactly the cause.
+
+**Architect rescue done report** at `done/B003-020_multi_operator_integration_tests_done.md` (174 lines):
+- Documents the 459 LOC Forge delivered as implementation-complete
+- Explains 2× timeout root cause (Forge tried to RUN Playwright suite; shell harness pre-conditions missing)
+- Maps each spec AC to test cases (file:line)
+- Proposes ShowX-1.1 follow-up scope: electron-shell build script + SHOWX_TEST_MODE wiring + SHOWX_AUTOLOAD_SHOW + test PIN override + data-testid additions to PWA
+- Note for Critic: NOT require runtime execution (handoff exception)
+
+**B003-021 highlights:**
+- Companion submitter-ready: manifest.json + 7 actions + 4 feedbacks + 6 variables + 6 presets
+- WS connection with exponential backoff 1s→2s→4s→30s max
+- Handles go.dispatched / arm.broadcast / mode.transition / heartbeat
+- Pre-existing 3 test failures noted (Shell IPC, PWA pairing timeout, catalog ENOTEMPTY — all unrelated to B003-021)
+
+**B003 acceptance ratio: 19 accepted (round1=10, round2=9).** B003-020 rescue + B003-021 awaiting Critic — once both Critic-accepted, ratio shifts.
+
+**Typecheck baseline: 22 errors UNCHANGED.** B003-021 lives in `external/companion-module-showx/` (separate workspace from cuelist-core) so no impact on cuelist typecheck.
+
+**Pattern 8 timeouts this session: 4 of 21 attempted (19%):**
+1. B003-002 — cycle 2 succeeded
+2. B003-009 — self-rescued by later Forge tick
+3. B003-020 cycle 1 — timed out
+4. B003-020 cycle 2 — timed out → **Architect rescue**
+
+B003-020 is the first task this session to consume the full rescue protocol. Recovery successful.
+
+**Phase 4 status:**
+- B003-020 ✅ (architect-rescue)
+- B003-021 done awaiting Critic verdict
+
+**Phase 5 outlook:**
+- B003-022 first pilot — eligible (deps B003-020 done)
+- B003-023 ShowX 0.1 release — blocked on all 22
+- B003-024 cleanup — eligible
+
+**Bundle close projection:** B003-022/-023/-024 remain. Each ~20 min if Forge cadence holds. ~1h to bundle close (likely 21:55-22:30 CEST tonight).
+

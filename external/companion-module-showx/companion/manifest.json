@@ -1,0 +1,17 @@
+{
+  "id": "showx",
+  "name": "ShowX",
+  "shortname": "ShowX",
+  "description": "XLAB live show cuelist platform — GO button, standby, cue navigation, mode indicators",
+  "version": "1.0.0",
+  "author": "XLAB s.r.o.",
+  "website": "https://showx.xlabproject.net",
+  "repository": "https://github.com/xlab-sro/companion-module-showx",
+  "bugs": "https://github.com/xlab-sro/companion-module-showx/issues",
+  "license": "MIT",
+  "category": "live-production",
+  "keywords": ["showx", "cuelist", "stage-manager", "live-show"],
+  "entrypoint": "./dist/index.js",
+  "runtime": "nodejs",
+  "api_version": "0.6.0"
+}
