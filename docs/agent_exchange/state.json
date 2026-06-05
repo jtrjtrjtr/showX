@@ -2,19 +2,19 @@
   "schema_version": 1,
   "project": "showX",
   "phase": "bundle_ShowX-1_foundation",
-  "updated_at": "2026-06-05T22:30:00Z",
+  "updated_at": "2026-06-05T02:35:00Z",
   "active_bundle": "ShowX-1",
   "tasks": [
     {
       "id": "B001-001",
       "slug": "workspace_setup",
       "title": "Workspace + TypeScript + ESLint setup",
-      "status": "queued",
-      "owner": null,
-      "task_path": "docs/agent_exchange/queued/B001-001_workspace_setup.md",
+      "status": "done",
+      "owner": "architect-rescue",
+      "task_path": "docs/agent_exchange/done/B001-001_workspace_setup_done.md",
       "created_at": "2026-06-05T22:15:00Z",
-      "started_at": null,
-      "ended_at": null,
+      "started_at": "2026-06-05T02:27:00Z",
+      "ended_at": "2026-06-05T02:35:00Z",
       "reviewed_at": null,
       "review_round": 0,
       "spawned_from": null,
@@ -33,7 +33,9 @@
       "reviewed_at": null,
       "review_round": 0,
       "spawned_from": null,
-      "depends_on": ["B001-001"]
+      "depends_on": [
+        "B001-001"
+      ]
     },
     {
       "id": "B001-003",
@@ -48,7 +50,9 @@
       "reviewed_at": null,
       "review_round": 0,
       "spawned_from": null,
-      "depends_on": ["B001-002"]
+      "depends_on": [
+        "B001-002"
+      ]
     },
     {
       "id": "B001-004",
@@ -63,7 +67,9 @@
       "reviewed_at": null,
       "review_round": 0,
       "spawned_from": null,
-      "depends_on": ["B001-002"]
+      "depends_on": [
+        "B001-002"
+      ]
     },
     {
       "id": "B001-005",
@@ -78,7 +84,9 @@
       "reviewed_at": null,
       "review_round": 0,
       "spawned_from": null,
-      "depends_on": ["B001-002"]
+      "depends_on": [
+        "B001-002"
+      ]
     },
     {
       "id": "B001-006",
@@ -93,7 +101,11 @@
       "reviewed_at": null,
       "review_round": 0,
       "spawned_from": null,
-      "depends_on": ["B001-002", "B001-003", "B001-005"]
+      "depends_on": [
+        "B001-002",
+        "B001-003",
+        "B001-005"
+      ]
     },
     {
       "id": "B001-007",
@@ -108,7 +120,10 @@
       "reviewed_at": null,
       "review_round": 0,
       "spawned_from": null,
-      "depends_on": ["B001-002", "B001-003"]
+      "depends_on": [
+        "B001-002",
+        "B001-003"
+      ]
     },
     {
       "id": "B001-008",
@@ -123,7 +138,10 @@
       "reviewed_at": null,
       "review_round": 0,
       "spawned_from": null,
-      "depends_on": ["B001-002", "B001-003"]
+      "depends_on": [
+        "B001-002",
+        "B001-003"
+      ]
     },
     {
       "id": "B001-009",
@@ -138,7 +156,10 @@
       "reviewed_at": null,
       "review_round": 0,
       "spawned_from": null,
-      "depends_on": ["B001-002", "B001-004"]
+      "depends_on": [
+        "B001-002",
+        "B001-004"
+      ]
     },
     {
       "id": "B001-010",
@@ -153,7 +174,11 @@
       "reviewed_at": null,
       "review_round": 0,
       "spawned_from": null,
-      "depends_on": ["B001-002", "B001-003", "B001-004"]
+      "depends_on": [
+        "B001-002",
+        "B001-003",
+        "B001-004"
+      ]
     },
     {
       "id": "B001-011",
@@ -168,7 +193,13 @@
       "reviewed_at": null,
       "review_round": 0,
       "spawned_from": null,
-      "depends_on": ["B001-005", "B001-006", "B001-007", "B001-009", "B001-010"]
+      "depends_on": [
+        "B001-005",
+        "B001-006",
+        "B001-007",
+        "B001-009",
+        "B001-010"
+      ]
     },
     {
       "id": "B001-012",
@@ -183,7 +214,9 @@
       "reviewed_at": null,
       "review_round": 0,
       "spawned_from": null,
-      "depends_on": ["B001-001"]
+      "depends_on": [
+        "B001-001"
+      ]
     },
     {
       "id": "B001-013",
@@ -198,7 +231,9 @@
       "reviewed_at": null,
       "review_round": 0,
       "spawned_from": null,
-      "depends_on": ["B001-001"]
+      "depends_on": [
+        "B001-001"
+      ]
     }
   ]
 }

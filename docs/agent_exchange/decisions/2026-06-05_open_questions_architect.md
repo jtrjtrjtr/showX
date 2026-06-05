@@ -209,6 +209,23 @@ B001-012 uses `{ pin, display_name }`. Canonical pairing_auth.md §5.2 requires 
 
 ## Late additions (post-launch 2026-06-05)
 
+### Q31. Forge cycle 1 timed out 20 min without output
+
+Forge subprocess on B001-001 spawned at 2026-06-05T01:38:51Z, timed out 1200s later without:
+- moving spec to in_progress/
+- updating state.json
+- writing any source files
+
+Hypothesis: Forge spent budget reading the rich spec foundation (5005 lines of binding specs + 5675 lines of task specs + CLAUDE.md + WORKFLOW.md + STARTING_PROMPTS) at session start, then ran out of time to actually do B001-001.
+
+**Mitigation candidates:**
+1. STARTING_PROMPTS could say "skip docs/specs/ for B001-001 task — pure tooling task" — too task-specific
+2. Add task spec note "Skip docs/specs/ reading — this task is tooling only"
+3. Architect rescue: write B001-001 (~200 lines pnpm/tsconfig) manually if cycle 2 also fails
+4. Lower STARTING_PROMPTS read-set to just CLAUDE.md + WORKFLOW.md + task spec
+
+**Status:** Cycle 2 launched 02:02:51Z; observing. If cycle 2 also empty at 02:22:51Z, Architect rescues.
+
 ### Q30. B001-007 OutputDispatcher sync vs async claim signature
 
 Subagent reviewing B001-007 flagged real type-signature mismatch: showx-shared's sync `claim()` declaration (from B001-002 spec) vs the necessary async impl in B001-007 OutputDispatcher.
