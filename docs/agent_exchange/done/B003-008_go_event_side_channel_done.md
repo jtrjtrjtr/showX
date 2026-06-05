@@ -2,88 +2,92 @@
 id: "B003-008"
 title: "GO event side-channel publish — pub/sub on /events/<show_id> with idempotency + replay window"
 status: "done"
-round: 1
+round: 2
 ---
+
+## Round 2 — Critic items addressed
+
+### 1. Wire `mode.transition` topic (Criterion 2 — Option A)
+
+`GoEventChannel.start()` now subscribes to `'show-mode-change'` on `deps.events` (the EventBus emitted by B003-004's `transitions.ts`). On each event, a `ModeTransition` payload is built, allocated a `seq`, pushed to `rings['mode.transition']`, and broadcast to all stations.
+
+New interface exported from `goEventChannel.ts`:
+```ts
+export interface ModeTransition {
+  topic: 'mode.transition';
+  show_id: string;
+  from: ShowMode;
+  to: ShowMode;
+  by_operator_id: string;
+}
+```
+
+Two new tests cover the round-trip: transition fires → broadcast envelope produced with correct payload; ring populated → resume replays to reconnecting station.
+
+### 2. Resume replay targets requesting station (Criterion 10)
+
+`ResumeRequest` now requires `station_id: string`. `onResume` sends all replayed messages via `deps.publishToStation(req.station_id, ...)` instead of `deps.broadcast(...)`. A station reconnect no longer floods all other connected stations.
+
+Existing resume tests updated to supply `station_id: 'station-replay'` and assert against `toStation` instead of `broadcasts`.
+
+### 3. Gap envelope when `since_seq` predates retained window (Criterion 10 + spec test #26)
+
+Before replaying ring items, `onResume` now computes:
+```ts
+const oldestRetainedSeq = ring.all()[0]._seq;
+if (oldestRetainedSeq > since + 1) {
+  deps.publishToStation(req.station_id, { type: 'gap', topic, from_seq: since, to_seq: oldestRetainedSeq - 1 });
+}
+```
+
+Gap is sent before replayed messages so the station can trigger a Yjs full sync before applying the partial replay.
+
+New test: channel constructed with `ringCapacity: 5`; 10 cues fired (ring retains last 5); resume from `since_seq: 0` → gap envelope emitted with correct `topic`, `from_seq`, `to_seq`.
+
+### Other changes
+
+- `GoEventChannel` constructor accepts `opts.ringCapacity` (default 1024) to enable gap tests with small buffers without affecting production behavior.
+- `ShowModeChangeEvent` and `ShowMode` imported from `showx-shared`.
 
 ## Files changed
 
-### New files created
-- `src/modules/cuelist-core/src/go/sequence.ts` — `SequenceCounter` (monotonic, process-scoped, never reset on show open)
-- `src/modules/cuelist-core/src/go/replayWindow.ts` — `isHistoricReplay()` (5s window per data_model §8.4) + `RingBuffer<T>` with `since(seq, getSeq)` + `all()`
-- `src/modules/cuelist-core/src/go/idempotencyStore.ts` — `IdempotencyStore` LRU keyed by `(show_id, request_id)`; stores `show_id` in entry for correct `findRecentRequest` filtering across shows
-- `src/modules/cuelist-core/src/go/authority.ts` — `authorise(req, cuelist, octx?)` implementing all four `go_authority` modes: `sm_called`, `auto_cascade`, `per_dept`, `timecode`
-- `src/modules/cuelist-core/src/go/goEventChannel.ts` — `GoEventChannel` class + `FORBIDDEN_CRDT_FIELDS`, `DesignViolationError`, `assertNotForbiddenCrdtField` guard
-
-### Test files created
-- `tests/unit/modules/cuelist-core/go/idempotencyStore.test.ts` (11 tests)
-- `tests/unit/modules/cuelist-core/go/replayWindow.test.ts` (12 tests)
-- `tests/unit/modules/cuelist-core/go/authority.test.ts` (12 tests)
-- `tests/unit/modules/cuelist-core/go/goEventChannel.test.ts` (24 tests)
-
-**Total new tests: 59**
+- `src/modules/cuelist-core/src/go/goEventChannel.ts` — imports, `ModeTransition` interface, `station_id` in `ResumeRequest`, `ringCapacity` constructor opt, `onModeChange` handler, `start()` wired to `show-mode-change`, `onResume` gap detection + `publishToStation`
+- `tests/unit/modules/cuelist-core/go/goEventChannel.test.ts` — updated 2 resume tests, added 3 new tests (mode.transition ×2, gap ×1)
 
 ## Test run output
 
 ```
-✓ tests/unit/modules/cuelist-core/go/goEventChannel.test.ts  (24 tests)
+✓ tests/unit/modules/cuelist-core/go/goEventChannel.test.ts  (27 tests)
 ✓ tests/unit/modules/cuelist-core/go/idempotencyStore.test.ts (11 tests)
 ✓ tests/unit/modules/cuelist-core/go/authority.test.ts        (12 tests)
 ✓ tests/unit/modules/cuelist-core/go/replayWindow.test.ts     (12 tests)
 
-Test Files  61 passed (61)
-     Tests  672 passed (672)
+Test Files  4 passed (4)
+     Tests  62 passed (62)
 ```
 
-All existing tests continue passing (672 total).
+Full suite: 694/694 pass (64 test files).
 
 ## Acceptance criteria coverage
 
-| Criterion | Status |
-|---|---|
-| Side-channel WSS topic `/events/<show_id>` per protocol_dictionary §7.2 + data_model §8.2 — JSON envelopes | ✅ `envelope(topic, seq, payload)` helper produces `{topic, seq, ts, payload}` |
-| Topics: `go.request`, `go.dispatched`, `go.rejected`, `arm.request`, `arm.broadcast`, `presence.heartbeat`, `mode.transition` | ✅ All wired in `start()`; `presence.heartbeat` is transport-layer — not handled in this module (shell concern) |
-| `SequenceCounter` — monotonic per-show, reset only on process restart | ✅ Implemented; reset() documented "process restart only" |
-| `IdempotencyStore` LRU keyed by `(show_id, request_id)`, default 1000 per Q9, configurable | ✅ Implemented; configurable via `opts.idempotencyLruSize` |
-| Replay window: `client_ts > 5s ago` → `historic_replay` rejection, NOT re-fired | ✅ Tested |
-| `GoEventChannel` integrates with shell's side-channel via `GoChannelDeps` abstraction | ✅ Transport-agnostic `GoChannelDeps` interface; see integration gap note below |
-| Authority check: `authorise(request, cuelist): AuthorityResult` per §8.5 | ✅ All four modes implemented and tested |
-| On accepted GO: emit `cue-fire` → EventBus; on `cue-complete`: broadcast `go.dispatched` | ✅ Tested |
-| On rejected GO: `go.rejected` to requester only, not broadcast | ✅ Tested; `publishToStation` used for rejections |
-| Ring buffer of last 1024 messages per topic for `resume{since_seq}` | ✅ Per-topic `RingBuffer(1024)`; `onResume` replays via `since(seq, getSeq)` |
-| GO events NEVER written to Y.Doc — `DesignViolationError` guard | ✅ `assertNotForbiddenCrdtField` exported and tested; direct doc inspection in test 28 confirms no forbidden fields |
-| 30+ vitest tests across files | ✅ 59 tests |
+| Criterion | Round 1 | Round 2 |
+|---|---|---|
+| 1. Side-channel envelope `{topic, seq, ts, payload}` | ✅ | ✅ unchanged |
+| 2. All 7 topics implemented | ⚠️ `mode.transition` unwired | ✅ wired via EventBus `show-mode-change` |
+| 3. `SequenceCounter` monotonic per process | ✅ | ✅ unchanged |
+| 4. `IdempotencyStore` LRU, default 1000, configurable | ✅ | ✅ unchanged |
+| 5. Replay window 5s | ✅ | ✅ unchanged |
+| 6. Transport-agnostic `GoChannelDeps` | ✅ | ✅ unchanged |
+| 7. `authorise()` all 4 modes | ✅ | ✅ unchanged |
+| 8. Accepted GO → `cue-fire`; `cue-complete` → broadcast `go.dispatched` | ✅ | ✅ unchanged |
+| 9. Rejected GO → `publishToStation` only | ✅ | ✅ unchanged |
+| 10. Ring buffer 1024/topic; `resume{since_seq}` → per-station replay + gap envelope | ⚠️ broadcast instead of station; no gap | ✅ per-station replay + gap envelope |
+| 11. GO events never in Y.Doc; `DesignViolationError` guard | ✅ | ✅ unchanged |
+| 12. 30+ vitest tests | ✅ 59 | ✅ 62 |
 
-## Decisions made within task scope
+## Notes for Critic
 
-### IdempotencyStore: show_id stored in Entry
-The spec's `findRecentRequest` filtered by `cue_id` only (comment said "show + cue" but code didn't). I store `show_id` in the `Entry` struct and filter on both, which correctly isolates entries from different shows sharing the same `cue_id`. No architectural impact.
-
-### RingBuffer.since() signature
-Added `getSeq: (item: T) => number` callback to avoid baking sequence semantics into the ring buffer (different ring topics may have different item shapes). This is cleaner than the `_seq` wrapper approach in the spec pseudocode.
-
-### `presence.heartbeat` topic not handled in GoEventChannel
-`presence.heartbeat` is a shell-level broadcast (uptime + module health). It does not belong in `GoEventChannel` — this module handles GO/ARM/mode events only. Heartbeat is emitted by the SyncBroker/AssetServer layer. Not a gap.
-
-## Integration gap — SyncBroker side-channel (document for Architect)
-
-`GoChannelDeps` expects:
-- `publishToStation(station_id, envelope)` — send to one station
-- `broadcast(envelope)` — send to all stations  
-- `subscribe(topic, handler)` — subscribe to a wire topic
-
-**Gap:** `SyncBroker.publishSideChannel` is typed as `SideChannelMessage {topic: 'go'|'presence'|'preview'}` — no per-station addressing and coarse topic granularity. The adapter in `CuelistCore.start()` will need to:
-1. Wrap granular topics (go.request, go.dispatched, etc.) inside `payload.topic` field within a `topic:'go'` message
-2. For per-station targeting, include `target_station_id` in payload and have PWA clients filter by their own `stationId`
-3. Alternatively, B001-006 SyncBroker may need extension to support direct station addressing
-
-Recommend Architect review whether SyncBroker needs a `publishToStation(showId, stationId, msg)` overload, or whether payload-level filtering is acceptable for MVP. This task implements the module-side logic correctly; the adapter glue is a separate concern.
-
-## Out of scope (confirmed as spec'd)
-
-- Side-channel WSS server infrastructure (B001-008)
-- Pairing token validation on incoming `go.request`
-- Operator role registry beyond SM detection (ShowX-4)
-- SHOW mode lock-time fire secret (Q16)
-- LTC/MTC timecode scheduling
-- Persistent idempotency store across restarts
-- Cross-show idempotency hardening (isolated by show_id in key)
+- `mode.transition` is wired via EventBus subscription (Option A). B003-004's `transitions.ts` already publishes `show-mode-change` — no changes needed to B003-004.
+- `opts.ringCapacity` is an extension to the constructor; default is 1024, no production behavioral change.
+- The gap envelope shape is `{ type: 'gap', topic, from_seq, to_seq }` sent via `publishToStation` before the replayed ring items.
+- Integration gap (SyncBroker per-station addressing) noted in round 1 done report is unchanged — separate adapter concern.

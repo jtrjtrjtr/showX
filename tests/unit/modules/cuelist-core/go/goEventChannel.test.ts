@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { EventBus, Logger, Subscription, ShowxEvent, CueCompleteEvent } from 'showx-shared';
+import type { EventBus, Logger, Subscription, ShowxEvent, CueCompleteEvent, ShowModeChangeEvent } from 'showx-shared';
 import { GoEventChannel, assertNotForbiddenCrdtField, DesignViolationError } from '../../../../../src/modules/cuelist-core/src/go/goEventChannel.js';
 import type { GoRequest, GoChannelDeps } from '../../../../../src/modules/cuelist-core/src/go/goEventChannel.js';
 import { initShowDoc, getMeta } from '../../../../../src/modules/cuelist-core/src/document/show.js';
@@ -321,7 +321,7 @@ describe('GoEventChannel — rejected sent to requester only', () => {
 });
 
 describe('GoEventChannel — ring buffer resume', () => {
-  it('onResume replays missed go.dispatched messages since seq', () => {
+  it('onResume replays missed go.dispatched to requesting station (not broadcast)', () => {
     const ctx = makeSetup();
     const cueId = ctx.addCueToList('Q1');
     ctx.channel.start();
@@ -329,14 +329,16 @@ describe('GoEventChannel — ring buffer resume', () => {
     ctx.fireGoRequest({ cue_id: cueId, request_id: 'req-a' });
     ctx.completeCue(cueId);
 
-    const dispatchedBefore = ctx.broadcasts.length;
+    const toStationBefore = ctx.toStation.length;
 
     // Simulate station reconnect requesting resume from seq 0
     const resumeHandler = ctx.topicHandlers.get('resume');
-    resumeHandler?.({ topic: 'resume', since_seq: 0, topic_filter: 'go.dispatched' });
+    resumeHandler?.({ topic: 'resume', station_id: 'station-replay', since_seq: 0, topic_filter: 'go.dispatched' });
 
-    const dispatchedAfter = ctx.broadcasts.length;
-    expect(dispatchedAfter).toBeGreaterThan(dispatchedBefore);
+    // Replay must go to station, not broadcast
+    const replayMsgs = ctx.toStation.slice(toStationBefore).filter((s) => s.station_id === 'station-replay');
+    expect(replayMsgs.length).toBeGreaterThan(0);
+    expect(ctx.broadcasts.length).toBe(1); // only the original broadcast; no extra from resume
   });
 
   it('onResume sends nothing when since_seq is current', () => {
@@ -346,11 +348,11 @@ describe('GoEventChannel — ring buffer resume', () => {
     ctx.fireGoRequest({ cue_id: cueId });
     ctx.completeCue(cueId);
 
-    const countBefore = ctx.broadcasts.length;
+    const toStationBefore = ctx.toStation.length;
     // Ask for everything past a very high seq number — should get nothing
     const resumeHandler = ctx.topicHandlers.get('resume');
-    resumeHandler?.({ topic: 'resume', since_seq: 999_999, topic_filter: 'go.dispatched' });
-    expect(ctx.broadcasts.length).toBe(countBefore);
+    resumeHandler?.({ topic: 'resume', station_id: 'station-replay', since_seq: 999_999, topic_filter: 'go.dispatched' });
+    expect(ctx.toStation.length).toBe(toStationBefore);
   });
 });
 
@@ -441,5 +443,119 @@ describe('GoEventChannel — process restart clears state', () => {
     // Both channels would process it — new channel's idem store doesn't know req-1
     // We just verify the new channel is operational
     newChannel.stop();
+  });
+});
+
+describe('GoEventChannel — mode.transition topic', () => {
+  it('broadcasts mode.transition envelope when show-mode-change fires on EventBus', () => {
+    const ctx = makeSetup();
+    ctx.channel.start();
+
+    const modeEvent: ShowModeChangeEvent = {
+      type: 'show-mode-change',
+      show_id: ctx.showId,
+      from: 'rehearsal',
+      to: 'show',
+      by_operator_id: 'op-sm',
+    };
+    ctx.deps.events.publish(modeEvent);
+
+    const transition = ctx.broadcasts.find(
+      (b) => (b as { topic: string }).topic === 'mode.transition',
+    ) as { topic: string; payload: { from: string; to: string; by_operator_id: string } } | undefined;
+    expect(transition).toBeDefined();
+    expect(transition?.payload?.from).toBe('rehearsal');
+    expect(transition?.payload?.to).toBe('show');
+    expect(transition?.payload?.by_operator_id).toBe('op-sm');
+  });
+
+  it('mode.transition envelope is added to ring buffer and replayed on resume', () => {
+    const ctx = makeSetup();
+    ctx.channel.start();
+
+    ctx.deps.events.publish({
+      type: 'show-mode-change',
+      show_id: ctx.showId,
+      from: 'rehearsal',
+      to: 'show',
+      by_operator_id: 'op-sm',
+    } as ShowModeChangeEvent);
+
+    const resumeHandler = ctx.topicHandlers.get('resume');
+    const toStationBefore = ctx.toStation.length;
+    resumeHandler?.({
+      topic: 'resume',
+      station_id: 'station-reconnect',
+      since_seq: 0,
+      topic_filter: 'mode.transition',
+    });
+
+    const replayMsgs = ctx.toStation.slice(toStationBefore).filter(
+      (s) => s.station_id === 'station-reconnect',
+    );
+    expect(replayMsgs.length).toBeGreaterThan(0);
+    const msg = replayMsgs[0].envelope as { topic: string; payload: { from: string; to: string } };
+    expect(msg.topic).toBe('mode.transition');
+    expect(msg.payload.from).toBe('rehearsal');
+    expect(msg.payload.to).toBe('show');
+  });
+});
+
+describe('GoEventChannel — gap envelope on ring overflow', () => {
+  it('emits gap envelope to requester when since_seq predates retained window', () => {
+    // Use small ring capacity to trigger overflow easily
+    const ctx = makeSetup();
+    const smallChannel = new GoEventChannel(ctx.deps, { ringCapacity: 5 });
+    smallChannel.start();
+
+    // Fire 10 cues — ring keeps only last 5
+    for (let i = 0; i < 10; i++) {
+      const cueId = ctx.addCueToList(`Q${i}`);
+      const reqId = `req-gap-${i}`;
+      ctx.topicHandlers.get('go.request')?.({
+        topic: 'go.request',
+        request_id: reqId,
+        cue_id: cueId,
+        cuelist_id: ctx.cuelistId,
+        station_id: 'station-gap',
+        operator_id: 'op-sm',
+        client_ts: new Date().toISOString(),
+        override: false,
+      });
+      ctx.deps.events.publish({
+        type: 'cue-complete',
+        seq: i,
+        ts: Date.now(),
+        source: 'test',
+        show_id: ctx.showId,
+        cuelist_id: ctx.cuelistId,
+        cue_id: cueId,
+        duration_ms: 10,
+        success: true,
+        payloads_dispatched: 0,
+        payloads_failed: [],
+      } as unknown as import('showx-shared').CueCompleteEvent);
+    }
+
+    const toStationBefore = ctx.toStation.length;
+
+    // Request resume from seq 0 — oldest retained is seq 6+ (items 1-5 were evicted)
+    const resumeHandler = ctx.topicHandlers.get('resume');
+    resumeHandler?.({
+      topic: 'resume',
+      station_id: 'station-gap',
+      since_seq: 0,
+      topic_filter: 'go.dispatched',
+    });
+
+    const msgs = ctx.toStation.slice(toStationBefore).filter((s) => s.station_id === 'station-gap');
+    const gapMsg = msgs.find(
+      (s) => (s.envelope as { type?: string }).type === 'gap',
+    );
+    expect(gapMsg).toBeDefined();
+    const gap = gapMsg!.envelope as { type: string; topic: string; from_seq: number; to_seq: number };
+    expect(gap.topic).toBe('go.dispatched');
+    expect(gap.from_seq).toBe(0);
+    expect(gap.to_seq).toBeGreaterThan(0);
   });
 });

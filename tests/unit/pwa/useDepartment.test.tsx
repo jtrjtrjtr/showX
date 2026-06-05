@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, afterEach } from 'vitest';
-import { render, screen, act, cleanup } from '@testing-library/react';
+import { render, screen, act, cleanup, fireEvent } from '@testing-library/react';
 
 afterEach(() => cleanup());
 import React from 'react';
@@ -119,23 +119,36 @@ describe('useDepartment', () => {
     expect(screen.getByTestId('visible')).toHaveTextContent('1');
   });
 
-  it('memoizes — same ctx produces same result reference when cues unchanged', () => {
+  it('memoizes — same ctx produces referentially equal result when cues unchanged', async () => {
     const conn = makeTestConnection();
     addCuelist(conn.doc, 'cl');
     addCue(conn.doc, 'cl', 'q1', ['LX']);
     const results: ReturnType<typeof useDepartment>[] = [];
-    function Capturer() {
+
+    function Capturer({ tick }: { tick: number }) {
       const result = useDepartment('cl', smCtx);
       results.push(result);
-      return <div>{result.visible.length}</div>;
+      return <button data-testid="btn">{tick}</button>;
     }
-    render(
+
+    const { rerender } = render(
       <ConnectionContext.Provider value={conn}>
-        <Capturer />
+        <Capturer tick={0} />
       </ConnectionContext.Provider>,
     );
-    // After initial render, all calls use same cues array → same result
-    expect(results.length).toBeGreaterThanOrEqual(1);
-    expect(results[0].visible.length).toBe(0); // SM doesn't own LX
+
+    // Force a re-render via new prop — no Yjs mutation, ctx unchanged
+    rerender(
+      <ConnectionContext.Provider value={conn}>
+        <Capturer tick={1} />
+      </ConnectionContext.Provider>,
+    );
+
+    expect(results.length).toBeGreaterThanOrEqual(2);
+    const first = results[0];
+    const last = results[results.length - 1];
+    // useMemo must return same references when cues + ctx key are unchanged
+    expect(Object.is(first.visible, last.visible)).toBe(true);
+    expect(Object.is(first.actionable, last.actionable)).toBe(true);
   });
 });

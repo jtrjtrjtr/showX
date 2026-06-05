@@ -1,5 +1,5 @@
 import * as Y from 'yjs';
-import type { EventBus, Logger, CueCompleteEvent } from 'showx-shared';
+import type { EventBus, Logger, CueCompleteEvent, ShowModeChangeEvent, ShowMode } from 'showx-shared';
 import { authorise, type AuthorityCuelist, type OperatorContext } from './authority.js';
 import { IdempotencyStore } from './idempotencyStore.js';
 import { isHistoricReplay, RingBuffer } from './replayWindow.js';
@@ -79,8 +79,17 @@ export interface ArmBroadcast {
   standby_note: string;
 }
 
+export interface ModeTransition {
+  topic: 'mode.transition';
+  show_id: string;
+  from: ShowMode;
+  to: ShowMode;
+  by_operator_id: string;
+}
+
 export interface ResumeRequest {
   topic: 'resume';
+  station_id: string;
   since_seq: number;
   topic_filter?: string;
 }
@@ -128,16 +137,23 @@ type CueCompleteExtended = CueCompleteEvent & {
 export class GoEventChannel {
   private seq = new SequenceCounter();
   private idem: IdempotencyStore;
-  private rings = {
-    'go.dispatched': new RingBuffer<GoDispatched & { _seq: number }>(1024),
-    'go.rejected': new RingBuffer<GoRejected & { _seq: number }>(1024),
-    'arm.broadcast': new RingBuffer<ArmBroadcast & { _seq: number }>(1024),
-    'mode.transition': new RingBuffer<object & { _seq: number }>(1024),
+  private rings: {
+    'go.dispatched': RingBuffer<GoDispatched & { _seq: number }>;
+    'go.rejected': RingBuffer<GoRejected & { _seq: number }>;
+    'arm.broadcast': RingBuffer<ArmBroadcast & { _seq: number }>;
+    'mode.transition': RingBuffer<ModeTransition & { _seq: number }>;
   };
   private unsubs: Array<() => void> = [];
 
-  constructor(private deps: GoChannelDeps, opts?: { idempotencyLruSize?: number }) {
+  constructor(private deps: GoChannelDeps, opts?: { idempotencyLruSize?: number; ringCapacity?: number }) {
     this.idem = new IdempotencyStore(opts?.idempotencyLruSize ?? 1000);
+    const cap = opts?.ringCapacity ?? 1024;
+    this.rings = {
+      'go.dispatched': new RingBuffer<GoDispatched & { _seq: number }>(cap),
+      'go.rejected': new RingBuffer<GoRejected & { _seq: number }>(cap),
+      'arm.broadcast': new RingBuffer<ArmBroadcast & { _seq: number }>(cap),
+      'mode.transition': new RingBuffer<ModeTransition & { _seq: number }>(cap),
+    };
   }
 
   start(): void {
@@ -149,7 +165,10 @@ export class GoEventChannel {
     const cc = this.deps.events.subscribe('cue-complete', (e: CueCompleteEvent) =>
       this.onCueComplete(e as CueCompleteExtended),
     );
-    this.unsubs.push(() => cc.unsubscribe());
+    const mc = this.deps.events.subscribe('show-mode-change', (e: ShowModeChangeEvent) =>
+      this.onModeChange(e),
+    );
+    this.unsubs.push(() => cc.unsubscribe(), () => mc.unsubscribe());
   }
 
   stop(): void {
@@ -259,20 +278,48 @@ export class GoEventChannel {
     this.deps.broadcast(envelope('arm.broadcast', seq, arm));
   }
 
+  private onModeChange(e: ShowModeChangeEvent): void {
+    const payload: ModeTransition = {
+      topic: 'mode.transition',
+      show_id: e.show_id,
+      from: e.from,
+      to: e.to,
+      by_operator_id: e.by_operator_id,
+    };
+    const seq = this.seq.next();
+    this.rings['mode.transition'].push({ ...payload, _seq: seq });
+    this.deps.broadcast(envelope('mode.transition', seq, payload));
+  }
+
   private onResume(req: ResumeRequest): void {
     const since = req.since_seq ?? 0;
     const topicFilter = req.topic_filter;
-    const rings = topicFilter
+    const topics = topicFilter
       ? ([topicFilter] as Array<keyof typeof this.rings>)
       : (Object.keys(this.rings) as Array<keyof typeof this.rings>);
 
-    for (const topic of rings) {
+    for (const topic of topics) {
       const ring = this.rings[topic];
       if (!ring) continue;
+
+      // Gap detection: if since_seq predates the oldest retained item, notify station first
+      const allItems = ring.all();
+      if (allItems.length > 0) {
+        const oldestRetainedSeq = (allItems[0] as { _seq: number })._seq;
+        if (oldestRetainedSeq > since + 1) {
+          this.deps.publishToStation(req.station_id, {
+            type: 'gap',
+            topic,
+            from_seq: since,
+            to_seq: oldestRetainedSeq - 1,
+          });
+        }
+      }
+
       const missed = ring.since(since, (item) => (item as { _seq: number })._seq);
       for (const item of missed) {
         const { _seq, ...payload } = item as { _seq: number } & Record<string, unknown>;
-        this.deps.broadcast(envelope(topic, _seq, payload));
+        this.deps.publishToStation(req.station_id, envelope(topic, _seq, payload));
       }
     }
   }

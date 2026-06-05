@@ -331,3 +331,29 @@ Architect = backstop. B003-024 cleanup task is the discharge of accumulated debt
 
 **Decision: commit checkpoint NOW** despite Forge in_progress on B003-008. Commit only DONE/ACCEPTED stable files + B003-024 expansion. Skip in_progress/ B003-008 state to avoid race.
 
+
+## Tick 9 — 16:49 CEST — 9/23 B003 accepted (39%)
+
+**State at tick:** 22 accepted (13 ShowX-1 + 9 B003), 29 queued, 1 in_progress (B003-008 round 2).
+
+**Forge/Critic since tick 8 (+28 min):**
+
+| Task | Status | Notes |
+|---|---|---|
+| B003-008 | done → changes_requested round 1 | Critic catch (3 issues): (1) `mode.transition` topic ring buffer reserved but unwired; (2) `onResume` floods all stations with replay (should target requester via publishToStation); (3) no `gap` envelope when `since_seq` predates retained ring per protocol_dictionary §7.2 |
+| B003-008 | in_progress round 2 | Forge revising at 14:42Z. SyncBroker.publishSideChannel addressing gap (Forge documented for Architect → Critic enforced into scope) |
+| B003-012 | round 2 accepted | All 6 round-1 fixes verified: useCue cache+clear with UNSET sentinel, useStations null sentinel, useDepartment Object.is assertion, sideChannel.test.ts 6 tests, useGoChannel.test.tsx 3 tests, useHooksSmoke.test.tsx 10 tests, yProviders.ts removed. 38 PWA tests, 691/691 suite ✅ |
+
+**B003 acceptance ratio: 9 accepted (round1=3, round2=6).**
+
+**Architectural observation:** Forge B003-008 round 1 documented `SyncBroker.publishSideChannel` gap as "needs design input" — passed to Architect. Critic instead enforced it into B003-008 scope ("publishToStation needed for resume targeting"). Forge round 2 will implement it. **This is correct emergent behavior:** Critic acts as both quality gate AND Architect-deferred-decision shaper. Architect doesn't intervene unless Forge gets stuck.
+
+**Typecheck baseline: 13 errors** (+1 from tick 8).
+
+New error not in B003-024 scope:
+- `goEventChannel.ts:321 TS2352` — type cast `(GoDispatched | GoRejected | ArmBroadcast | ModeTransition) → Record<string, unknown>` may not overlap. Real type issue from B003-008 round 1.
+
+**Architect call:** WAIT — Forge round 2 is currently rewriting goEventChannel.ts (publishToStation + gap envelope). Likely to fix the TS2352 as side effect. Re-check at tick 10. If TS2352 persists post-B003-008 round 2 accept → add to B003-024.
+
+**Phase 1 progress: 7/10 base tasks accepted** (B003-001/-002/-003/-004/-005/-006/-007). B003-008 in revision, B003-009 + B003-010 queued waiting B003-008 accept. Phase 1 complete = 10/10. ~1 hour realistic.
+
