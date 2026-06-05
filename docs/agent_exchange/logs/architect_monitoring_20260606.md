@@ -357,3 +357,40 @@ New error not in B003-024 scope:
 
 **Phase 1 progress: 7/10 base tasks accepted** (B003-001/-002/-003/-004/-005/-006/-007). B003-008 in revision, B003-009 + B003-010 queued waiting B003-008 accept. Phase 1 complete = 10/10. ~1 hour realistic.
 
+
+## Tick 10 — 17:16 CEST — 🎯 10/23 B003 ACCEPTED (43%)
+
+**State at tick:** 23 accepted (13 ShowX-1 + 10 B003), 28 queued, 1 in_progress (B003-009 cycle 1 TIMED OUT — cycle 2 pending).
+
+**Forge/Critic since tick 9 (+27 min):**
+
+| Task | Status | Notes |
+|---|---|---|
+| B003-008 | round 2 accepted | All 3 round-1 issues fixed: mode.transition wired via show-mode-change EventBus subscription; publishToStation replaces broadcast in onResume; gap envelope `{type:'gap', from_seq, to_seq}` on ring overflow. 62 GO tests, 694/694 suite |
+| B003-009 | queued → in_progress (cycle 1 TIMEOUT 1200s) | Pattern 8 risk REALIZED again. Forge wrote 11 source files + 8 test files (~592 LOC) before timeout: dispatch types/cycleDetect/resolveRouting/payloadDispatch + 6 transports (group/lxRef/midi/msc/osc/wait + webhook). Latest mod 15:09Z; subprocess killed at 15:14Z |
+
+**🎯 MILESTONE 10/23 (43%) — but B003-009 timeout means Phase 1 (B003-001..010) still pending B003-009 + B003-010.**
+
+**B003 acceptance ratio: 10 accepted (round1=3, round2=7).**
+
+Round 1 single-accept rate: 30%. Round 2 after Critic fix: 70%. Critic catching real issues consistently.
+
+**Pattern 8 timeout #2 of session:**
+- B003-002 (800 LOC) — cycle 1 timeout, cycle 2 succeeded (~38 min total wall)
+- B003-009 (600 LOC) — cycle 1 timeout. Cycle 2 expected to fire ~15:18Z, complete ~15:38Z if succeeds
+
+**B003-009 partial work on disk:**
+- 11 source files (dispatch/ + 6 transports/)
+- 8 test files (missing webhook.test.ts)
+- Suggests Forge had ~80% complete at timeout; cycle 2 likely just needs done report + final tests + state.json update
+
+**Architect call: NO RESCUE this tick.** Wait for cycle 2 outcome at tick 11. If cycle 2 ALSO times out → rescue mode (Architect inspects partial output, writes done report manually if all key acceptance criteria covered).
+
+**Typecheck baseline: 13 errors** (unchanged from tick 9).
+
+TS2352 in goEventChannel.ts:321 persisted through B003-008 round 2 — Forge didn't address it during publishToStation rewrite. **B003-024 spec expanded** to include explicit fix guidance (double-cast through `unknown`).
+
+**B003-024 total scope: 13 errors / ~13 acceptance criteria / ~110 LOC estimated.**
+
+**Architectural note: SyncBroker.publishToStation now exists.** Critic enforced what Forge documented as "Architect input needed." This sets precedent — Forge can document gaps in done reports as "needs Architect" and Critic will enforce them into scope when reviewable rather than escalating.
+

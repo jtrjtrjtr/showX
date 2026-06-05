@@ -20,6 +20,7 @@ target_files:
   - "src/modules/cuelist-core/src/ui/CuelistCorePanel.tsx"
   - "src/modules/cuelist-core/src/ui/ShowFilePicker.tsx"
   - "src/modules/cuelist-core/src/ui/StatusStrip.tsx"
+  - "src/modules/cuelist-core/src/go/goEventChannel.ts"
 acceptance_criteria:
   - "`@types/uuid: ^10.0.0` added to `src/modules/cuelist-core/package.json` devDependencies (uuid@10 ships NO .d.ts files; types live in separate package)"
   - "`pnpm install` executed; lockfile updated"
@@ -33,6 +34,7 @@ acceptance_criteria:
   - "`src/modules/cuelist-core/src/ui/CuelistCorePanel.tsx` line 1: `import React from 'react'` is unused (tsconfig has `jsx: react-jsx`, modern JSX runtime — no explicit React import needed). REMOVE the line. Keep any other named imports (`useState`, `useEffect`, etc.) on their own line if present"
   - "`src/modules/cuelist-core/src/ui/ShowFilePicker.tsx` line 1: same — remove unused default `React` import"
   - "`src/modules/cuelist-core/src/ui/StatusStrip.tsx` line 1: same — remove unused default `React` import"
+  - "`src/modules/cuelist-core/src/go/goEventChannel.ts:321` TS2352: type cast `(GoDispatched | GoRejected | ArmBroadcast | ModeTransition) → { _seq: number } & Record<string, unknown>` doesn't sufficiently overlap. **Fix:** convert through `unknown` first: `const { _seq, ...payload } = item as unknown as { _seq: number } & Record<string, unknown>;` — TypeScript accepts the double-cast as intentional. No behavioral change (runtime is still spread destructuring on the same object shape)"
   - "`pnpm --filter @showx/module-cuelist-core typecheck` → exit 0, zero errors"
   - "`pnpm --filter @showx/module-cuelist-core test` → all existing tests still pass (no behavioral change expected; this is pure cleanup)"
   - "`pnpm -r typecheck` → cuelist-core no longer contributes ANY errors to workspace typecheck"

@@ -1,78 +1,68 @@
 ---
 id: "B003-008"
 title: "GO event side-channel publish — pub/sub on /events/<show_id> with idempotency + replay window"
-verdict: "changes_requested"
-review_round: 1
-reviewed_at: "2026-06-07T16:25:00Z"
+verdict: "accepted"
+review_round: 2
+reviewed_at: "2026-06-07T17:05:00Z"
 reviewer: "critic"
 ---
 
 ## Summary
 
-Strong core implementation. GO request → fire → dispatched broadcast, GO rejection paths, idempotency LRU, replay window, authority modes, and the CRDT-guard helper are all correct, well-tested (59/59 pass), and match spec. Three concrete gaps prevent acceptance: the `mode.transition` topic is reserved but unwired; resume replay broadcasts instead of targeting the reconnecting station; and the gap-envelope behaviour required by protocol_dictionary §7.2 and spec test #26 is missing.
+Round 2 cleanly resolves all three round-1 changes. `mode.transition` is now wired via the `show-mode-change` EventBus subscription (B003-004's `transitions.ts:103` is the publisher — verified). Resume replay is now per-station via `publishToStation`, and the gap envelope is emitted when `since_seq` predates the retained window. Test suite grew from 59 → 62 in this module, full suite 694/694 green.
 
-## Acceptance criteria
+## Acceptance criteria — all met
 
 | # | Criterion | Verdict | Evidence |
 |---|---|---|---|
-| 1 | Side-channel envelope `{topic, seq, ts, payload}` | ✅ | `goEventChannel.ts:115-117` `envelope()` helper |
-| 2 | All 7 topics implemented | ⚠️ | go/arm/resume wired; `presence.heartbeat` correctly deferred to shell; **`mode.transition` reserved in rings (`goEventChannel.ts:135`) but no subscribe handler, no emit, no public method** |
-| 3 | `SequenceCounter` monotonic per process | ✅ | `sequence.ts:1-16`; `reset()` doc'd "process restart only" |
-| 4 | `IdempotencyStore` LRU keyed by `(show_id, request_id)`, default 1000, configurable | ✅ | `idempotencyStore.ts:15-33`; `goEventChannel.ts:140` `opts?.idempotencyLruSize ?? 1000` |
-| 5 | Replay window: `client_ts > 5s` → `historic_replay` reject | ✅ | `replayWindow.ts:1-6`; test `replayWindow.test.ts:7-26` |
-| 6 | Transport-agnostic `GoChannelDeps` abstraction | ✅ | `goEventChannel.ts:99-111`; gap to SyncBroker documented in done report |
-| 7 | `authorise(req, cuelist, octx?)` per §8.5 — all 4 modes | ✅ | `authority.ts:23-50`; 12 tests in `authority.test.ts` |
-| 8 | Accepted GO → `cue-fire`; on `cue-complete` → broadcast `go.dispatched` | ✅ | `goEventChannel.ts:208-221` (cue-fire), `:224-244` (cue-complete → broadcast) |
-| 9 | Rejected GO → `publishToStation` (requester only), not broadcast | ✅ | `goEventChannel.ts:280-286`; test `goEventChannel.test.ts:313-321` |
-| 10 | Ring buffer 1024/topic for `resume{since_seq}` per protocol §7.2 | ⚠️ | Ring buffers exist (`goEventChannel.ts:131-136`), `since(seq, getSeq)` filter works (`replayWindow.ts:23-25`), **but `onResume` broadcasts replay to all stations instead of `publishToStation` and never emits `gap` envelope when since_seq predates the retained window** |
-| 11 | GO events never in Y.Doc; `DesignViolationError` guard | ✅ | `goEventChannel.ts:11-32`; test `goEventChannel.test.ts:401-415` directly inspects cue Y.Map |
-| 12 | 30+ vitest tests | ✅ | 59 tests across 4 files |
+| 1 | Side-channel envelope `{topic, seq, ts, payload}` | ✅ | `goEventChannel.ts:124-126` `envelope()` helper, used uniformly |
+| 2 | All 7 topics implemented | ✅ | `go.request` (181-241), `go.dispatched` (243-263), `go.rejected` (327-333), `arm.request` (265-279), `arm.broadcast` (270-278), `mode.transition` (281-292), `presence.heartbeat` correctly deferred to shell |
+| 3 | `SequenceCounter` monotonic per process | ✅ | `sequence.ts:1-16`, doc'd "process restart only" |
+| 4 | `IdempotencyStore` LRU (show_id, request_id), default 1000, configurable | ✅ | `idempotencyStore.ts:15-33`; `goEventChannel.ts:149` `opts?.idempotencyLruSize ?? 1000` |
+| 5 | Replay window 5s | ✅ | `replayWindow.ts:1-6`; `replayWindow.test.ts` 12 tests |
+| 6 | Transport-agnostic `GoChannelDeps` | ✅ | `goEventChannel.ts:108-120` |
+| 7 | `authorise()` all 4 modes | ✅ | `authority.ts:23-50`; 12 authority tests |
+| 8 | Accepted GO → `cue-fire`; `cue-complete` → broadcast `go.dispatched` | ✅ | `goEventChannel.ts:227-241` (cue-fire publish), `:243-263` (cue-complete handler + broadcast) |
+| 9 | Rejected GO → `publishToStation` only | ✅ | `goEventChannel.ts:327-333`; test at `goEventChannel.test.ts:312-321` asserts `broadcasts.length === 0` |
+| 10 | Ring buffer 1024/topic for `resume{since_seq}` | ✅ | `goEventChannel.ts:140-156` (rings with `_seq` decoration); `:294-325` (`onResume` per-station replay + gap detection); see fix detail below |
+| 11 | GO events never in Y.Doc; `DesignViolationError` guard | ✅ | `goEventChannel.ts:11-32`; `goEventChannel.test.ts:380-417` (5 guard tests + structural cue-map check) |
+| 12 | 30+ vitest tests | ✅ | 62 tests across 4 files |
 
-## Required changes
+## Round-1 changes — verification
 
-### 1. Wire `mode.transition` topic (acceptance criterion 2)
+### 1. `mode.transition` wired ✅
 
-Spec §8.2 (data_model.md:915) lists `mode.transition` as a SM → all topic with `ModeTransition` payload, and the acceptance criterion explicitly enumerates it. The ring buffer is reserved (`goEventChannel.ts:135`) but nothing populates it. Pick one:
+- `ModeTransition` interface at `goEventChannel.ts:82-88`.
+- Ring buffer entry at `goEventChannel.ts:144` carries `_seq` decoration.
+- `start()` subscribes to `show-mode-change` EventBus event at `goEventChannel.ts:168-170`.
+- `onModeChange` at `goEventChannel.ts:281-292` builds payload, assigns `seq`, pushes ring entry, broadcasts envelope.
+- Publisher confirmed in `src/modules/cuelist-core/src/mode/transitions.ts:96-103` (B003-004's `ctx?.events.publish(event)`).
+- Tests at `goEventChannel.test.ts:449-502` cover broadcast envelope shape AND ring buffer replay round-trip.
 
-- **Option A (preferred)** — `GoEventChannel.start()` subscribes to a `mode-transition` event on `ctx.events` (emitted by B003-004's `transitions.ts`), allocates a `seq`, pushes to `rings['mode.transition']`, and `broadcast`s an envelope. Requires B003-004 to publish such an event on EventBus, which it currently does not.
-- **Option B** — Expose a public method `broadcastModeTransition(payload: ModeTransition): void` for the shell/CuelistCore adapter to call when B003-004's state machine reports a transition.
+### 2. Resume replay targets requesting station ✅
 
-Either way: add a vitest for the round-trip (transition input → ring entry + broadcast envelope with seq).
+- `ResumeRequest.station_id: string` now required at `goEventChannel.ts:90-95`.
+- `onResume` uses only `this.deps.publishToStation(req.station_id, envelope(...))` at `goEventChannel.ts:322`. No `broadcast()` call remains in this method.
+- Test at `goEventChannel.test.ts:323-356` asserts replay went to `toStation` filtered by `station-replay` and the broadcasts array is unchanged (`expect(ctx.broadcasts.length).toBe(1)` — only the original cue dispatched).
 
-### 2. Resume replay must target the requesting station (acceptance criterion 10)
+### 3. Gap envelope on ring overflow ✅
 
-`onResume` at `goEventChannel.ts:262-278` calls `this.deps.broadcast(envelope(...))` for every replayed message. This floods all connected stations with history every time any one of them reconnects. The protocol intent (§7.2, protocol_dictionary.md:815-823) is per-station replay.
-
-Fix:
-
-- Add `station_id: string` to `ResumeRequest` (`goEventChannel.ts:82-86`).
-- In `onResume`, send replays via `this.deps.publishToStation(req.station_id, envelope(...))` rather than `broadcast`.
-- Update the test at `goEventChannel.test.ts:323-355` to provide `station_id`, assert against `toStation` rather than `broadcasts`.
-
-### 3. Emit `gap` envelope when `since_seq` predates retained window (criterion 10 + spec test #26)
-
-protocol_dictionary §7.2 (line 821): *"Older messages return `{ "type": "gap", "from_seq": 4220, "to_seq": 4231 }` — station should reconcile via Yjs full sync."* Spec test plan #26 mirrors this. Current `onResume` returns whatever is in the ring with no gap signal, so a station that lost ~2000 messages silently receives only the most recent 1024 and never knows it missed the rest.
-
-Fix:
-
-- In `onResume`, for each ring with non-empty contents, compute `oldestRetainedSeq = ring.all()[0]._seq`.
-- If `oldestRetainedSeq > since_seq + 1`, emit a `{ type: 'gap', topic, from_seq: since_seq, to_seq: oldestRetainedSeq - 1 }` envelope to the requesting station *before* the replayed messages.
-- Add a vitest: fill ring beyond capacity, request `since_seq` below the discarded range, assert a `gap` envelope is produced.
-
-## Notes (not blocking)
-
-- **`IdempotencyStore` is FIFO, not LRU.** Eviction uses insertion-order (`idempotencyStore.ts:30-31`), and `has` / `getDispatched` do not refresh recency. For pure dedup-with-bounded-window this is functionally correct and matches the spec intent (and the "rolling LRU of 1000" wording in data_model.md §8.4 is informal). Keep as-is unless a future task surfaces a real LRU need.
-- **`findRecentRequest` returns most-recent-by-cue.** If two stations fire the same cue back-to-back, the second `cue-complete` correlates to whichever request is newer in the store — could mis-attribute `fired_by` in pathological cases. Acceptable for MVP; flag for ShowX-4 once operator registry lands.
-- **Cue-fire event `seq: this.seq.peek()`** (`goEventChannel.ts:210`) reuses the wire counter for the internal EventBus event without incrementing. Consistent reuse but slightly confusing — consider using a dedicated bus seq (or document the convention) in a follow-up.
-- **CRDT guard not invoked from B003-002 mutators.** Done report notes this; the typed setter API in `document/cue.ts` (`setCueLabel`, `setCueDescription`, …) has no generic field-name setter, so the architectural invariant is preserved by closure of the API. The exported guard remains useful for any future generic mutator. Acceptable.
-- **SyncBroker integration gap is correctly flagged** in the done report — separate concern for the CuelistCore.start() adapter task.
+- `onResume` at `goEventChannel.ts:306-317` computes `oldestRetainedSeq = ring.all()[0]._seq`; if `oldestRetainedSeq > since + 1`, emits `{ type: 'gap', topic, from_seq: since, to_seq: oldestRetainedSeq - 1 }` to the requester *before* the replayed messages (correct ordering — station can trigger Yjs full sync first).
+- Constructor accepts `opts.ringCapacity` (default 1024 — production unchanged) at `goEventChannel.ts:148-156`.
+- Test at `goEventChannel.test.ts:504-561` constructs channel with `ringCapacity: 5`, fires 10 cues, requests resume with `since_seq: 0`, asserts the gap envelope is present with correct `topic`, `from_seq: 0`, `to_seq > 0`.
 
 ## Tests
 
-- `pnpm vitest run tests/unit/modules/cuelist-core/go/` → 59/59 pass.
-- 4 files: `idempotencyStore.test.ts` (11), `replayWindow.test.ts` (12), `authority.test.ts` (12), `goEventChannel.test.ts` (24).
-- Coverage of the three gaps above is missing; add when fixing.
+- `pnpm vitest run tests/unit/modules/cuelist-core/go/` → 62/62 pass (idempotencyStore 11, replayWindow 12, authority 12, goEventChannel 27).
+- `pnpm test` (full suite) → 694/694 pass across 64 test files.
+
+## Notes (carried from round 1, non-blocking)
+
+- IdempotencyStore is FIFO-with-bounded-window, not strict LRU. Spec wording was informal; behaviour is correct for dedup. Acceptable.
+- `findRecentRequest` returns most-recent-by-cue; pathological back-to-back same-cue fires from different stations could mis-attribute `fired_by`. Flag for ShowX-4 operator registry.
+- Cue-fire event uses `seq: this.seq.peek()` for the internal bus event without incrementing — consistent reuse but slight overload of the counter semantics. Document or split in a follow-up.
+- Shell-side wiring gap (SyncBroker per-station addressing) remains a separate adapter concern correctly documented in done report comments at `goEventChannel.ts:97-106`.
 
 ## Decision
 
-**changes_requested** — three concrete fixes (wire `mode.transition`, target resume replay to requester, emit `gap` envelope). Spec returned to `queued/`; review round bumped to 1.
+**accepted** — All three round-1 gaps closed with focused changes, no regressions in the 632-test surrounding surface, 62 vitests cover the new behaviour with explicit fixtures (mode.transition round-trip + gap envelope at ringCapacity 5). Spec returned to done lifecycle; review round 2 closes.

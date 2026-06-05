@@ -41,6 +41,10 @@ export interface CueCompleteEvent {
   duration_ms: number;
   success: boolean;
   errors?: string[];
+  /** Populated by B003-009 payload dispatcher */
+  payloads_dispatched?: number;
+  /** Populated by B003-009 payload dispatcher — array of failed payload_ids */
+  payloads_failed?: string[];
 }
 
 export interface CuelistGoEvent {
