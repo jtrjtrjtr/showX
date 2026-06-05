@@ -1,11 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
 import { createSyncClient, type SyncClient } from '../lib/syncClient.js';
+import { createSideChannel } from '../lib/sideChannel.js';
 import { clearSession } from '../lib/auth.js';
 import type { PairedSession, SyncStatus } from '../lib/types.js';
 
 interface Props {
   session: PairedSession;
   onSignOut?: () => void;
+}
+
+interface GoEvent {
+  cue_id: string;
+  timestamp: number;
 }
 
 function useSyncClient(s: PairedSession) {
@@ -29,6 +35,20 @@ const stateIcon: Record<SyncStatus['state'], string> = {
 
 export function PlaceholderShowView({ session, onSignOut }: Props) {
   const { client, status } = useSyncClient(session);
+  const [goEvent, setGoEvent] = useState<GoEvent | null>(null);
+
+  useEffect(() => {
+    const channel = createSideChannel({
+      host: session.host,
+      port: session.port,
+      showId: 'default',
+      token: session.token,
+    });
+    const unsub = channel.onEvent((e) => {
+      if (e.type === 'go') setGoEvent({ cue_id: e.cue_id, timestamp: e.timestamp });
+    });
+    return () => { unsub(); channel.destroy(); };
+  }, [session.host, session.port, session.token]);
 
   async function handleSignOut() {
     await clearSession(session.host);
@@ -52,6 +72,11 @@ export function PlaceholderShowView({ session, onSignOut }: Props) {
         {status.attempts > 0 && ` (attempt ${status.attempts})`}
       </p>
       <p>Doc size: {docSize} keys</p>
+      <p>
+        {goEvent
+          ? `Last GO: cue ${goEvent.cue_id} at ${new Date(goEvent.timestamp).toISOString()}`
+          : 'No GO yet'}
+      </p>
       <button onClick={handleSignOut}>Sign out</button>
       <button onClick={handleForceReconnect} style={{ marginLeft: '0.5rem' }}>Force reconnect</button>
     </div>

@@ -4,19 +4,21 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import * as Y from 'yjs';
 import { createSideChannel } from '../../../pwa/src/lib/sideChannel.js';
 
-// Mock y-websocket before importing syncClient
-const mockProviderInstance = {
-  on: vi.fn(),
-  destroy: vi.fn(),
-  awareness: null,
-};
-const MockWebsocketProvider = vi.fn(() => mockProviderInstance);
+// Hoist BOTH the instance and the constructor so vi.mock factory can reference them
+const mocks = vi.hoisted(() => {
+  const mockProviderInstance = {
+    on: vi.fn(),
+    destroy: vi.fn(),
+    awareness: null,
+  };
+  const MockWebsocketProvider = vi.fn(() => mockProviderInstance);
+  return { mockProviderInstance, MockWebsocketProvider };
+});
 
 vi.mock('y-websocket', () => ({
-  WebsocketProvider: MockWebsocketProvider,
+  WebsocketProvider: mocks.MockWebsocketProvider,
 }));
 
-// Mock y-indexeddb
 vi.mock('y-indexeddb', () => ({
   IndexeddbPersistence: vi.fn(() => ({ destroy: vi.fn() })),
 }));
@@ -80,6 +82,7 @@ describe('createSideChannel', () => {
 });
 
 describe('createSyncClient', () => {
+  const { mockProviderInstance, MockWebsocketProvider } = mocks;
   let statusHandlers: Record<string, ((e: unknown) => void)[]> = {};
 
   beforeEach(() => {
@@ -107,6 +110,7 @@ describe('createSyncClient', () => {
     client.onStatusChange(cb);
 
     const statusCbs = statusHandlers['status'] ?? [];
+    expect(statusCbs.length).toBeGreaterThan(0);
     statusCbs.forEach((h) => h({ status: 'connected' }));
 
     expect(client.status.state).toBe('connected');
@@ -121,6 +125,7 @@ describe('createSyncClient', () => {
     client.onStatusChange(cb);
 
     const statusCbs = statusHandlers['status'] ?? [];
+    expect(statusCbs.length).toBeGreaterThan(0);
     statusCbs.forEach((h) => h({ status: 'disconnected' }));
 
     expect(client.status.state).toBe('reconnecting');
@@ -145,7 +150,7 @@ describe('createSyncClient', () => {
     disconnect();
     vi.advanceTimersByTime(1000);
 
-    // Re-register handler on new provider
+    // Re-register handler on new provider instance after reconnect
     mockProviderInstance.on.mockImplementation((event: string, cb: (e: unknown) => void) => {
       if (!statusHandlers[event]) statusHandlers[event] = [];
       statusHandlers[event].push(cb);

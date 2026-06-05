@@ -19,7 +19,7 @@ export function createSyncClient(opts: {
 }): SyncClient {
   const doc = new Y.Doc();
   const idb = new IndexeddbPersistence(opts.docName, doc);
-  const wsUrl = `ws://${opts.host}:${opts.port}/sync`;
+  const wsUrl = `ws://${opts.host}:${opts.port}/yjs`;
   const status: SyncStatus = { state: 'connecting', attempts: 0 };
   const listeners = new Set<(s: SyncStatus) => void>();
 
@@ -63,8 +63,9 @@ export function createSyncClient(opts: {
         scheduleReconnect();
       }
     });
-    provider.on('connection-error', (e: Error) => {
-      status.lastError = e.message;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (provider as any).on('connection-error', (e: unknown) => {
+      status.lastError = e instanceof Error ? e.message : String(e);
       emit();
     });
   }

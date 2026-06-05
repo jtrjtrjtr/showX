@@ -17,6 +17,8 @@ async function fetchWithTimeout(url: string, ms: number): Promise<Response> {
 
 export async function discoverFromOrigin(): Promise<DiscoveryResult | null> {
   try {
+    // TODO(B001-005-contract): acceptance criterion says /system/health; spec body says /_showx/ping.
+    // Using /_showx/ping pending Architect ratification of canonical path.
     const r = await fetchWithTimeout(`${window.location.origin}/_showx/ping`, 1500);
     if (!r.ok) return null;
     return {
