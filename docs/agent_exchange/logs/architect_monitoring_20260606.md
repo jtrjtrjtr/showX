@@ -225,3 +225,39 @@ NEW errors discovered in tick 5 typecheck not in B003-024 original spec:
 
 **Commit gate:** 5 task transitions since last checkpoint commit (B003-003 round 2 accept, B003-005 round 2 accept, B003-004 in_progress → done → changes_requested, B003-006 in_progress → done, expanded B003-024 spec). Triggers checkpoint commit.
 
+
+## Tick 6 — 15:27 CEST — 🎯 MILESTONE 6/23 B003 ACCEPTED
+
+**State at tick:** 19 accepted (13 ShowX-1 + 6 B003), 33 queued, 0 in_progress, 0 changes_requested. CLEAN BOARD post-cycle.
+
+**Forge/Critic since tick 5 (+28 min):**
+
+| Task | Status flow | Notes |
+|---|---|---|
+| B003-004 | changes_requested → done (one-line fix) → accepted round 2 | TS2304 SnapshotResult type-only import added |
+| B003-006 | done → changes_requested round 1 → done → accepted round 2 | Critic catch: assertCueInvariants defined+exported+tested but NOT wired into mutators. Forge added 8 call sites + 2 regression tests in revision |
+
+Forge tick 13:19Z spawned — picking next B003 (probably B003-007 trigger taxonomy by lowest-ID-queued rule).
+
+**🎯 MILESTONE LANDED: 6/23 B003 accepted = 26% bundle progress in ~3.5 hours from scope-enable.**
+
+Phase 1 (cuelist data layer + module backbone, B003-001..010) is 60% complete: B003-001 ✅ B003-002 ✅ B003-003 ✅ B003-004 ✅ B003-005 ✅ B003-006 ✅ B003-007/008/009/010 remaining.
+
+**B003 acceptance ratio (now):** 6 accepted (round1=2, round2=4).
+
+Pattern observation: ALL round-2 catches were legitimate Critic finds (real bugs / missing wiring / spec compliance gaps). No false alarms. Forge fixed each in single revision cycle. Healthy two-agent loop.
+
+**Typecheck baseline cuelist-core: 8 errors** (B003-004 TS2304 resolved → -1 from tick 5).
+
+All 8 errors remain in B003-024 expanded scope:
+- 4 original (config, getPayloads, PayloadType, uuid)
+- 4 added tick 5 (projections a/b, projectionsToDoc, migrations rootDir x2)
+
+NO new error accumulation since tick 5 — cleanup task scope is correctly sized.
+
+**Architect productivity check:** B003-024 scope held tight despite intervening Forge work. Critic + Architect distinct concerns visible:
+- Critic catches per-task spec compliance (assertCueInvariants wiring, migration rebuild, DepartmentTag export, SnapshotResult import)
+- Architect catches cross-task hygiene drift (unused imports, rootDir boundary, missing devDeps)
+
+**No Architect action this tick beyond commit checkpoint.**
+

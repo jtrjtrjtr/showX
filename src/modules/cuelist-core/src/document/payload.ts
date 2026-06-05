@@ -1,8 +1,9 @@
 import * as Y from 'yjs';
-import type { Payload, PayloadType, OscPayload, WebhookPayload, WaitPayload, MscPayload, LxRefPayload, MidiPayload, GroupPayload } from 'showx-shared';
+import type { Cue, Payload, PayloadType, OscPayload, WebhookPayload, WaitPayload, MscPayload, LxRefPayload, MidiPayload, GroupPayload } from 'showx-shared';
 import { uuidv7 } from './uuid.js';
 import { getCuelist, getCues } from './cuelist.js';
 import { assertEditAllowed } from '../mode/lockGuards.js';
+import { assertCueInvariants } from '../cue/invariants.js';
 
 // ── Validation ────────────────────────────────────────────────────────────────
 
@@ -99,6 +100,10 @@ export function validatePayloadMap(m: Y.Map<unknown>): void {
   validatePayload(plain as unknown as Partial<Omit<Payload, 'id'>>);
 }
 
+function assertCueMapValid(cueMap: Y.Map<unknown>): void {
+  assertCueInvariants(cueMap.toJSON() as Cue);
+}
+
 // ── Payload accessors ─────────────────────────────────────────────────────────
 
 export function getPayloads(cueMap: Y.Map<unknown>): Y.Array<Y.Map<unknown>> {
@@ -140,6 +145,7 @@ export function addPayload(
   const payloads = getPayloads(cue);
   const m = makePayloadMap(payload);
   doc.transact(() => payloads.push([m]));
+  assertCueMapValid(cue);
   return m.get('id') as string;
 }
 
@@ -159,6 +165,7 @@ export function removePayload(
   const idx = arr.findIndex((p) => p.get('id') === payloadId);
   if (idx === -1) throw new Error(`payload ${payloadId} not found`);
   doc.transact(() => payloads.delete(idx, 1));
+  assertCueMapValid(cue);
 }
 
 export function updatePayload(
@@ -188,6 +195,7 @@ export function updatePayload(
     // Re-validate integrated map (m.get() works here since map is in doc).
     validatePayloadMap(payload);
   });
+  assertCueMapValid(cue);
 }
 
 // ── Department inference (Q4 MVP heuristic) ───────────────────────────────────

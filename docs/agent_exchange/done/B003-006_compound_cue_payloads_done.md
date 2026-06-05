@@ -1,70 +1,72 @@
 ---
-id: "B003-006"
-title: "Compound cue model — multi-department payload helpers + invariants"
+task_id: "B003-006"
+round: 2
 status: "done"
-round: 1
+forge_completed_at: "2026-06-06T20:18:00Z"
 ---
 
-## Summary
+# B003-006 — Compound cue model: revision round 2
 
-Implemented compound cue helpers, payload grouping utilities, and defensive invariants across 3 source files and 3 test files. All 31 new tests pass; full cuelist-core test suite (262 tests) passes with no regressions.
+## Round 2 summary
+
+Critic round-1 verdict: `changes_requested` — single issue: `assertCueInvariants` defined and tested but not called by any mutator.
+
+**Fix applied**: wired `assertCueInvariants` into all mutator functions that modify cue structure or payload content.
+
+## Critic round-1 issue addressed
+
+**Issue**: acceptance criterion #8 — "called by mutator API as defensive check" — was not met. Function was defined and exported but `grep -r assertCueInvariants src/` found zero call sites.
+
+**Fix**: Added a private `assertCueMapValid(cueMap)` helper in each file. Wired after every `doc.transact()` in:
+
+- `src/modules/cuelist-core/src/document/cue.ts` — `addCue`, `insertCueAfter`, `setCueDepartments`
+- `src/modules/cuelist-core/src/document/payload.ts` — `addPayload`, `removePayload`, `updatePayload`
+- `src/modules/cuelist-core/src/cue/compoundCue.ts` — `makeCompoundCue` (explicit lookup post-transact; also transitively covered since it delegates to `addCue`+`addPayload`), `splitCompoundCue` (per new cue via captured `newCueMaps` array), `mergeCues` (on merged cue via `newCueMapRef` closure variable)
+- `src/modules/cuelist-core/src/cue/payloadOps.ts` — `reorderPayloads` (`addPayloadWithDepartmentTag` is covered via `addPayload` delegation)
+
+No circular import issues: `invariants.ts` imports only from `showx-shared`.
 
 ## Files changed
 
-### New source files
-- `src/modules/cuelist-core/src/cue/invariants.ts` — `InvariantError`, `assertCueInvariants`
-- `src/modules/cuelist-core/src/cue/payloadOps.ts` — `payloadsByDepartment`, `addPayloadWithDepartmentTag`, `reorderPayloads`
-- `src/modules/cuelist-core/src/cue/compoundCue.ts` — `MakeCompoundCueOpts`, `makeCompoundCue`, `isCompound`, `splitCompoundCue`, `mergeCues`
-
-### New test files
-- `tests/unit/modules/cuelist-core/cue/invariants.test.ts` — 7 tests (covers tests 20-24 + 2 extra)
-- `tests/unit/modules/cuelist-core/cue/payloadOps.test.ts` — 8 tests (covers tests 12-19)
-- `tests/unit/modules/cuelist-core/cue/compoundCue.test.ts` — 16 tests (covers tests 1-11, 25-29)
+- `src/modules/cuelist-core/src/document/cue.ts` — add `Cue` type import + `assertCueInvariants` import + `assertCueMapValid` helper; wire into `addCue` / `insertCueAfter` / `setCueDepartments`
+- `src/modules/cuelist-core/src/document/payload.ts` — add `Cue` type import + `assertCueInvariants` import + `assertCueMapValid` helper; wire into `addPayload` / `removePayload` / `updatePayload`
+- `src/modules/cuelist-core/src/cue/compoundCue.ts` — add `assertCueInvariants` import + `assertCueMapValid` helper; wire into `makeCompoundCue` / `splitCompoundCue` / `mergeCues`; capture `newCueMaps[]` for split, `newCueMapRef` for merge
+- `src/modules/cuelist-core/src/cue/payloadOps.ts` — add `assertCueInvariants` import + `assertCueMapValid` helper; wire into `reorderPayloads`
+- `tests/unit/modules/cuelist-core/document/cue.test.ts` — add `InvariantError` import; add regression test: `setCueDepartments(['LX', 'LX'])` throws `InvariantError`
+- `tests/unit/modules/cuelist-core/document/payload.test.ts` — add `InvariantError` import; add regression test: CRDT-merge duplicate-ID scenario causes next `addPayload` to throw `InvariantError`
 
 ## Tests run
 
 ```
-✓ tests/unit/modules/cuelist-core/cue/invariants.test.ts     7 tests
-✓ tests/unit/modules/cuelist-core/cue/payloadOps.test.ts     8 tests
-✓ tests/unit/modules/cuelist-core/cue/compoundCue.test.ts   16 tests
-─────────────────────────────────────────────────────────────
-Total new: 31 tests (all pass)
-
-Full suite: 262 tests, 20 files, 0 failures
+$ pnpm vitest run tests/unit/modules/cuelist-core
+ Test Files  20 passed (20)
+      Tests  264 passed (264)
+   Duration  1.35s
 ```
 
-## Decisions within task scope
+262 original tests + 2 new regression tests. Zero regressions.
 
-### D1: Yjs prelim-map guard pattern
-`makeCueMap()` returns a prelim Y.Map whose nested Y.Array (`payloads`) is inaccessible via `.get()` until the parent is pushed into a Y.Doc. In `splitCompoundCue` and `mergeCues`, I push the new cueMap to the cues Y.Array **first** (integrating it), then access `cueMap.get('payloads')` for payload insertion. This mirrors the existing `addPayload` pattern in `payload.ts`.
+## Regression tests added
 
-### D2: Sort-key assignment in splitCompoundCue
-New cues from a split are spread evenly in the range `[origSk, nextSk)` where `nextSk` is the sort_key of the next sibling in display order (or `origSk + 1000 * N` if no sibling). This keeps all split cues between their predecessor and successor without colliding with other cues.
+**Test 1** (`cue.test.ts` — setCueDepartments invariant wiring):
+- Calls `setCueDepartments(doc, cuelistId, id, ['LX', 'LX'], 'op1')`
+- Expects `InvariantError`
+- Before fix: call succeeds silently (no dup-dept check in the mutator itself)
+- After fix: `assertCueMapValid` fires after transact → `assertCueInvariants` finds duplicate → throws
 
-### D3: Unassigned payloads in splitCompoundCue
-Payloads not tagged with a canonical department go to partition[0] (first listed in the partitions argument). This is documented in the function JSDoc.
+**Test 2** (`payload.test.ts` — CRDT duplicate-ID simulation):
+- Adds a normal payload via API, then directly injects a Y.Map with the same ID (simulates CRDT merge)
+- Next `addPayload` call fires `assertCueMapValid` → detects duplicate ID → throws `InvariantError`
 
-### D4: Payload id regeneration on split/merge
-Split and merge create new payload Y.Maps via `makePayloadMap`, which generates new UUIDs. Original payload ids are NOT preserved — this matches the spec note "payload ids regenerated" in the round-trip test (test 11) and is expected behavior.
+## Decisions made within task scope
 
-### D5: reorderPayloads id preservation
-Contrary to split/merge, `reorderPayloads` preserves original payload ids by overriding the id field after `makePayloadMap` generates a new one (`newMap.set('id', originalId)`). The semantics are different: reorder is a position change on existing payloads, not destruction+recreation.
-
-### D6: assertCueInvariants typing
-`Cue.payloads` is typed as `Payload[]` (discriminated union with known `PayloadType` values). The forward-compat check uses `p.type as string` to bypass TypeScript's narrow union type and check for `unknown_*` prefixed types at runtime.
+- `removePayload` wired for belt-and-suspenders — the cue may already be corrupt before removal.
+- `makeCompoundCue` explicit assertion is intentionally redundant (also covered transitively via `addCue`+`addPayload`) but meets Critic's explicit ask to wire all `compoundCue.ts` functions.
+- `splitCompoundCue` captures cue maps in `newCueMaps[]` array before the transact closure ends — cleaner than post-transact ID lookup.
+- `mergeCues` captures `newCueMapRef` inside the transact closure — mirrors existing `newCueId` pattern.
 
 ## Notes for Critic
 
-1. **Yjs prelim-map pattern**: Verify that `cues.push([cueMap])` inside `doc.transact()` correctly integrates the cueMap and its nested Y.Array, making `cueMap.get('payloads')` accessible within the same transaction. Tests confirm this works with yjs@13.6.31.
-
-2. **splitCompoundCue removes original before push**: The `cues.delete(idx, 1)` call happens before the loop that pushes new cues. New cues are pushed to the END of the Y.Array (not inserted at original raw position). Display order is determined by sort_key, not Y.Array position — `getCuesSorted()` is authoritative for display. Tests 5 and 29 verify the sort order is preserved correctly.
-
-3. **mergeCues sort_key**: Merged cue inherits `firstSk` (sort_key of the first original cue by display order). After all originals are deleted, the new cue is pushed to the end of the Y.Array but appears at the correct display position via sort_key. Test 10 verifies this.
-
-4. **reorderPayloads validation**: Both set-equality AND length equality are checked (`existingIds.size !== newSet.size || newOrder.length !== arr.length`). This catches both duplicate ids in newOrder AND missing/extra ids.
-
-5. **payloadsByDepartment 'unassigned' key**: The key type is `DepartmentTag | 'unassigned'`. The string `'unassigned'` is not a canonical department (not in `CANONICAL_DEPARTMENTS`) so it won't conflict with real dept tags.
-
-6. **TypeScript strict-mode typecheck**: Tests ran through vitest/esbuild (syntax correctness verified). Full `tsc --noEmit` requires shell approval from Critic environment. Key casting points use `as unknown as` double-casts for discriminated union payload types; these are unavoidable given TypeScript's limitations with `Omit<UnionType, 'id'>` in loop bodies.
-
-7. **Door slam fixture**: Tests 25-29 reproduce the data_model.md §4.3 example exactly (dept=['SX','LX'], OSC tagged 'SX', LXRef tagged 'LX'). Integration with B003-005 `visibleCues` + `highlightedPayloads` + `dimmedPayloads` verified in tests 26-29.
+- Verify `grep -r assertCueInvariants src/` now shows call sites in all 4 files.
+- All 10 originally-passing acceptance criteria remain met; round 1 code is unchanged.
+- This round addresses criterion #8 only. Round 2 → acceptance expected.

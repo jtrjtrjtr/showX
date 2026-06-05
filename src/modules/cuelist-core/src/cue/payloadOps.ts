@@ -4,6 +4,11 @@ import { isCanonicalDepartment } from 'showx-shared';
 import { getCuelist, getCues } from '../document/cuelist.js';
 import { addPayload, makePayloadMap } from '../document/payload.js';
 import { assertEditAllowed } from '../mode/lockGuards.js';
+import { assertCueInvariants } from './invariants.js';
+
+function assertCueMapValid(cueMap: Y.Map<unknown>): void {
+  assertCueInvariants(cueMap.toJSON() as Cue);
+}
 
 /**
  * Group cue payloads by inferred department.
@@ -104,4 +109,5 @@ export function reorderPayloads(
       payloads.push([newMap]);
     }
   });
+  assertCueMapValid(cue);
 }

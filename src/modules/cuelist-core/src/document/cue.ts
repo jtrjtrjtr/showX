@@ -1,9 +1,10 @@
 import * as Y from 'yjs';
-import type { DepartmentTag, Trigger } from 'showx-shared';
+import type { Cue, DepartmentTag, Trigger } from 'showx-shared';
 import { uuidv7 } from './uuid.js';
 import { getCuelist, getCues } from './cuelist.js';
 import { ValidationError, getPayloads } from './payload.js';
 import { assertEditAllowed } from '../mode/lockGuards.js';
+import { assertCueInvariants } from '../cue/invariants.js';
 
 // ── Cue factory ───────────────────────────────────────────────────────────────
 
@@ -72,6 +73,10 @@ function touchModified(cue: Y.Map<unknown>, modifiedBy: string): void {
   cue.set('modified_by', modifiedBy);
 }
 
+function assertCueMapValid(cueMap: Y.Map<unknown>): void {
+  assertCueInvariants(cueMap.toJSON() as Cue);
+}
+
 export function addCue(doc: Y.Doc, cuelistId: string, opts: MakeCueOpts): string {
   assertEditAllowed(doc, 'structure');
   const cuelist = getCuelist(doc, cuelistId);
@@ -86,6 +91,7 @@ export function addCue(doc: Y.Doc, cuelistId: string, opts: MakeCueOpts): string
   cue.set('sort_key', sk);
 
   doc.transact(() => cues.push([cue]));
+  assertCueMapValid(cue);
   return cue.get('id') as string;
 }
 
@@ -125,6 +131,7 @@ export function insertCueAfter(
   cue.set('sort_key', sk);
 
   doc.transact(() => cues.insert(insertIdx, [cue]));
+  assertCueMapValid(cue);
   return cue.get('id') as string;
 }
 
@@ -210,6 +217,7 @@ export function setCueDepartments(
     cue.set('department', departments.slice());
     touchModified(cue, modifiedBy);
   });
+  assertCueMapValid(cue);
 }
 
 export function setCueTrigger(

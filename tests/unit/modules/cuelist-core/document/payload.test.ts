@@ -15,6 +15,7 @@ import {
   inferPayloadDepartment,
   getPayloads,
 } from '../../../../../src/modules/cuelist-core/src/document/payload.js';
+import { InvariantError } from '../../../../../src/modules/cuelist-core/src/cue/invariants.js';
 
 function makeDocWithCue() {
   const doc = initShowDoc({ title: 'Test', venue: null, date: null, created_by: 'op1' });
@@ -256,6 +257,36 @@ describe('updatePayload type immutability', () => {
     const cue = getCues(getCuelist(doc, cuelistId)!).toArray().find((c) => c.get('id') === cueId)!;
     const payload = getPayloads(cue).toArray().find((p) => p.get('id') === payloadId)!;
     expect(payload.get('address')).toBe('/cue/new');
+  });
+});
+
+describe('invariant wiring in addPayload', () => {
+  it('detects pre-existing duplicate payload id via invariant check (CRDT merge simulation)', () => {
+    const { doc, cuelistId, cueId } = makeDocWithCue();
+
+    // Add a normal payload via API
+    const existingId = addPayload(doc, cuelistId, cueId, {
+      type: 'osc', device_id: 'dev', address: '/cue/1', args: [], tag: null, note: '',
+    });
+
+    // Simulate a CRDT merge that injects a payload with a duplicate ID directly
+    const cue = getCues(getCuelist(doc, cuelistId)!).toArray().find(c => c.get('id') === cueId)!;
+    const dupMap = new Y.Map<unknown>();
+    dupMap.set('id', existingId); // duplicate
+    dupMap.set('type', 'osc');
+    dupMap.set('tag', null);
+    dupMap.set('note', '');
+    dupMap.set('device_id', 'dev2');
+    dupMap.set('address', '/cue/2');
+    dupMap.set('args', []);
+    doc.transact(() => getPayloads(cue).push([dupMap]));
+
+    // Next mutator call should catch the bad state via assertCueMapValid
+    expect(() =>
+      addPayload(doc, cuelistId, cueId, {
+        type: 'osc', device_id: 'dev3', address: '/cue/3', args: [], tag: null, note: '',
+      })
+    ).toThrow(InvariantError);
   });
 });
 

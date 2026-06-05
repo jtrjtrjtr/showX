@@ -18,6 +18,7 @@ import {
   setCueNotes,
 } from '../../../../../src/modules/cuelist-core/src/document/cue.js';
 import { ValidationError } from '../../../../../src/modules/cuelist-core/src/document/payload.js';
+import { InvariantError } from '../../../../../src/modules/cuelist-core/src/cue/invariants.js';
 
 function makeDocWithCuelist() {
   const doc = initShowDoc({ title: 'Test', venue: null, date: null, created_by: 'op1' });
@@ -88,6 +89,12 @@ describe('setCueDepartments', () => {
     const cuelist = getCuelist(doc, cuelistId)!;
     const cue = getCues(cuelist).toArray().find((c) => c.get('id') === id)!;
     expect(cue.get('department')).toEqual(['LX', 'SX']);
+  });
+
+  it('rejects duplicate departments via invariant wiring (regression: wires assertCueInvariants)', () => {
+    const { doc, cuelistId } = makeDocWithCuelist();
+    const id = addCue(doc, cuelistId, { label: 'Q1', department: ['LX'], created_by: 'op1' });
+    expect(() => setCueDepartments(doc, cuelistId, id, ['LX', 'LX'], 'op1')).toThrow(InvariantError);
   });
 });
 

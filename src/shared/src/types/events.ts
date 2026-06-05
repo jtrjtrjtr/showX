@@ -1,4 +1,6 @@
 import type { CueCatalog } from './cue.js';
+import type { Payload } from './payload.js';
+import type { DepartmentTag } from './department.js';
 import type { HealthStatus } from './services.js';
 import type { ModuleState } from './module.js';
 import type { ShowMode } from './show.js';
@@ -9,6 +11,59 @@ export interface CueFiredEvent {
   cueId: string;
   firedAt: number;
   origin: string;
+}
+
+// ── Cuelist Core canonical events (protocol_dictionary.md §2.2) ───────────────
+
+export interface CueFireEvent {
+  type: 'cue-fire';
+  seq: number;
+  ts: number;
+  source: string;
+  show_id: string;
+  cuelist_id: string;
+  cue_id: string;
+  cue_label: string;
+  departments: DepartmentTag[];
+  payloads?: Payload[];
+  fired_by: string;
+  trigger_mode: 'manual' | 'auto_follow' | 'auto_continue' | 'timecode';
+}
+
+export interface CueCompleteEvent {
+  type: 'cue-complete';
+  seq: number;
+  ts: number;
+  source: string;
+  show_id: string;
+  cuelist_id: string;
+  cue_id: string;
+  duration_ms: number;
+  success: boolean;
+  errors?: string[];
+}
+
+export interface CuelistGoEvent {
+  type: 'cuelist-go';
+  seq: number;
+  ts: number;
+  source: string;
+  show_id: string;
+  cuelist_id: string;
+  next_cue_id: string;
+  by_operator_id: string;
+}
+
+export interface SystemErrorEvent {
+  type: 'system-error';
+  seq: number;
+  ts: number;
+  source: string;
+  module: string;
+  severity: 'warn' | 'error' | 'fatal';
+  code: string;
+  message: string;
+  context?: Record<string, unknown>;
 }
 
 export interface CueCatalogUpdatedEvent {

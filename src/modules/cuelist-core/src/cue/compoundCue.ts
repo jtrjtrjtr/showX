@@ -7,6 +7,11 @@ import { addCue } from '../document/cue.js';
 import { addPayload, makePayloadMap } from '../document/payload.js';
 import { assertEditAllowed } from '../mode/lockGuards.js';
 import { payloadsByDepartment } from './payloadOps.js';
+import { assertCueInvariants } from './invariants.js';
+
+function assertCueMapValid(cueMap: Y.Map<unknown>): void {
+  assertCueInvariants(cueMap.toJSON() as Cue);
+}
 
 export interface MakeCompoundCueOpts {
   label: string;
@@ -51,6 +56,8 @@ export function makeCompoundCue(
         : (p.tag ?? null);
     addPayload(doc, cuelistId, cueId, { ...payloadRest, tag });
   }
+  const finalCueMap = getCues(getCuelist(doc, cuelistId)!).toArray().find(c => c.get('id') === cueId);
+  if (finalCueMap) assertCueMapValid(finalCueMap);
   return cueId;
 }
 
@@ -105,6 +112,7 @@ export function splitCompoundCue(
   const grouped = payloadsByDepartment(origJson);
   const unassigned = grouped.get('unassigned') ?? [];
   const newCueIds: string[] = [];
+  const newCueMaps: Y.Map<unknown>[] = [];
 
   doc.transact(() => {
     // Remove original before inserting new cues.
@@ -129,6 +137,7 @@ export function splitCompoundCue(
       // Integrate cueMap into the doc FIRST — prelim Y.Maps cannot have their nested
       // Y.Array children accessed via .get() until the parent is pushed into a Y.Doc.
       cues.push([cueMap]);
+      newCueMaps.push(cueMap);
 
       const payloadsArr = cueMap.get('payloads') as Y.Array<Y.Map<unknown>>;
       for (const p of payloadsForCue) {
@@ -141,6 +150,9 @@ export function splitCompoundCue(
     }
   });
 
+  for (const cm of newCueMaps) {
+    assertCueMapValid(cm);
+  }
   return newCueIds;
 }
 
@@ -189,6 +201,7 @@ export function mergeCues(
     .join('; ');
 
   let newCueId = '';
+  let newCueMapRef: Y.Map<unknown> | undefined;
 
   doc.transact(() => {
     // Delete originals in reverse rawIdx order to avoid index drift.
@@ -216,7 +229,9 @@ export function mergeCues(
     }
 
     newCueId = cueMap.get('id') as string;
+    newCueMapRef = cueMap;
   });
 
+  if (newCueMapRef) assertCueMapValid(newCueMapRef);
   return newCueId;
 }
