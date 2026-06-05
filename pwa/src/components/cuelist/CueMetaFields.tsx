@@ -52,6 +52,7 @@ export function CueMetaFields({ cue, cuelistId, disabled }: CueMetaFieldsProps) 
         <label style={labelStyle}>
           Label
           <input
+            data-testid="cue-label-input"
             type="text"
             value={cue.label}
             onChange={(e) => setCueLabel(conn.doc, cuelistId, cue.id, e.target.value, modifiedBy)}

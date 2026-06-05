@@ -9,17 +9,17 @@ interface Props {
 
 const DEPARTMENTS = ['LX', 'SND', 'VID', 'SM'];
 
-type Phase = 'idle' | 'claiming' | 'waiting';
+type Phase = 'idle' | 'claiming';
 
 export function PairingView({ host, onPaired }: Props) {
   const [pin, setPin] = useState('');
   const [displayName, setDisplayName] = useState('');
+  const [role, setRole] = useState<'sm' | 'operator'>('operator');
   const [ownedDepts, setOwnedDepts] = useState<string[]>([]);
   const [watchedDepts, setWatchedDepts] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [phase, setPhase] = useState<Phase>('idle');
-
-  const offerId = new URLSearchParams(window.location.search).get('offer') ?? '';
+  const [pairedDevice, setPairedDevice] = useState<{ device_id: string; token: string } | null>(null);
 
   function toggleDept(list: string[], setList: (v: string[]) => void, dept: string) {
     setList(list.includes(dept) ? list.filter((d) => d !== dept) : [...list, dept]);
@@ -34,130 +34,135 @@ export function PairingView({ host, onPaired }: Props) {
     try {
       const client_pubkey = await getOrCreateClientPubkey();
 
-      const claimR = await fetch(`http://${host.host}:${host.port}/pairing/claim`, {
+      const owned_departments = role === 'sm' ? ['SM', ...ownedDepts] : ownedDepts;
+
+      const claimR = await fetch(`http://${host.host}:${host.port}/api/pairing/claim`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          offer_id: offerId,
           pin,
           display_name: displayName,
-          owned_departments: ownedDepts,
+          owned_departments,
           watched_departments: watchedDepts,
           client_pubkey,
         }),
       });
 
       if (!claimR.ok) {
-        setError(claimR.status === 401 ? 'PIN invalid or expired' : 'Pairing failed');
+        const body = (await claimR.json().catch(() => ({}))) as { error?: string };
+        setError(claimR.status === 401 ? 'PIN invalid or expired' : (body.error ?? 'Pairing failed'));
         setPhase('idle');
         return;
       }
 
-      const { request_id } = (await claimR.json()) as { request_id: string };
-      setPhase('waiting');
+      const { token, device } = (await claimR.json()) as { token: string; device: { device_id: string } };
 
-      // Long-poll for SM approval — check immediately, then every 1s, give up after 120s
-      const deadline = Date.now() + 120_000;
-      while (Date.now() < deadline) {
-        const statusR = await fetch(
-          `http://${host.host}:${host.port}/pairing/${request_id}/status`,
-        );
-        if (statusR.ok) {
-          const body = (await statusR.json()) as {
-            status: string;
-            token?: string;
-            device?: { device_id: string };
-          };
+      const session: PairedSession = {
+        host: host.host,
+        port: host.port,
+        token,
+        display_name: displayName,
+        device_id: device.device_id,
+        paired_at: Date.now(),
+      };
 
-          if (body.status === 'allowed' && body.token && body.device) {
-            const session: PairedSession = {
-              host: host.host,
-              port: host.port,
-              token: body.token,
-              display_name: displayName,
-              device_id: body.device.device_id,
-              paired_at: Date.now(),
-            };
-            await saveSession(session);
-            onPaired(session);
-            return;
-          }
+      // Expose token for test helpers to read from localStorage
+      localStorage.setItem('showx_pair_token', token);
 
-          if (body.status === 'refused') {
-            setError('Pairing refused by SM');
-            setPhase('idle');
-            return;
-          }
-        }
-        await new Promise<void>((res) => setTimeout(res, 1_000));
-      }
-
-      setError('Pairing timed out (SM did not respond in 120s)');
-      setPhase('idle');
+      await saveSession(session);
+      setPairedDevice({ device_id: device.device_id, token });
+      onPaired(session);
     } catch {
       setError('Network error');
       setPhase('idle');
     }
   }
 
+  if (pairedDevice) {
+    return (
+      <div data-testid="paired-success" className="pairing-view">
+        <p>Paired successfully!</p>
+        <span
+          data-testid="station-id"
+          data-id={pairedDevice.device_id}
+          style={{ display: 'none' }}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="pairing-view">
       <h2>Pair with {host.host}:{host.port}</h2>
 
-      {phase === 'waiting' && <p>Waiting for SM approval…</p>}
-
-      {phase !== 'waiting' && (
-        <form onSubmit={handleSubmit}>
-          <div>
-            <label>Display name</label>
-            <input
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
-              placeholder="e.g. LX Op"
-              required
-            />
-          </div>
-          <div>
-            <label>PIN</label>
-            <input
-              value={pin}
-              onChange={(e) => setPin(e.target.value)}
-              placeholder="6-digit PIN"
-              maxLength={6}
-              required
-            />
-          </div>
-          <div>
-            <span>Owned departments</span>
-            {DEPARTMENTS.map((d) => (
-              <label key={`own-${d}`}>
-                <input
-                  type="checkbox"
-                  checked={ownedDepts.includes(d)}
-                  onChange={() => toggleDept(ownedDepts, setOwnedDepts, d)}
-                />
-                {d}
-              </label>
-            ))}
-          </div>
-          <div>
-            <span>Watched departments</span>
-            {DEPARTMENTS.map((d) => (
-              <label key={`watch-${d}`}>
-                <input
-                  type="checkbox"
-                  checked={watchedDepts.includes(d)}
-                  onChange={() => toggleDept(watchedDepts, setWatchedDepts, d)}
-                />
-                {d}
-              </label>
-            ))}
-          </div>
-          <button type="submit" disabled={phase === 'claiming'}>
-            {phase === 'claiming' ? 'Claiming…' : 'Pair'}
-          </button>
-        </form>
-      )}
+      <form onSubmit={handleSubmit}>
+        <div>
+          <label>Display name</label>
+          <input
+            data-testid="device-name-input"
+            value={displayName}
+            onChange={(e) => setDisplayName(e.target.value)}
+            placeholder="e.g. LX Op"
+            required
+          />
+        </div>
+        <div>
+          <label>PIN</label>
+          <input
+            data-testid="pin-input"
+            value={pin}
+            onChange={(e) => setPin(e.target.value)}
+            placeholder="6-digit PIN"
+            maxLength={6}
+            required
+          />
+        </div>
+        <div>
+          <label>Role</label>
+          <select
+            data-testid="role-select"
+            value={role}
+            onChange={(e) => setRole(e.target.value as 'sm' | 'operator')}
+          >
+            <option value="sm">Stage Manager</option>
+            <option value="operator">Operator</option>
+          </select>
+        </div>
+        <div>
+          <span>Owned departments</span>
+          {DEPARTMENTS.map((d) => (
+            <label key={`own-${d}`}>
+              <input
+                data-testid={`dept-chip-${d}`}
+                type="checkbox"
+                checked={ownedDepts.includes(d)}
+                onChange={() => toggleDept(ownedDepts, setOwnedDepts, d)}
+              />
+              {d}
+            </label>
+          ))}
+        </div>
+        <div>
+          <span>Watched departments</span>
+          {DEPARTMENTS.map((d) => (
+            <label key={`watch-${d}`}>
+              <input
+                type="checkbox"
+                checked={watchedDepts.includes(d)}
+                onChange={() => toggleDept(watchedDepts, setWatchedDepts, d)}
+              />
+              {d}
+            </label>
+          ))}
+        </div>
+        <button
+          data-testid="submit-pairing"
+          type="submit"
+          disabled={phase === 'claiming'}
+        >
+          {phase === 'claiming' ? 'Pairing…' : 'Pair'}
+        </button>
+      </form>
 
       {error && <p style={{ color: '#f66' }}>{error}</p>}
     </div>

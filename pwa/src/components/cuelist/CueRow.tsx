@@ -22,10 +22,15 @@ export function CueRow({ cue, isPlayhead, isArmed, isFiring, onSelect, stations,
   if (isFiring) bg = tokens.color.green;
   else if (isPlayhead) bg = tokens.color.teal_dim;
 
+  const isCompound = cue.department.length > 1;
+  const deptTag = cue.department.length === 1 ? cue.department[0] : undefined;
+
   return (
     <div
       role="row"
       aria-selected={isPlayhead}
+      data-testid="cue-row"
+      data-cue-type={isCompound ? 'compound' : deptTag}
       onClick={onSelect}
       style={{
         position: 'relative',
@@ -43,8 +48,20 @@ export function CueRow({ cue, isPlayhead, isArmed, isFiring, onSelect, stations,
     >
       <PlayheadIndicator visible={isPlayhead} />
       <DepartmentSideBar departments={cue.department} />
-      <div style={{ fontSize: 24, fontWeight: 700, fontFamily: tokens.font.ui }}>
+      <div
+        data-testid="cue-label"
+        style={{ fontSize: 24, fontWeight: 700, fontFamily: tokens.font.ui }}
+      >
         {cue.label}
+        {isFiring && (
+          <span
+            data-testid="cue-fire-animation"
+            aria-label="Firing"
+            style={{ marginLeft: 8, fontSize: 14, color: tokens.color.cream }}
+          >
+            ●
+          </span>
+        )}
       </div>
       <div>
         <div style={{ fontSize: 16, color: tokens.color.ink }}>{cue.description}</div>
@@ -53,8 +70,13 @@ export function CueRow({ cue, isPlayhead, isArmed, isFiring, onSelect, stations,
             {cue.standby_note}
           </div>
         )}
-        <div style={{ fontSize: 12, color: tokens.color.gray_700, marginTop: 2 }}>
-          {cue.payloads.length > 0 && `${cue.payloads.length} payload${cue.payloads.length > 1 ? 's' : ''}`}
+        <div
+          data-testid="payload-summary"
+          style={{ fontSize: 12, color: tokens.color.gray_700, marginTop: 2 }}
+        >
+          {cue.payloads.length > 0
+            ? `${cue.payloads.length} payload${cue.payloads.length > 1 ? 's' : ''} — ${cue.payloads.map((p) => ('cue_number' in p ? `cue ${(p as { cue_number: number }).cue_number}` : '')).filter(Boolean).join(', ')}`
+            : ''}
         </div>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.space.s, alignItems: 'flex-end' }}>

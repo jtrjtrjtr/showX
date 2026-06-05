@@ -652,3 +652,56 @@ B003-024 scope expansion needed eventually. Defer until Phase 3 closes.
 
 **Architect projection:** Bundle closing within 1-2 hours if cadence holds (5 tasks remaining + cleanup). Forge has demonstrated 800 LOC single-cycle capacity; B003-020 (Playwright multi-op E2E ~600 LOC) is the next Pattern 8 candidate.
 
+
+## Tick 17 — 20:28 CEST — 🎯 19/23 (83%) + Phase 3 COMPLETE 3/3 + Pattern 8 #3
+
+**State at tick:** 32 accepted (13 ShowX-1 + 19 B003), 19 queued, 1 in_progress (B003-020 cycle 2).
+
+**Forge/Critic since tick 16 (+27 min):**
+
+| Task | Status | Notes |
+|---|---|---|
+| B003-019 | done → **accepted round 1** | PDF cue-sheet — 15 ACs, 14 tests, two documented deviations: ASCII fallback for ⏩/⏱ + minimal cover page. Atomic writes, two-pass page-numbering, safeText defense |
+| B003-020 | queued → in_progress (cycle 1 TIMEOUT) | Pattern 8 #3 — multi-operator E2E Playwright. Cycle 1 timeout at 18:16Z (1200s). Cycle 2 spawned 18:20Z, PID 23013, currently ~8 min in (deadline 18:40Z) |
+
+**🎯 19/23 (83%) accepted. Phase 3 (import/export) COMPLETE 3/3.**
+
+**B003 acceptance ratio: 19 accepted (round1=10, round2=9) = round-1 single accept 52.6% (up from 50%).**
+
+**Pattern 8 timeouts this session: 3 of 19 attempted tasks (15.8%):**
+1. B003-002 Yjs document model (800 LOC) — cycle 2 succeeded
+2. B003-009 cue payload dispatch (600 LOC) — self-rescued by later tick
+3. B003-020 multi-op E2E Playwright (~600 LOC) — cycle 2 pending
+
+Decision tick 16 Q&A with Jindřich confirmed: **timeout STAYS 1200s.** Self-rescue + cycle 2 pattern robust. Per-task cost benefit favors current config.
+
+**Critic's "swallows tsc output" investigation: FALSE ALARM.**
+
+Tested `pnpm typecheck` from cwd `src/modules/cuelist-core/`:
+```
+pnpm typecheck
+# → 22 errors surfaced, ELIFECYCLE exit code 1
+```
+
+Workspace typecheck script works correctly. Critic's observation was likely:
+- Caching artifact from earlier deliberate type mismatch experiment
+- OR Forge's actual discipline issue: Forge runs `pnpm test` (vitest passes via esbuild — no strict TS) and SKIPS `pnpm typecheck` despite prompt MANDATE
+
+**Real issue: Forge's `MANDATORY: Run pnpm typecheck` step not reliably executed.**
+
+Critic catches typecheck errors per task review (B003-007 missing log, B003-017 TS2304, etc). Architect catches drift via tick monitoring. B003-024 cleanup accumulates remainder. Current architecture works — no Architect intervention beyond planned B003-024.
+
+**Typecheck baseline: 22 errors** (unchanged from tick 16 — B003-019 zero new dirt).
+
+**Phase 4 progress:**
+- B003-020 in_progress cycle 2 — outcome by 18:40Z
+- B003-021 Stream Deck Companion — queued, eligible (deps B003-008/-015)
+
+**Phase 5:**
+- B003-022 first pilot — blocked on B003-020
+- B003-023 ShowX 0.1 release — blocked on all 22
+
+**B003-024 cleanup — eligible, lowest-ID rule puts it after B003-020/-021/-022/-023.** Realistic: cleanup runs last, ~2-3 tasks before bundle close.
+
+**Bundle close projection:** 4 tasks remain (B003-020/-021/-022/-023) + B003-024 cleanup = 5 total. At ~20 min/task average = ~1.5-2h. **Bundle done ~22:00-22:30 CEST tonight.**
+

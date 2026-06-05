@@ -14,6 +14,7 @@ export function OperatorPresenceIndicators({ stations }: OperatorPresenceIndicat
           key={s.station_id}
           title={s.display_name}
           aria-label={`${s.display_name} is here`}
+          data-testid={`presence-dot-${s.owned_departments[0] ?? 'unknown'}`}
           style={{
             width: 16,
             height: 16,

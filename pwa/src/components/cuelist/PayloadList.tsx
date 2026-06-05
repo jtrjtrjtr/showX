@@ -75,6 +75,7 @@ export function PayloadList({ cue, cuelistId, locked }: PayloadListProps) {
       {cue.payloads.map((p: Payload, i: number) => (
         <div
           key={p.id}
+          data-testid={p.tag ? `payload-${p.tag}` : `payload-${p.type}-${i}`}
           draggable={!locked}
           onDragStart={() => setDraggingIdx(i)}
           onDrop={() => handleDrop(i)}

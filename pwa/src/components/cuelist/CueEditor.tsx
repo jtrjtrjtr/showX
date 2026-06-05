@@ -153,6 +153,7 @@ export function CueEditor({ cuelistId, cueId, onClose }: CueEditorProps) {
 
         {isLocked && (
           <div
+            data-testid="show-lock-banner"
             role="status"
             aria-label="SHOW mode lock banner"
             style={{

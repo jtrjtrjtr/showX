@@ -8,4 +8,6 @@ export const IPC = {
   PAIRING_REVOKE_DEVICE: 'pairing:revokeDevice',
   CONFIG_GET: 'config:get',
   CONFIG_SET: 'config:set',
+  /** Test-mode only: returns port the AssetServer is listening on */
+  TEST_GET_PORT: 'test:getPort',
 } as const;

@@ -88,6 +88,7 @@ export function LxRefPayloadEditor({ payload, cuelistId, cueId, locked }: LxRefP
       <label style={labelStyle}>
         Cue Number (≥ 0, fractional OK)
         <input
+          data-testid="lx-cue-number-input"
           type="number"
           min={0}
           step={0.1}

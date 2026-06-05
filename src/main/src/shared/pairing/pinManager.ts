@@ -6,6 +6,8 @@ export interface PinManager {
   claim(pin: string, sourceIp: string): PinRecord;
   cleanupExpired(): void;
   activePinCount(): number;
+  /** Register a persistent PIN for test mode. This PIN never expires and is never consumed. */
+  registerTestPin(pin: string): void;
 }
 
 const TTL_MS = 5 * 60 * 1000;
@@ -21,6 +23,7 @@ interface RateBucket {
 export class PinManagerImpl implements PinManager {
   private pins = new Map<string, PinRecord>();
   private rateLimit = new Map<string, RateBucket>();
+  private testPins = new Set<string>();
   private readonly secureRandomInt: (min: number, max: number) => number;
 
   // Inject randomInt for testability; defaults to crypto.randomInt (secure)
@@ -63,8 +66,21 @@ export class PinManagerImpl implements PinManager {
 
     if (rec.claimed_at !== null) throw new PinInvalidError('already_claimed');
 
-    rec.claimed_at = Date.now();
+    if (!this.testPins.has(pin)) {
+      // Normal PINs are consumed on claim; test PINs remain claimable indefinitely
+      rec.claimed_at = Date.now();
+    }
     return rec;
+  }
+
+  registerTestPin(pin: string): void {
+    this.testPins.add(pin);
+    this.pins.set(pin, {
+      pin,
+      expires_at: Date.now() + 365 * 24 * 60 * 60 * 1000, // 1 year
+      claimed_at: null,
+      attempts: 0,
+    });
   }
 
   cleanupExpired(): void {

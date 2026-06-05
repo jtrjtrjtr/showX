@@ -62,9 +62,9 @@ function EmptyState() {
 export function SMMasterView({ cuelistId }: SMMasterViewProps) {
   const conn = useConnection();
   const { cuelist, cues } = useCuelist(cuelistId);
-  const { mode } = useMode();
+  const { mode, transition } = useMode();
   const stations = useStations();
-  const { go, standby, lastDispatched } = useGoChannel(cuelistId);
+  const { go, standby, lastDispatched, lastHistoric } = useGoChannel(cuelistId);
   const { playheadCueId, armedCueId, setPlayhead, advance, retreat, arm, unarm } =
     usePlayhead(cuelistId);
 
@@ -180,6 +180,24 @@ export function SMMasterView({ cuelistId }: SMMasterViewProps) {
           }}
         />
         <button
+          data-testid="mode-badge"
+          aria-label={`Current mode: ${mode}. Click to toggle`}
+          onClick={() => transition(mode === 'rehearsal' ? 'show' : 'rehearsal')}
+          style={{
+            padding: `${tokens.space.xs}px ${tokens.space.s}px`,
+            borderRadius: tokens.radius.s,
+            border: `1px solid ${mode === 'show' ? tokens.color.red : tokens.color.teal}`,
+            background: mode === 'show' ? tokens.color.red : tokens.color.teal,
+            color: '#fff',
+            fontSize: 11,
+            fontWeight: 700,
+            cursor: 'pointer',
+            textTransform: 'uppercase',
+          }}
+        >
+          {mode === 'show' ? 'SHOW' : 'REHEARSAL'}
+        </button>
+        <button
           aria-label="Show keyboard shortcuts"
           title="Keyboard shortcuts (?)"
           onClick={() => setShowHelp(true)}
@@ -235,6 +253,7 @@ export function SMMasterView({ cuelistId }: SMMasterViewProps) {
       <div style={{ padding: tokens.space.m, flexShrink: 0 }}>
         {displayReason && (
           <div
+            data-testid="go-rejected-toast"
             role="alert"
             aria-live="assertive"
             style={{
@@ -249,6 +268,23 @@ export function SMMasterView({ cuelistId }: SMMasterViewProps) {
             }}
           >
             Rejected: {displayReason}
+          </div>
+        )}
+        {lastHistoric && (
+          <div
+            data-testid="cue-history-marker"
+            aria-live="polite"
+            style={{
+              padding: `${tokens.space.s}px ${tokens.space.m}px`,
+              marginBottom: tokens.space.s,
+              background: tokens.color.gray_50,
+              border: `1px solid ${tokens.color.gray_300}`,
+              borderRadius: tokens.radius.m,
+              fontSize: 12,
+              color: tokens.color.gray_700,
+            }}
+          >
+            Missed: {lastHistoric.cue_id}
           </div>
         )}
         <GoButton

@@ -1,0 +1,145 @@
+{
+  "id": "e2e00000-0000-7000-8000-000000000010",
+  "name": "Main Show",
+  "default_trigger": "manual",
+  "go_authority": "sm_called",
+  "sm_offline_policy": { "kind": "freeze" },
+  "playhead": { "cue_id": null, "armed_cue_id": null },
+  "show_snapshot_id": null,
+  "cues": [
+    {
+      "id": "e2e00000-0000-7000-8000-000000000020",
+      "label": "Q 1",
+      "description": "House lights to full",
+      "department": ["LX"],
+      "standby_note": "On SM call",
+      "script_line_ref": null,
+      "trigger": { "kind": "manual" },
+      "payloads": [
+        {
+          "id": "e2e00000-0000-7000-8000-000000000030",
+          "type": "lx_ref",
+          "tag": null,
+          "note": "Eos house full",
+          "device_id": "dev_eos",
+          "cue_list": 1,
+          "cue_number": 1
+        }
+      ],
+      "duration_hint_ms": null,
+      "notes": "LX cue — visible to LX op",
+      "payload_frozen_at": null,
+      "created_at": "2026-06-01T10:00:00.000Z",
+      "created_by": "op_fixture",
+      "modified_at": "2026-06-01T10:00:00.000Z",
+      "modified_by": "op_fixture"
+    },
+    {
+      "id": "e2e00000-0000-7000-8000-000000000021",
+      "label": "Q 2",
+      "description": "SM announce — house open",
+      "department": ["SM"],
+      "standby_note": "After house to full",
+      "script_line_ref": null,
+      "trigger": { "kind": "manual" },
+      "payloads": [],
+      "duration_hint_ms": null,
+      "notes": "SM-only cue — LX op should NOT see this",
+      "payload_frozen_at": null,
+      "created_at": "2026-06-01T10:01:00.000Z",
+      "created_by": "op_fixture",
+      "modified_at": "2026-06-01T10:01:00.000Z",
+      "modified_by": "op_fixture"
+    },
+    {
+      "id": "e2e00000-0000-7000-8000-000000000022",
+      "label": "Q 3",
+      "description": "Compound: house half + pre-show music",
+      "department": ["LX", "SX"],
+      "standby_note": "10 min before show",
+      "script_line_ref": null,
+      "trigger": { "kind": "manual" },
+      "payloads": [
+        {
+          "id": "e2e00000-0000-7000-8000-000000000031",
+          "type": "lx_ref",
+          "tag": "LX",
+          "note": "House to 50%",
+          "device_id": "dev_eos",
+          "cue_list": 1,
+          "cue_number": 5
+        },
+        {
+          "id": "e2e00000-0000-7000-8000-000000000032",
+          "type": "osc",
+          "tag": "SX",
+          "note": "Pre-show music start",
+          "device_id": "dev_qlab",
+          "address": "/cue/preshow/start",
+          "args": []
+        }
+      ],
+      "duration_hint_ms": null,
+      "notes": "Compound LX+SX — both ops see it",
+      "payload_frozen_at": null,
+      "created_at": "2026-06-01T10:02:00.000Z",
+      "created_by": "op_fixture",
+      "modified_at": "2026-06-01T10:02:00.000Z",
+      "modified_by": "op_fixture"
+    },
+    {
+      "id": "e2e00000-0000-7000-8000-000000000023",
+      "label": "Q 4",
+      "description": "Pre-show music fade",
+      "department": ["SX"],
+      "standby_note": "On doors open",
+      "script_line_ref": null,
+      "trigger": { "kind": "manual" },
+      "payloads": [
+        {
+          "id": "e2e00000-0000-7000-8000-000000000033",
+          "type": "osc",
+          "tag": null,
+          "note": "QLab fade out",
+          "device_id": "dev_qlab",
+          "address": "/cue/preshow/fade",
+          "args": []
+        }
+      ],
+      "duration_hint_ms": 5000,
+      "notes": "SX cue — LX op should NOT see this",
+      "payload_frozen_at": null,
+      "created_at": "2026-06-01T10:03:00.000Z",
+      "created_by": "op_fixture",
+      "modified_at": "2026-06-01T10:03:00.000Z",
+      "modified_by": "op_fixture"
+    },
+    {
+      "id": "e2e00000-0000-7000-8000-000000000024",
+      "label": "Q 5",
+      "description": "House to full — end",
+      "department": ["LX"],
+      "standby_note": "Final bow",
+      "script_line_ref": null,
+      "trigger": { "kind": "manual" },
+      "payloads": [
+        {
+          "id": "e2e00000-0000-7000-8000-000000000034",
+          "type": "lx_ref",
+          "tag": null,
+          "note": "Eos full wash",
+          "device_id": "dev_eos",
+          "cue_list": 1,
+          "cue_number": 99
+        }
+      ],
+      "duration_hint_ms": null,
+      "notes": "LX cue — manual fire test target",
+      "payload_frozen_at": null,
+      "created_at": "2026-06-01T10:04:00.000Z",
+      "created_by": "op_fixture",
+      "modified_at": "2026-06-01T10:04:00.000Z",
+      "modified_by": "op_fixture"
+    }
+  ]
+}

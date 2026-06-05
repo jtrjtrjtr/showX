@@ -6,16 +6,21 @@ export interface GoChannelState {
   go: (cueId: string, override?: boolean) => string;
   standby: (cueId: string) => void;
   lastDispatched: GoDispatched | null;
+  lastHistoric: GoDispatched | null;
 }
 
 export function useGoChannel(cuelistId: string): GoChannelState {
   const conn = useConnection();
   const [lastDispatched, setLastDispatched] = useState<GoDispatched | null>(null);
+  const [lastHistoric, setLastHistoric] = useState<GoDispatched | null>(null);
 
   useEffect(() => {
     return conn.sideChannel.on('go.dispatched', (event) => {
       if (event.cuelist_id !== cuelistId) return;
-      if (event.historic) return;
+      if (event.historic) {
+        setLastHistoric(event);
+        return;
+      }
       setLastDispatched(event);
     });
   }, [conn.sideChannel, cuelistId]);
@@ -25,5 +30,6 @@ export function useGoChannel(cuelistId: string): GoChannelState {
       conn.sideChannel.sendGoRequest(cuelistId, cueId, override),
     standby: (cueId) => conn.sideChannel.sendArmRequest(cuelistId, cueId),
     lastDispatched,
+    lastHistoric,
   };
 }

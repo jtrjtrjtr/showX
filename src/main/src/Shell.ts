@@ -261,9 +261,11 @@ export class Shell {
 
     // 6. AssetServer
     const isProd = process.env['SHOWX_DEV'] !== '1';
+    const explicitPort = process.env['SHOWX_PORT'] ? Number(process.env['SHOWX_PORT']) : undefined;
     this.assets =
       this.deps.assets ??
       new AssetServer({
+        port: explicitPort,
         mode: isProd
           ? { kind: 'prod', pwaDir: pwaDistPath() }
           : { kind: 'dev', viteUrl: 'http://localhost:5174' },
@@ -290,6 +292,13 @@ export class Shell {
     await this.tokenManager.init();
 
     this.pinManager = this.deps.pinManager ?? new PinManagerImpl();
+
+    // Test-mode: pre-register a known PIN so tests can pair without UI
+    const testPin = process.env['SHOWX_PAIRING_TEST_PIN'];
+    if (testPin) {
+      this.pinManager.registerTestPin(testPin);
+      this.logger.info('test-mode: registered test pairing PIN', { pin: testPin });
+    }
 
     const pairingPersisted =
       this.deps.pairingPersisted ?? new PersistedStore('pairing', this.layout, this.logger);

@@ -13,6 +13,7 @@ export function CallingText({ armedCue, lastFired }: CallingTextProps) {
 
   return (
     <div
+      data-testid="calling-text"
       aria-live="polite"
       style={{
         padding: `${tokens.space.m}px ${tokens.space.l}px`,

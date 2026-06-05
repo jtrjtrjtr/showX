@@ -13,6 +13,17 @@ function modeFromUrl(): AppMode | null {
   return null;
 }
 
+function hostFromLocation(): DiscoveredHost | null {
+  if (window.location.pathname === '/pairing') {
+    return {
+      host: window.location.hostname,
+      port: Number(window.location.port) || 80,
+      pairingAvailable: true,
+    };
+  }
+  return null;
+}
+
 export function App() {
   const [mode, setMode] = useState<AppMode>('discover');
   const [host, setHost] = useState<DiscoveredHost | null>(null);
@@ -21,6 +32,14 @@ export function App() {
   useEffect(() => {
     const urlMode = modeFromUrl();
     if (urlMode === 'shell') { setMode('shell'); return; }
+
+    const pairingHost = hostFromLocation();
+    if (pairingHost) {
+      setHost(pairingHost);
+      setMode('pair');
+      return;
+    }
+
     listSessions().then((sessions) => {
       const latest = sessions.sort((a, b) => b.paired_at - a.paired_at)[0];
       if (latest) {
