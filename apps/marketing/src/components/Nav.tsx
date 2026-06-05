@@ -7,6 +7,7 @@ export function Nav() {
     { to: '/try-it', label: t('nav.try-it') },
     { to: '/status', label: t('nav.status') },
     { to: '/downloads', label: t('nav.downloads') },
+    { to: '/guide', label: t('nav.guide') },
     { to: '/docs', label: t('nav.docs') },
   ]
 
@@ -14,7 +15,7 @@ export function Nav() {
     <header className="sticky top-0 z-50 backdrop-blur bg-ground/90 border-b border-rule/60">
       <div className="max-w-[1280px] mx-auto px-6 lg:px-12 h-16 flex items-center justify-between gap-6">
         <Link to="/" className="flex items-center gap-3 group shrink-0">
-          <img src="/showx-logo-mark.svg" alt="ShowX" className="h-7 w-auto" />
+          <img src="/showx-logo-256.png" alt="ShowX" className="h-6 w-auto" />
           <span className="hidden sm:block font-mono text-[10px] uppercase tracking-[0.2em] text-muted mt-1">by XLAB</span>
         </Link>
         <nav className="hidden md:flex items-center gap-7">

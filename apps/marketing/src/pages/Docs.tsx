@@ -17,7 +17,7 @@ const cards: DocCard[] = [
       cs: 'Root index pro developer docs. Postup setup, architektonický overview, jak přispět.',
       en: 'Root index for developer docs. Setup walkthrough, architectural overview, how to contribute.',
     },
-    href: 'https://github.com/xlab/showx/blob/main/docs/dev/index.md',
+    href: 'https://github.com/jtrjtrjtr/showX/blob/main/docs/dev/index.md',
     external: true,
   },
   {
@@ -27,7 +27,7 @@ const cards: DocCard[] = [
       cs: 'Electron shell, modul loader, shared services (Dispatcher, SyncBroker, AssetServer, mDNS, Pairing), IPC layout, PWA wire-up.',
       en: 'Electron shell, module loader, shared services (Dispatcher, SyncBroker, AssetServer, mDNS, Pairing), IPC layout, PWA wire-up.',
     },
-    href: 'https://github.com/xlab/showx/blob/main/docs/specs/module_loader.md',
+    href: 'https://github.com/jtrjtrjtr/showX/blob/main/docs/specs/module_loader.md',
     external: true,
   },
   {
@@ -37,7 +37,7 @@ const cards: DocCard[] = [
       cs: 'Jak napsat ShowX modul. ModuleContext API, lifecycle hooks (init/start/stop), shared service access, persistence patterns.',
       en: 'How to write a ShowX module. ModuleContext API, lifecycle hooks (init/start/stop), shared service access, persistence patterns.',
     },
-    href: 'https://github.com/xlab/showx/blob/main/docs/specs/module_loader.md#sdk',
+    href: 'https://github.com/jtrjtrjtr/showX/blob/main/docs/specs/module_loader.md#sdk',
     external: true,
   },
   {
@@ -47,7 +47,7 @@ const cards: DocCard[] = [
       cs: 'OSC dictionary, MIDI mapping conventions, DMX universe layout, MSC commands, sACN universe routing, LTC sync.',
       en: 'OSC dictionary, MIDI mapping conventions, DMX universe layout, MSC commands, sACN universe routing, LTC sync.',
     },
-    href: 'https://github.com/xlab/showx/blob/main/docs/specs/protocol_dictionary.md',
+    href: 'https://github.com/jtrjtrjtr/showX/blob/main/docs/specs/protocol_dictionary.md',
     external: true,
   },
   {
@@ -57,7 +57,7 @@ const cards: DocCard[] = [
       cs: 'Show, Cuelist, Cue, Payload, Device entities. Yjs document layout. .showx package directory layout.',
       en: 'Show, Cuelist, Cue, Payload, Device entities. Yjs document layout. .showx package directory layout.',
     },
-    href: 'https://github.com/xlab/showx/blob/main/docs/specs/data_model.md',
+    href: 'https://github.com/jtrjtrjtr/showX/blob/main/docs/specs/data_model.md',
     external: true,
   },
   {
@@ -67,7 +67,7 @@ const cards: DocCard[] = [
       cs: 'Lokální pairing token flow (QR + 6-digit PIN). mDNS discovery handshake. Manual fallback pro non-mDNS prostředí.',
       en: 'Local pairing token flow (QR + 6-digit PIN). mDNS discovery handshake. Manual fallback for non-mDNS environments.',
     },
-    href: 'https://github.com/xlab/showx/blob/main/docs/specs/pairing_auth.md',
+    href: 'https://github.com/jtrjtrjtr/showX/blob/main/docs/specs/pairing_auth.md',
     external: true,
   },
   {
@@ -77,7 +77,7 @@ const cards: DocCard[] = [
       cs: 'Vitest unit tests, Playwright E2E, BridgeX 0.3.x parity test harness, broker chaos testing, GitHub Actions.',
       en: 'Vitest unit tests, Playwright E2E, BridgeX 0.3.x parity test harness, broker chaos testing, GitHub Actions.',
     },
-    href: 'https://github.com/xlab/showx/blob/main/docs/dev/testing.md',
+    href: 'https://github.com/jtrjtrjtr/showX/blob/main/docs/dev/testing.md',
     external: true,
   },
   {
@@ -98,7 +98,7 @@ const cards: DocCard[] = [
       cs: 'Architektonické decision notes (Architect ratifies). Why LAN-first, why one Cuelist per Show v 0.1, why GO event off-CRDT, atd.',
       en: 'Architectural decision notes (Architect ratifies). Why LAN-first, why one Cuelist per Show in 0.1, why GO event off-CRDT, etc.',
     },
-    href: 'https://github.com/xlab/showx/tree/main/docs/agent_exchange/decisions',
+    href: 'https://github.com/jtrjtrjtr/showX/tree/main/docs/agent_exchange/decisions',
     external: true,
   },
   {
@@ -108,7 +108,7 @@ const cards: DocCard[] = [
       cs: 'Live task dashboard: ShowX-1 Foundation bundle, ShowX-2 (Cuelist Core), ShowX-3 (SHOW mode). Status per task.',
       en: 'Live task dashboard: ShowX-1 Foundation bundle, ShowX-2 (Cuelist Core), ShowX-3 (SHOW mode). Status per task.',
     },
-    href: 'https://github.com/xlab/showx/blob/main/docs/agent_exchange/TASK_DASHBOARD.md',
+    href: 'https://github.com/jtrjtrjtr/showX/blob/main/docs/agent_exchange/TASK_DASHBOARD.md',
     external: true,
     badge: { cs: 'Live', en: 'Live' },
   },
@@ -186,7 +186,7 @@ export function Docs() {
             <div className="col-span-12 md:col-span-8">
               <pre className="bg-ink text-cream/90 font-mono text-[11px] leading-relaxed p-6 rounded-sm overflow-x-auto border border-rule">
                 <code>{`# 1. Clone the repo
-git clone https://github.com/xlab/showx.git
+git clone https://github.com/jtrjtrjtr/showX.git
 cd showx
 
 # 2. Install dependencies (pnpm workspace)
@@ -219,7 +219,7 @@ pnpm dev
               </h2>
             </div>
             <div className="col-span-12 md:col-span-4 flex md:justify-end flex-wrap gap-3">
-              <a href="https://github.com/xlab/showx/issues" target="_blank" rel="noreferrer" className="btn-ghost">
+              <a href="https://github.com/jtrjtrjtr/showX/issues" target="_blank" rel="noreferrer" className="btn-ghost">
                 GitHub Issues →
               </a>
               <a href="mailto:hello@xlabproject.net?subject=ShowX%20docs" className="btn-ghost">

@@ -8,7 +8,7 @@ export function Footer() {
       <div className="max-w-[1280px] mx-auto px-6 lg:px-12 py-16 grid grid-cols-1 md:grid-cols-12 gap-12">
         <div className="md:col-span-4">
           <div className="flex items-center gap-3">
-            <img src="/showx-logo-mark.svg" alt="ShowX" className="h-9 w-auto" />
+            <img src="/showx-logo-256.png" alt="ShowX" className="h-9 w-auto" />
             <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted mt-1">by XLAB</span>
           </div>
           <p className="copy mt-6 max-w-md text-sm">{t('footer.tagline')}</p>

@@ -6,6 +6,7 @@ import { TryIt } from './pages/TryIt'
 import { Status } from './pages/Status'
 import { Downloads } from './pages/Downloads'
 import { Docs } from './pages/Docs'
+import { UserGuide } from './pages/UserGuide'
 
 export function App() {
   return (
@@ -18,6 +19,7 @@ export function App() {
           <Route path="/get-started" element={<TryIt />} />
           <Route path="/status" element={<Status />} />
           <Route path="/downloads" element={<Downloads />} />
+          <Route path="/guide" element={<UserGuide />} />
           <Route path="/docs" element={<Docs />} />
         </Routes>
       </main>
