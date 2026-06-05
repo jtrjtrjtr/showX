@@ -1,8 +1,22 @@
 {
-  "enabled": false,
+  "enabled": true,
   "bundle_id": "ShowX-1",
-  "allowed_task_ids": [],
-  "rationale": "Bootstrap phase — Forge stays disabled until ShowX-1 Foundation bundle is fully specced and queued. Architect populates allowed_task_ids when tasks are ready for Forge pickup.",
-  "updated_at": "2026-06-05T22:00:00Z",
+  "allowed_task_ids": [
+    "B001-001",
+    "B001-002",
+    "B001-003",
+    "B001-004",
+    "B001-005",
+    "B001-006",
+    "B001-007",
+    "B001-008",
+    "B001-009",
+    "B001-010",
+    "B001-011",
+    "B001-012",
+    "B001-013"
+  ],
+  "rationale": "Full ShowX-1 Foundation bundle authorized by Jindřich 2026-06-05 night (autonomous max mode). Forge respects dependency graph via STARTING_PROMPTS deps-accepted gate. Critic processes done reports as they appear.",
+  "updated_at": "2026-06-05T01:40:00Z",
   "updated_by": "architect"
 }
