@@ -63,19 +63,19 @@ const releases: Release[] = [
 ]
 
 const bundleProgress = [
-  { id: 1, title: 'Repo scaffold + workspace setup', status: 'accepted' },
-  { id: 2, title: 'TypeScript shared types', status: 'accepted' },
-  { id: 3, title: 'Electron main shell + IPC scaffold', status: 'accepted' },
-  { id: 4, title: 'Module loader spec + dynamic loader', status: 'accepted' },
-  { id: 5, title: 'Embedded y-websocket sync broker', status: 'accepted' },
-  { id: 6, title: 'Static PWA asset server', status: 'accepted' },
-  { id: 7, title: 'mDNS service advertiser', status: 'accepted' },
-  { id: 8, title: 'Pairing token store + QR/PIN flow', status: 'accepted' },
-  { id: 9, title: 'Shared protocol dispatcher (OSC + MIDI)', status: 'accepted' },
-  { id: 10, title: 'Shared protocol dispatcher (DMX + sACN)', status: 'accepted' },
-  { id: 11, title: 'BridgeX 0.3.x source migration', status: 'in_progress' },
-  { id: 12, title: 'EventX Bridge module wired through dispatcher', status: 'queued' },
-  { id: 13, title: 'BridgeX 0.3.x parity test harness', status: 'queued' },
+  { id: 1, title: 'Workspace + TypeScript + ESLint setup', status: 'accepted' },
+  { id: 2, title: 'Shared types (Module, ModuleContext, services)', status: 'accepted' },
+  { id: 3, title: 'Logger + EventBus + HealthBus services', status: 'accepted' },
+  { id: 4, title: 'PersistedStore + SecretStore services', status: 'accepted' },
+  { id: 5, title: 'AssetServer + mDNS services', status: 'accepted' },
+  { id: 6, title: 'SyncBroker (embedded y-websocket)', status: 'accepted' },
+  { id: 7, title: 'OutputDispatcher (OSC + MIDI + DMX)', status: 'accepted' },
+  { id: 8, title: 'InputRegistrar (OSC + MIDI listeners)', status: 'accepted' },
+  { id: 9, title: 'PairingStore + pairing flow API', status: 'accepted' },
+  { id: 10, title: 'Module loader implementation', status: 'accepted' },
+  { id: 11, title: 'Electron main entry + shell skeleton', status: 'accepted' },
+  { id: 12, title: 'PWA workspace (Vite + React + Yjs + IndexedDB)', status: 'accepted' },
+  { id: 13, title: 'CI workflow + parity test harness skeleton', status: 'accepted' },
 ]
 
 const statusBadge = (s: string, cs: boolean) => {
@@ -177,8 +177,8 @@ export function Downloads() {
               </h2>
               <p className="copy mt-4 max-w-2xl text-sm">
                 {cs
-                  ? 'Aktuální stav prvního bundle. Architect + Forge + Critic file-based workflow. Každý task má spec, done report, Critic review. Bundle se uzavře, jakmile Critic accepts všech 13.'
-                  : 'Current state of the first bundle. Architect + Forge + Critic file-based workflow. Each task has a spec, done report, Critic review. Bundle closes when Critic accepts all 13.'}
+                  ? 'Foundation bundle uzavřen 2026-06-06: 13/13 accepted. Architect + Forge + Critic file-based workflow. ~12,500 LOC TypeScript + 269 testů passing. Bundle ShowX-2 (BridgeX absorption) startuje post-Kongres 2026-06-17.'
+                  : 'Foundation bundle closed 2026-06-06: 13/13 accepted. Architect + Forge + Critic file-based workflow. ~12,500 LOC TypeScript + 269 tests passing. Bundle ShowX-2 (BridgeX absorption) starts post-Kongres 2026-06-17.'}
               </p>
             </div>
           </div>
