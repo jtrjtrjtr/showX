@@ -95,3 +95,49 @@ Estimated total: ~8,000 source lines + ~2,000 test lines + ~500 migration script
 - Spec: `../../specs/module_loader.md`
 - Bundle parent: `ShowX-1-foundation.md`
 - Strategy: `../../../../xlab-strategy/decisions/2026-06-05_bridgex_to_showx_module.md`
+
+## Spec-writing status
+
+**2026-06-05 (Architect):** All 15 task specs written + queued at `../queued/B002-001_*.md` through `B002-015_*.md`. Total estimated source: **9,520 lines** across 15 tasks (matches ~8,000-9,000 forecast in bundle outline).
+
+Per-task estimated_size_lines breakdown:
+- B002-001 (250) — source copy + workspace
+- B002-002 (320) — module skeleton + manifest
+- B002-003 (1500) — core migration (heaviest)
+- B002-004 (1200) — adapter → OutputDispatcher
+- B002-005 (600) — Supabase subscriber + reconnect
+- B002-006 (800) — rule engine + config schema
+- B002-007 (500) — auth manager (Q23 module-local)
+- B002-008 (800) — UI panel migration
+- B002-009 (400) — config migration script
+- B002-010 (800) — parity PT-001..015
+- B002-011 (800) — parity PT-016..025
+- B002-012 (700) — parity PT-026..035 (incl. latency + soak)
+- B002-013 (500) — migration test harness
+- B002-014 (200) — Apple Dev ID rebrand
+- B002-015 (150) — 0.5 internal release
+
+Specs do NOT activate until ShowX-1 Foundation is fully accepted AND Architect explicitly opens the ShowX-2 bundle (state.json + claude_runner_scope.json mutations gated). Specs may be revised before activation as Q22, Q23, Q25, Q26 rulings land.
+
+### Open questions surfaced during spec writing
+
+Specs reference and depend on these open questions from `../decisions/2026-06-05_open_questions_architect.md`:
+- **Q22** — `outputs/html-renderer.ts` fate: referenced in B002-003 (file kept temporarily in `legacy/outputs/`); needs Architect ruling before B002-005 picks up.
+- **Q23** — `auth-manager.ts` placement: B002-007 honors module-local default; revisit if Cloud Sync absorbs auth earlier.
+- **Q25** — OSC packet ordering nondeterminism: B002-010..012 parity scenarios default to byte-equal comparator; order-insensitive comparator gated by `SHOWX_PARITY_ORDER_INSENSITIVE=1`.
+- **Q26** — Legacy YAML profile pipeline retirement: B002-003 deletes ~2,800 LOC under this assumption; if any customer uses YAML profiles (interview pre-Kongres), the retire decision must change.
+- **Q30** — OutputDispatcher `claim()` sync→async signature: B002-004 assumes `claim()` returns `Promise<ClaimToken | ClaimConflict>` (async ruling confirmed in open questions doc).
+
+### Additional cross-task dependencies not in bundle outline
+
+- B002-006 extends B002-002's persisted config schema (adds `supabaseUrl`, `supabaseAnonKey`) and bumps `persistedConfigSchemaVersion: 1 → 2` with migrate() — Forge must read B002-002's final shape before extending.
+- B002-007 wires AuthManager's `subscribe(handler)` callback into B002-005's `SupabaseSubscriber.updateAccessToken(token)` — neither task fully wires without the other; B002-007 expects B002-005 to exist (depends_on chain is correct).
+- B002-008 UI panel uses IPC channel naming convention `eventx-bridge:auth:login` that B002-007 declares; both must agree on naming.
+- B002-010 parity harness depends on `tests/parity/` helpers from B001-013 (foundation). If B001-013 did not fully implement `scenario-harness.ts`, B002-010 extends and documents.
+- B002-013 migration harness re-uses B002-010 parity goldens to verify post-migration parity (clear dependency in spec).
+- B002-014 build pipeline assumes B001-011 Electron main shell exists at `src/main/` and an `apps/showx/` workspace package wraps it for electron-builder (verify B001-011's actual layout choice).
+- B002-015 release task gates on ALL 14 prior B002-* tasks accepted; checklist enumerated in spec.
+
+### Golden recording capture pre-requirement
+
+B002-010, B002-011, B002-012 parity scenarios require golden BridgeX 0.3.x recordings. These do NOT exist yet and are Architect's responsibility per `bridgex_absorption.md` §7 Step 6. Specs document the BLOCK condition: if goldens absent at task pickup, Forge BLOCKS and escalates. Architect should capture goldens during Step 6 of the migration sequence — ideally after BridgeX 0.3.x final ships post-Kongres 2026-06-17.

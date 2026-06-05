@@ -2,7 +2,7 @@
   "schema_version": 1,
   "project": "showX",
   "phase": "bundle_ShowX-1_foundation",
-  "updated_at": "2026-06-06T11:25:00Z",
+  "updated_at": "2026-06-06T10:30:00Z",
   "active_bundle": "ShowX-1",
   "tasks": [
     {
@@ -246,6 +246,267 @@
       "spawned_from": null,
       "depends_on": [
         "B001-001"
+      ]
+    },
+    {
+      "id": "B002-001",
+      "slug": "bridgex_source_copy",
+      "title": "BridgeX 0.3.x source copy + workspace setup",
+      "status": "queued",
+      "owner": null,
+      "task_path": "docs/agent_exchange/queued/B002-001_bridgex_source_copy.md",
+      "created_at": "2026-06-06T10:30:00Z",
+      "started_at": null,
+      "ended_at": null,
+      "reviewed_at": null,
+      "review_round": 0,
+      "spawned_from": null,
+      "depends_on": []
+    },
+    {
+      "id": "B002-002",
+      "slug": "eventx_bridge_module_skeleton",
+      "title": "EventX Bridge module manifest + skeleton",
+      "status": "queued",
+      "owner": null,
+      "task_path": "docs/agent_exchange/queued/B002-002_eventx_bridge_module_skeleton.md",
+      "created_at": "2026-06-06T10:30:00Z",
+      "started_at": null,
+      "ended_at": null,
+      "reviewed_at": null,
+      "review_round": 0,
+      "spawned_from": null,
+      "depends_on": [
+        "B002-001"
+      ]
+    },
+    {
+      "id": "B002-003",
+      "slug": "module_internal_core_migration",
+      "title": "Module-internal core migration (Bridge engine + event-runtime)",
+      "status": "queued",
+      "owner": null,
+      "task_path": "docs/agent_exchange/queued/B002-003_module_internal_core_migration.md",
+      "created_at": "2026-06-06T10:30:00Z",
+      "started_at": null,
+      "ended_at": null,
+      "reviewed_at": null,
+      "review_round": 0,
+      "spawned_from": null,
+      "depends_on": [
+        "B002-002"
+      ]
+    },
+    {
+      "id": "B002-004",
+      "slug": "adapter_migration_outputdispatcher",
+      "title": "Adapter migration \u2192 OutputDispatcher",
+      "status": "queued",
+      "owner": null,
+      "task_path": "docs/agent_exchange/queued/B002-004_adapter_migration_outputdispatcher.md",
+      "created_at": "2026-06-06T10:30:00Z",
+      "started_at": null,
+      "ended_at": null,
+      "reviewed_at": null,
+      "review_round": 0,
+      "spawned_from": null,
+      "depends_on": [
+        "B002-003"
+      ]
+    },
+    {
+      "id": "B002-005",
+      "slug": "supabase_subscriber_reconnect",
+      "title": "Supabase subscriber + reconnect logic",
+      "status": "queued",
+      "owner": null,
+      "task_path": "docs/agent_exchange/queued/B002-005_supabase_subscriber_reconnect.md",
+      "created_at": "2026-06-06T10:30:00Z",
+      "started_at": null,
+      "ended_at": null,
+      "reviewed_at": null,
+      "review_round": 0,
+      "spawned_from": null,
+      "depends_on": [
+        "B002-003"
+      ]
+    },
+    {
+      "id": "B002-006",
+      "slug": "rule_engine_config_schema",
+      "title": "Rule engine + config schema",
+      "status": "queued",
+      "owner": null,
+      "task_path": "docs/agent_exchange/queued/B002-006_rule_engine_config_schema.md",
+      "created_at": "2026-06-06T10:30:00Z",
+      "started_at": null,
+      "ended_at": null,
+      "reviewed_at": null,
+      "review_round": 0,
+      "spawned_from": null,
+      "depends_on": [
+        "B002-002",
+        "B002-003",
+        "B002-005"
+      ]
+    },
+    {
+      "id": "B002-007",
+      "slug": "auth_manager_placement",
+      "title": "Auth manager placement (Q23 module-local)",
+      "status": "queued",
+      "owner": null,
+      "task_path": "docs/agent_exchange/queued/B002-007_auth_manager_placement.md",
+      "created_at": "2026-06-06T10:30:00Z",
+      "started_at": null,
+      "ended_at": null,
+      "reviewed_at": null,
+      "review_round": 0,
+      "spawned_from": null,
+      "depends_on": [
+        "B002-005"
+      ]
+    },
+    {
+      "id": "B002-008",
+      "slug": "ui_panel_migration",
+      "title": "UI panel migration (BridgeX config \u2192 ShowX module panel)",
+      "status": "queued",
+      "owner": null,
+      "task_path": "docs/agent_exchange/queued/B002-008_ui_panel_migration.md",
+      "created_at": "2026-06-06T10:30:00Z",
+      "started_at": null,
+      "ended_at": null,
+      "reviewed_at": null,
+      "review_round": 0,
+      "spawned_from": null,
+      "depends_on": [
+        "B002-002",
+        "B002-007"
+      ]
+    },
+    {
+      "id": "B002-009",
+      "slug": "config_migration_script",
+      "title": "Config migration BridgeX 0.3.x \u2192 ShowX persistedConfig",
+      "status": "queued",
+      "owner": null,
+      "task_path": "docs/agent_exchange/queued/B002-009_config_migration_script.md",
+      "created_at": "2026-06-06T10:30:00Z",
+      "started_at": null,
+      "ended_at": null,
+      "reviewed_at": null,
+      "review_round": 0,
+      "spawned_from": null,
+      "depends_on": [
+        "B002-006"
+      ]
+    },
+    {
+      "id": "B002-010",
+      "slug": "parity_scenarios_pt_001_015",
+      "title": "Parity scenarios PT-001..015",
+      "status": "queued",
+      "owner": null,
+      "task_path": "docs/agent_exchange/queued/B002-010_parity_scenarios_pt_001_015.md",
+      "created_at": "2026-06-06T10:30:00Z",
+      "started_at": null,
+      "ended_at": null,
+      "reviewed_at": null,
+      "review_round": 0,
+      "spawned_from": null,
+      "depends_on": [
+        "B002-004",
+        "B002-006"
+      ]
+    },
+    {
+      "id": "B002-011",
+      "slug": "parity_scenarios_pt_016_025",
+      "title": "Parity scenarios PT-016..025",
+      "status": "queued",
+      "owner": null,
+      "task_path": "docs/agent_exchange/queued/B002-011_parity_scenarios_pt_016_025.md",
+      "created_at": "2026-06-06T10:30:00Z",
+      "started_at": null,
+      "ended_at": null,
+      "reviewed_at": null,
+      "review_round": 0,
+      "spawned_from": null,
+      "depends_on": [
+        "B002-010"
+      ]
+    },
+    {
+      "id": "B002-012",
+      "slug": "parity_scenarios_pt_026_035",
+      "title": "Parity scenarios PT-026..035 + soak",
+      "status": "queued",
+      "owner": null,
+      "task_path": "docs/agent_exchange/queued/B002-012_parity_scenarios_pt_026_035.md",
+      "created_at": "2026-06-06T10:30:00Z",
+      "started_at": null,
+      "ended_at": null,
+      "reviewed_at": null,
+      "review_round": 0,
+      "spawned_from": null,
+      "depends_on": [
+        "B002-011"
+      ]
+    },
+    {
+      "id": "B002-013",
+      "slug": "migration_test_harness",
+      "title": "Migration test harness (E2E upgrade flow)",
+      "status": "queued",
+      "owner": null,
+      "task_path": "docs/agent_exchange/queued/B002-013_migration_test_harness.md",
+      "created_at": "2026-06-06T10:30:00Z",
+      "started_at": null,
+      "ended_at": null,
+      "reviewed_at": null,
+      "review_round": 0,
+      "spawned_from": null,
+      "depends_on": [
+        "B002-009",
+        "B002-010",
+        "B002-012"
+      ]
+    },
+    {
+      "id": "B002-014",
+      "slug": "apple_developer_id_rebrand",
+      "title": "Apple Developer ID bundle ID rebrand",
+      "status": "queued",
+      "owner": null,
+      "task_path": "docs/agent_exchange/queued/B002-014_apple_developer_id_rebrand.md",
+      "created_at": "2026-06-06T10:30:00Z",
+      "started_at": null,
+      "ended_at": null,
+      "reviewed_at": null,
+      "review_round": 0,
+      "spawned_from": null,
+      "depends_on": [
+        "B001-011",
+        "B002-012"
+      ]
+    },
+    {
+      "id": "B002-015",
+      "slug": "showx_0_5_internal_release",
+      "title": "ShowX 0.5 internal release (DMG signed + notarized)",
+      "status": "queued",
+      "owner": null,
+      "task_path": "docs/agent_exchange/queued/B002-015_showx_0_5_internal_release.md",
+      "created_at": "2026-06-06T10:30:00Z",
+      "started_at": null,
+      "ended_at": null,
+      "reviewed_at": null,
+      "review_round": 0,
+      "spawned_from": null,
+      "depends_on": [
+        "B002-013",
+        "B002-014"
       ]
     }
   ]
