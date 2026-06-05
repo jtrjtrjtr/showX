@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm install)",
+      "Bash(pnpm install --no-frozen-lockfile)",
+      "Bash(pnpm -r typecheck)",
+      "Bash(pnpm --filter showx-main typecheck)",
+      "Bash(pnpm --filter showx-main typecheck *)",
+      "Bash(pnpm --filter showx-shared typecheck)",
+      "Bash(pnpm --filter showx-shared typecheck *)",
+      "Bash(pnpm --filter showx-pwa typecheck)",
+      "Bash(pnpm --filter showx-pwa typecheck *)",
+      "Bash(pnpm --filter showx-pwa build)",
+      "Bash(pnpm lint)",
+      "Bash(pnpm lint *)",
+      "Bash(pnpm test)",
+      "Bash(pnpm test:parity)",
+      "Bash(pnpm vitest run tests/unit/types)",
+      "Bash(pnpm vitest run tests/unit/types *)",
+      "Bash(pnpm vitest run tests/unit/shared)",
+      "Bash(pnpm vitest run tests/unit/shared *)",
+      "Bash(pnpm vitest run tests/unit/pwa)",
+      "Bash(pnpm vitest run tests/unit/pwa *)",
+      "Bash(pnpm vitest run tests/unit *)",
+      "Bash(python3 scripts/render_dashboard.py)",
+      "Bash(python3 scripts/agent_exchange_refresh_dashboard.py)"
+    ]
+  }
+}

@@ -144,7 +144,7 @@ Small `idbGet`/`idbPut`/`idbDelete` helpers wrapping the imperative IDB API in p
 Browser cannot do mDNS directly. Two paths:
 
 1. **Same-host discovery** (when PWA is served from ShowX itself, common after pairing): `window.location.origin` IS the host. Return immediately.
-2. **Cross-host discovery**: probe a small list of likely LAN IPs by fetching `/_showx/ping` with a timeout. The ping endpoint is served by AssetServer (B001-005) and returns `{ service: 'showx', port, version }`.
+2. **Cross-host discovery**: probe a small list of likely LAN IPs by fetching `/system/health` with a timeout. The ping endpoint is served by AssetServer (B001-005) and returns `{ service: 'showx', port, version }`.
 3. **Manual fallback**: a form input for host/port.
 
 ```ts
@@ -155,7 +155,7 @@ export interface DiscoveryResult {
 
 export async function discoverFromOrigin(): Promise<DiscoveryResult | null> {
   try {
-    const r = await fetchWithTimeout(`${window.location.origin}/_showx/ping`, 1500);
+    const r = await fetchWithTimeout(`${window.location.origin}/system/health`, 1500);
     if (!r.ok) return null;
     const body = await r.json();
     return { hosts: [{ host: window.location.hostname, port: Number(window.location.port) || 80, pairingAvailable: true }], source: 'origin' };
@@ -166,7 +166,7 @@ export async function probeLan(hints: string[]): Promise<DiscoveredHost[]> {
   // hints: ['192.168.1.10', '10.0.0.5', ...]
   const probes = hints.map(async (host) => {
     try {
-      const r = await fetchWithTimeout(`http://${host}:8088/_showx/ping`, 800);
+      const r = await fetchWithTimeout(`http://${host}:8088/system/health`, 800);
       if (r.ok) {
         const body = await r.json();
         return { host, port: body.port ?? 8088, name: body.name, pairingAvailable: true };
@@ -465,7 +465,7 @@ Plus a smoke `pnpm --filter showx-pwa build` MUST succeed (no TypeScript errors,
 - Verify that the same Vite build serves both the PWA experience AND the Electron shell mode — the mode router in App.tsx is what distinguishes. Confirm there are no separate build outputs.
 - syncClient backoff math: 1s → 2s → 4s → 8s → 16s → 30s → 30s capped. Confirm `Math.min` is applied AFTER the doubling.
 - `fake-indexeddb/auto` import must be at the top of EVERY test file that touches IndexedDB, BEFORE any other import that might touch IDB. Common mistake: ordering imports wrong.
-- The PWA serves itself from ShowX's AssetServer in production; CORS / fetch issues won't appear because origin matches. But the probe step (`probeLan`) DOES cross origins — confirm AssetServer's `/_showx/ping` route returns `Access-Control-Allow-Origin: *` (or this task adds a note that B001-005 should). If route doesn't exist yet, comment the path in code and flag in done report.
+- The PWA serves itself from ShowX's AssetServer in production; CORS / fetch issues won't appear because origin matches. But the probe step (`probeLan`) DOES cross origins — confirm AssetServer's `/system/health` route returns `Access-Control-Allow-Origin: *` (or this task adds a note that B001-005 should). If route doesn't exist yet, comment the path in code and flag in done report.
 - Service worker placeholder must NOT cache anything yet. A naive `cache.add(...)` here will pin the dev build into IDB and break iteration. Confirm sw.js fetch handler is truly passthrough.
 - Confirm `<App />` doesn't try to connect to ShowX during tests (no real fetch). All network paths should be behind injected/mocked helpers OR guarded by mode.
 - `WebsocketProvider` options: confirm `params: { token }` is forwarded as a query string (`?token=...`), which is how y-websocket's URL builder works. The server side (B001-006 SyncBroker) needs to read it from there. Note as integration concern in done report.
