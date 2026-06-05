@@ -205,6 +205,20 @@ B001-012 uses `{ pin, display_name }`. Canonical pairing_auth.md §5.2 requires 
 
 29 open questions identified across 5 specs + task-spec consistency review. Approximately 5 need decisions before ShowX-1 Foundation execution can start (Q1-Q3, plus Q27-Q29 patches); the rest cascade through ShowX-2 through ShowX-4 bundles. None block bundle-opening; most have sensible spec defaults.
 
+---
+
+## Late additions (post-launch 2026-06-05)
+
+### Q30. B001-007 OutputDispatcher sync vs async claim signature
+
+Subagent reviewing B001-007 flagged real type-signature mismatch: showx-shared's sync `claim()` declaration (from B001-002 spec) vs the necessary async impl in B001-007 OutputDispatcher.
+
+**Default in spec:** B001-007 spec recommends `@ts-expect-error` + a separate `claimAsync` method, OR a follow-up task to widen B001-002's signature to `Promise<TransportHandle>`.
+
+**Architect ruling:** Widen B001-002's signature to `claim(...): Promise<TransportHandle>` (cleaner long-term). If B001-002 is already in_progress/done when this lands, file a B001-002-revision task.
+
+**Status:** Forge starting B001-001 first; B001-002 is next; correct the signature in spec before B001-002 picks up.
+
 **Recommended morning workflow:**
 1. Read this doc top-to-bottom (~10 min)
 2. Confirm defaults for Q1-Q3 (Module Loader) — needed for B001-010 implementation
