@@ -12,7 +12,7 @@ export default defineConfig({
     },
   },
   test: {
-    include: ['tests/unit/**/*.test.ts', 'tests/unit/**/*.test.tsx', 'src/**/*.test.ts', 'pwa/src/**/*.test.tsx'],
+    include: ['tests/unit/**/*.test.ts', 'tests/unit/**/*.test.tsx', 'tests/parity/**/*.test.ts', 'src/**/*.test.ts', 'pwa/src/**/*.test.tsx'],
     environment: 'node',
     setupFiles: ['./tests/setup.ts'],
     passWithNoTests: true,

@@ -1,0 +1,8 @@
+{
+  "name": "Crasher",
+  "slug": "crasher",
+  "version": "0.0.1",
+  "description": "crashes during init",
+  "tier": "free",
+  "depends_on": []
+}

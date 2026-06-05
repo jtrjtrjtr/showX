@@ -16,6 +16,7 @@
     "test:e2e": "playwright test",
     "test:parity": "vitest run tests/parity",
     "lint": "eslint src pwa",
+    "dev": "concurrently 'pnpm --filter showx-pwa dev' 'pnpm --filter showx-main dev'",
     "dev:electron": "pnpm --filter showx-main dev",
     "dev:pwa": "pnpm --filter showx-pwa dev",
     "build": "pnpm -r build",

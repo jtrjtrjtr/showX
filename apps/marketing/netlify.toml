@@ -1,0 +1,19 @@
+[build]
+  publish = "dist"
+  command = "pnpm install && pnpm --filter @showx/marketing build"
+
+[build.environment]
+  NODE_VERSION = "20"
+  PNPM_VERSION = "8.15.0"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"

@@ -1,0 +1,250 @@
+import { Link } from 'react-router-dom'
+import { useI18n } from '../lib/i18n'
+
+interface Release {
+  version: string
+  name: { cs: string; en: string }
+  target: string
+  status: 'development' | 'planned' | 'preview'
+  notes: { cs: string; en: string }
+}
+
+const releases: Release[] = [
+  {
+    version: '0.5',
+    name: { cs: 'Internal preview', en: 'Internal preview' },
+    target: 'End-2026',
+    status: 'development',
+    notes: {
+      cs: 'EventX Bridge module reaches BridgeX 0.3.x feature parity. Electron shell + module loader + embedded sync broker + mDNS + local pairing. Žádné public binaries; výhradně pro 5-10 BridgeX zákazníků na ručním testu.',
+      en: 'EventX Bridge module reaches BridgeX 0.3.x feature parity. Electron shell + module loader + embedded sync broker + mDNS + local pairing. No public binaries; for 5-10 BridgeX customers on hand-rolled test only.',
+    },
+  },
+  {
+    version: '0.1',
+    name: { cs: 'Public preview', en: 'Public preview' },
+    target: 'Q1 2027',
+    status: 'planned',
+    notes: {
+      cs: 'První public binary. Cuelist Core module + REHEARSAL mode. EventX Bridge ships ve stejném binary. CSV import, JSON .showx export, PDF cue-sheet export. macOS only.',
+      en: 'First public binary. Cuelist Core module + REHEARSAL mode. EventX Bridge ships in the same binary. CSV import, JSON .showx export, PDF cue-sheet export. macOS only.',
+    },
+  },
+  {
+    version: '0.2',
+    name: { cs: 'SHOW mode + Cloud Sync', en: 'SHOW mode + Cloud Sync' },
+    target: 'Q2 2027',
+    status: 'planned',
+    notes: {
+      cs: 'SHOW mode module + edit proposal queue + history snapshots. Cloud Sync opt-in module. MSC out, USITT ASCII import, Stream Deck via Companion (komunitní modul).',
+      en: 'SHOW mode module + edit proposal queue + history snapshots. Cloud Sync opt-in module. MSC out, USITT ASCII import, Stream Deck via Companion (community module).',
+    },
+  },
+  {
+    version: '0.3',
+    name: { cs: 'Multi-cuelist + Master Timeline', en: 'Multi-cuelist + Master Timeline' },
+    target: 'Q3 2027',
+    status: 'planned',
+    notes: {
+      cs: 'Multiple cuelists per show + Showlist container (Pre-show / Act 1 / Interval / Act 2 / Encore). Master Timeline read-only (LTC/MTC chase). Custom Router rule table polished.',
+      en: 'Multiple cuelists per show + Showlist container (Pre-show / Act 1 / Interval / Act 2 / Encore). Master Timeline read-only (LTC/MTC chase). Custom Router rule table polished.',
+    },
+  },
+  {
+    version: '1.0',
+    name: { cs: 'Public beta', en: 'Public beta' },
+    target: 'Q4 2027',
+    status: 'planned',
+    notes: {
+      cs: 'Open signups. Marketing site + docs portal. iPad PWA fully polished. Companion community module published. Path k 50 paying customers do konce 2027.',
+      en: 'Open signups. Marketing site + docs portal. iPad PWA fully polished. Companion community module published. Path to 50 paying customers by end of 2027.',
+    },
+  },
+]
+
+const bundleProgress = [
+  { id: 1, title: 'Repo scaffold + workspace setup', status: 'accepted' },
+  { id: 2, title: 'TypeScript shared types', status: 'accepted' },
+  { id: 3, title: 'Electron main shell + IPC scaffold', status: 'accepted' },
+  { id: 4, title: 'Module loader spec + dynamic loader', status: 'accepted' },
+  { id: 5, title: 'Embedded y-websocket sync broker', status: 'accepted' },
+  { id: 6, title: 'Static PWA asset server', status: 'accepted' },
+  { id: 7, title: 'mDNS service advertiser', status: 'accepted' },
+  { id: 8, title: 'Pairing token store + QR/PIN flow', status: 'accepted' },
+  { id: 9, title: 'Shared protocol dispatcher (OSC + MIDI)', status: 'accepted' },
+  { id: 10, title: 'Shared protocol dispatcher (DMX + sACN)', status: 'accepted' },
+  { id: 11, title: 'BridgeX 0.3.x source migration', status: 'in_progress' },
+  { id: 12, title: 'EventX Bridge module wired through dispatcher', status: 'queued' },
+  { id: 13, title: 'BridgeX 0.3.x parity test harness', status: 'queued' },
+]
+
+const statusBadge = (s: string, cs: boolean) => {
+  if (s === 'accepted') return { label: cs ? 'Accepted' : 'Accepted', cls: 'bg-accent text-ink' }
+  if (s === 'in_progress') return { label: cs ? 'In progress' : 'In progress', cls: 'bg-paper text-ink border border-ink/30' }
+  if (s === 'queued') return { label: cs ? 'Queued' : 'Queued', cls: 'border border-rule text-muted' }
+  return { label: s, cls: 'text-muted' }
+}
+
+const releaseStatusBadge = (s: string, cs: boolean) => {
+  if (s === 'development') return { label: cs ? 'Vývoj' : 'In development', cls: 'bg-ink text-accent' }
+  if (s === 'planned') return { label: cs ? 'Plánováno' : 'Planned', cls: 'border border-rule text-muted' }
+  if (s === 'preview') return { label: cs ? 'Preview' : 'Preview', cls: 'bg-accent text-ink' }
+  return { label: s, cls: '' }
+}
+
+export function Downloads() {
+  const { t, lang } = useI18n()
+  const cs = lang === 'cs'
+
+  const accepted = bundleProgress.filter(b => b.status === 'accepted').length
+
+  return (
+    <div>
+      {/* HERO */}
+      <section className="relative overflow-hidden">
+        <div className="max-w-[1280px] mx-auto px-6 lg:px-12 pt-24 lg:pt-32 pb-20">
+          <div className="grid grid-cols-12 gap-6 items-end">
+            <div className="col-span-12 lg:col-span-9 animate-fade-up">
+              <div className="section-label mb-8">{t('dl.label')}</div>
+              <h1 className="display-serif text-display-1 text-ink leading-[0.95]">
+                {t('dl.headline.line1')}<br />
+                <em className="font-light text-accent-deep not-italic">{t('dl.headline.line2')}</em>
+              </h1>
+              <p className="copy text-lg mt-10 max-w-2xl">{t('dl.intro')}</p>
+            </div>
+          </div>
+        </div>
+        <div className="absolute -bottom-10 -right-20 display-serif text-[18rem] leading-none text-accent/[0.08] select-none pointer-events-none">06</div>
+      </section>
+
+      {/* RELEASES */}
+      <section className="rule-top">
+        <div className="max-w-[1280px] mx-auto px-6 lg:px-12 py-20">
+          <div className="grid grid-cols-12 gap-8 mb-12">
+            <div className="col-span-12 md:col-span-3">
+              <div className="section-label">{cs ? 'Roadmapa' : 'Roadmap'}</div>
+            </div>
+            <div className="col-span-12 md:col-span-9">
+              <h2 className="display-serif text-display-2 leading-tight">
+                {cs ? 'Pět vydání' : 'Five releases'}<br />
+                <em className="text-muted italic font-light">{cs ? 'do public bety.' : 'to public beta.'}</em>
+              </h2>
+            </div>
+          </div>
+          <div className="space-y-4">
+            {releases.map(r => {
+              const badge = releaseStatusBadge(r.status, cs)
+              return (
+                <div
+                  key={r.version}
+                  className="border border-rule rounded-sm p-6 bg-ground grid grid-cols-12 gap-6 items-start"
+                >
+                  <div className="col-span-12 md:col-span-2">
+                    <div className="display-serif text-3xl">{r.version}</div>
+                    <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted mt-1">
+                      {r.target}
+                    </div>
+                  </div>
+                  <div className="col-span-12 md:col-span-2">
+                    <span className={`text-[10px] uppercase tracking-[0.18em] px-2 py-0.5 rounded-sm font-mono ${badge.cls}`}>
+                      {badge.label}
+                    </span>
+                  </div>
+                  <div className="col-span-12 md:col-span-8">
+                    <h3 className="display-serif text-xl mb-2">{cs ? r.name.cs : r.name.en}</h3>
+                    <p className="copy text-sm">{cs ? r.notes.cs : r.notes.en}</p>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* BUNDLE PROGRESS */}
+      <section className="rule-top bg-paper/30">
+        <div className="max-w-[1280px] mx-auto px-6 lg:px-12 py-20">
+          <div className="grid grid-cols-12 gap-8 mb-12">
+            <div className="col-span-12 md:col-span-3">
+              <div className="section-label">{cs ? 'Live progress' : 'Live progress'}</div>
+            </div>
+            <div className="col-span-12 md:col-span-9">
+              <h2 className="display-serif text-display-2 leading-tight">
+                ShowX-1 Foundation<br />
+                <em className="text-accent-deep font-light not-italic">
+                  {accepted}/{bundleProgress.length} {cs ? 'tasků accepted' : 'tasks accepted'}
+                </em>
+              </h2>
+              <p className="copy mt-4 max-w-2xl text-sm">
+                {cs
+                  ? 'Aktuální stav prvního bundle. Architect + Forge + Critic file-based workflow. Každý task má spec, done report, Critic review. Bundle se uzavře, jakmile Critic accepts všech 13.'
+                  : 'Current state of the first bundle. Architect + Forge + Critic file-based workflow. Each task has a spec, done report, Critic review. Bundle closes when Critic accepts all 13.'}
+              </p>
+            </div>
+          </div>
+          <div className="border border-rule rounded-sm bg-ground overflow-hidden">
+            <table className="w-full">
+              <thead className="bg-paper/40 border-b border-rule">
+                <tr>
+                  <th className="text-left px-4 py-3 font-mono text-[10px] uppercase tracking-[0.18em] text-muted w-12">#</th>
+                  <th className="text-left px-4 py-3 font-mono text-[10px] uppercase tracking-[0.18em] text-muted">
+                    {cs ? 'Task' : 'Task'}
+                  </th>
+                  <th className="text-right px-4 py-3 font-mono text-[10px] uppercase tracking-[0.18em] text-muted w-32">
+                    {cs ? 'Stav' : 'Status'}
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {bundleProgress.map(b => {
+                  const badge = statusBadge(b.status, cs)
+                  return (
+                    <tr key={b.id} className="border-b border-rule last:border-b-0">
+                      <td className="px-4 py-3 font-mono text-xs text-muted">{String(b.id).padStart(2, '0')}</td>
+                      <td className="px-4 py-3 text-sm">{b.title}</td>
+                      <td className="px-4 py-3 text-right">
+                        <span className={`text-[10px] uppercase tracking-[0.18em] px-2 py-0.5 rounded-sm font-mono ${badge.cls}`}>
+                          {badge.label}
+                        </span>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+          <div className="mt-6 flex flex-wrap gap-3">
+            <a
+              href="https://github.com/xlab/showx"
+              target="_blank"
+              rel="noreferrer"
+              className="btn-ghost"
+            >
+              {cs ? 'GitHub repo' : 'GitHub repo'} →
+            </a>
+            <Link to="/docs" className="btn-ghost">{cs ? 'Bundle docs' : 'Bundle docs'}</Link>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section className="rule-top">
+        <div className="max-w-[1280px] mx-auto px-6 lg:px-12 py-24">
+          <div className="grid grid-cols-12 gap-8 items-end">
+            <div className="col-span-12 md:col-span-8">
+              <h2 className="display-serif text-display-2 leading-tight">
+                {cs ? 'Když chcete být první,' : 'If you want to be first,'}<br />
+                <em className="text-accent-deep italic font-light not-italic">{cs ? 'přidejte se do bety.' : 'join the beta.'}</em>
+              </h2>
+            </div>
+            <div className="col-span-12 md:col-span-4 flex md:justify-end">
+              <a href="mailto:hello@xlabproject.net?subject=ShowX%20beta" className="btn-primary">
+                {cs ? 'Beta access' : 'Beta access'} →
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  )
+}

@@ -79,6 +79,11 @@ export class AssetServer {
     return this.server;
   }
 
+  /** Expose the Express API router so Shell can mount sub-routers (e.g. pairing routes). */
+  get expressApiRouter(): express.Router {
+    return this.apiRouter;
+  }
+
   registerStaticRoute(slug: string, dir: string): Subscription {
     const id = randomUUID();
     this.staticMounts.push({ id, slug, dir });

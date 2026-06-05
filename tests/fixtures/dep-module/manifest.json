@@ -1,0 +1,8 @@
+{
+  "name": "Dep Module",
+  "slug": "dep",
+  "version": "0.0.1",
+  "description": "depends on stub",
+  "tier": "free",
+  "depends_on": ["stub"]
+}

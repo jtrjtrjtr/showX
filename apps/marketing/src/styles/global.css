@@ -1,0 +1,60 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  body {
+    @apply bg-ground text-ink font-sans;
+    font-feature-settings: 'cv11', 'ss03';
+  }
+}
+
+@layer components {
+  .copy {
+    @apply text-ink/80 leading-relaxed;
+  }
+  .display-serif {
+    @apply font-display tracking-tightest;
+  }
+  .section-label {
+    @apply font-mono text-[11px] uppercase tracking-[0.2em] text-muted;
+  }
+  .nav-link {
+    @apply font-mono text-[12px] uppercase tracking-[0.18em] text-ink/70 hover:text-ink transition-colors;
+  }
+  .nav-link.active {
+    @apply text-ink;
+  }
+  .btn-primary {
+    @apply inline-flex items-center gap-2 bg-ink text-accent font-mono text-[12px] uppercase tracking-[0.18em] px-5 py-3 rounded-sm hover:bg-ink/90 transition-colors;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center gap-2 border border-ink/20 text-ink font-mono text-[12px] uppercase tracking-[0.18em] px-5 py-3 rounded-sm hover:border-ink hover:bg-ink hover:text-accent transition-colors;
+  }
+  .rule-top {
+    @apply border-t border-rule;
+  }
+  .rule-bottom {
+    @apply border-b border-rule;
+  }
+  .grid-card {
+    @apply border border-rule rounded-sm p-6 bg-cream/40 hover:bg-cream/80 transition-colors;
+  }
+  .tier-card {
+    @apply border border-rule rounded-sm p-8 bg-ground hover:border-ink transition-colors flex flex-col;
+  }
+  .tier-card.featured {
+    @apply border-ink bg-ink text-ground;
+  }
+  .tier-card.featured .section-label,
+  .tier-card.featured .copy {
+    @apply text-ground/70;
+  }
+  .badge {
+    @apply inline-block font-mono text-[10px] uppercase tracking-[0.2em] px-2 py-1 border border-current rounded-sm;
+  }
+}

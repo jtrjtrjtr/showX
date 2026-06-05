@@ -2,8 +2,7 @@ import { promises as fs } from 'node:fs';
 import { dirname } from 'node:path';
 import { createCipheriv, createDecipheriv, randomBytes, randomUUID } from 'node:crypto';
 import { createRequire } from 'node:module';
-import type { SecretStore as SecretStoreIface } from 'showx-shared';
-import type { Logger } from './Logger.js';
+import type { SecretStore as SecretStoreIface, Logger } from 'showx-shared';
 import { type PathLayout, secretFallbackPath } from './paths.js';
 
 type KeytarModule = {

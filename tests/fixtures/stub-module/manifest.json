@@ -1,0 +1,8 @@
+{
+  "name": "Stub Module",
+  "slug": "stub",
+  "version": "0.0.1",
+  "description": "test fixture",
+  "tier": "free",
+  "depends_on": []
+}

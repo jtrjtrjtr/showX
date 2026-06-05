@@ -6,7 +6,7 @@ import type {
   ConfigSchemaDescriptor,
   Subscription,
 } from 'showx-shared';
-import type { Logger } from './Logger.js';
+import type { Logger } from 'showx-shared';
 import { type PathLayout, moduleConfigPath } from './paths.js';
 
 interface ChangeHandler<T> {
