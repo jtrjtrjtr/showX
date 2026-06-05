@@ -2,7 +2,6 @@ import type { LxRefPayload } from 'showx-shared';
 import type { DispatchDeps, SingleDispatchResult } from '../types.js';
 import { resolveDeviceTransport } from '../resolveRouting.js';
 import type { RoutingEntry, OscTransport } from '../resolveRouting.js';
-import { buildSourceURI } from './osc.js';
 
 export async function dispatchLxRef(
   payload: LxRefPayload,
@@ -15,7 +14,6 @@ export async function dispatchLxRef(
   }
   const osc = transport as OscTransport;
   const encoding = osc.encoding ?? 'eos';
-  const sourceURI = buildSourceURI(deps.doc);
 
   let address: string;
   let args: Array<number | string | boolean | Buffer> = [];
@@ -41,8 +39,6 @@ export async function dispatchLxRef(
     default:
       return { ok: false, error: `unsupported lx encoding ${encoding as string}` };
   }
-
-  args.push(sourceURI);
 
   const result = await deps.output.send({
     transport: 'osc',

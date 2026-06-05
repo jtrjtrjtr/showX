@@ -33,8 +33,8 @@ describe('dispatchLxRef', () => {
     const deps = makeDeps(sendFn);
     await dispatchLxRef(makeLxPayload(), makeRouting('eos'), deps);
     const msg = sendFn.mock.calls[0][0];
-    expect(msg.payload.address).toBe('/eos/cue/1/47/fire');
-    expect(msg.payload.args).toEqual([]);
+    expect(msg.address).toBe('/eos/cue/1/47/fire');
+    expect(msg.args).toEqual([]);
   });
 
   it('MA3: address is /cmd with string arg GO Cue 47 List 1', async () => {
@@ -42,8 +42,8 @@ describe('dispatchLxRef', () => {
     const deps = makeDeps(sendFn);
     await dispatchLxRef(makeLxPayload(), makeRouting('ma3'), deps);
     const msg = sendFn.mock.calls[0][0];
-    expect(msg.payload.address).toBe('/cmd');
-    expect(msg.payload.args).toEqual([{ type: 'string', value: 'GO Cue 47 List 1' }]);
+    expect(msg.address).toBe('/cmd');
+    expect(msg.args).toEqual(['GO Cue 47 List 1']);
   });
 
   it('Hog4: address is /hog/playback/go/1.47', async () => {
@@ -51,7 +51,7 @@ describe('dispatchLxRef', () => {
     const deps = makeDeps(sendFn);
     await dispatchLxRef(makeLxPayload(), makeRouting('hog'), deps);
     const msg = sendFn.mock.calls[0][0];
-    expect(msg.payload.address).toBe('/hog/playback/go/1.47');
+    expect(msg.address).toBe('/hog/playback/go/1.47');
   });
 
   it('unknown encoding returns error', async () => {

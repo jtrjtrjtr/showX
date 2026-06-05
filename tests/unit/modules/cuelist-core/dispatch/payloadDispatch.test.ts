@@ -87,11 +87,7 @@ function makeWebhookPayload(id = 'pwh'): WebhookPayload {
 
 describe('dispatchCue', () => {
   it('cue with 3 payloads: all dispatched in order; payloads_dispatched === 3', async () => {
-    const sendOrder: string[] = [];
-    const sendFn = vi.fn().mockImplementation(async (msg: { payload: { address?: string } }) => {
-      sendOrder.push(msg.payload.address ?? '?');
-      return { ok: true };
-    });
+    const sendFn = vi.fn().mockResolvedValue({ ok: true });
     const doc = makeDoc();
     const clId = addCuelist(doc, 'Main');
     setRouting(doc, makeOscRouting());
@@ -108,6 +104,8 @@ describe('dispatchCue', () => {
     expect(r.payloads_dispatched).toBe(3);
     expect(r.payloads_failed).toHaveLength(0);
     expect(sendFn).toHaveBeenCalledTimes(3);
+    // Verify dispatch order via details
+    expect(r.details.map((d) => d.payload_id)).toEqual(['p1', 'p2', 'p3']);
   });
 
   it('1 failing + 2 succeeding: ok=false, payloads_failed has 1 entry, dispatched===2', async () => {

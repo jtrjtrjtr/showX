@@ -29,7 +29,7 @@ describe('dispatchMidi', () => {
     const sendFn = vi.fn().mockResolvedValue({ ok: true });
     const deps = makeDeps(sendFn);
     await dispatchMidi(makeMidiPayload({ kind: 'note_on', channel: 1, note: 60, velocity: 127 }), makeRouting(), deps);
-    const bytes = sendFn.mock.calls[0][0].payload.bytes;
+    const bytes = sendFn.mock.calls[0][0].bytes;
     expect(bytes).toEqual([0x90, 60, 127]);
   });
 
@@ -37,7 +37,7 @@ describe('dispatchMidi', () => {
     const sendFn = vi.fn().mockResolvedValue({ ok: true });
     const deps = makeDeps(sendFn);
     await dispatchMidi(makeMidiPayload({ kind: 'note_off', channel: 2, note: 60, velocity: 0 }), makeRouting(), deps);
-    const bytes = sendFn.mock.calls[0][0].payload.bytes;
+    const bytes = sendFn.mock.calls[0][0].bytes;
     expect(bytes).toEqual([0x81, 60, 0]);
   });
 
@@ -45,7 +45,7 @@ describe('dispatchMidi', () => {
     const sendFn = vi.fn().mockResolvedValue({ ok: true });
     const deps = makeDeps(sendFn);
     await dispatchMidi(makeMidiPayload({ kind: 'cc', channel: 1, controller: 7, value: 100 }), makeRouting(), deps);
-    const bytes = sendFn.mock.calls[0][0].payload.bytes;
+    const bytes = sendFn.mock.calls[0][0].bytes;
     expect(bytes).toEqual([0xb0, 7, 100]);
   });
 
@@ -54,7 +54,7 @@ describe('dispatchMidi', () => {
     const deps = makeDeps(sendFn);
     const raw = [0xf0, 0x7e, 0x7f, 0x09, 0x01, 0xf7];
     await dispatchMidi(makeMidiPayload({ kind: 'raw', bytes: raw }), makeRouting(), deps);
-    expect(sendFn.mock.calls[0][0].payload.bytes).toEqual(raw);
+    expect(sendFn.mock.calls[0][0].bytes).toEqual(raw);
   });
 
   it('returns error when no midi routing', async () => {

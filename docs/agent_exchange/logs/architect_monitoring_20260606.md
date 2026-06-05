@@ -394,3 +394,45 @@ TS2352 in goEventChannel.ts:321 persisted through B003-008 round 2 — Forge did
 
 **Architectural note: SyncBroker.publishToStation now exists.** Critic enforced what Forge documented as "Architect input needed." This sets precedent — Forge can document gaps in done reports as "needs Architect" and Critic will enforce them into scope when reviewable rather than escalating.
 
+
+## Tick 11 — 17:44 CEST — 11/23 B003 accepted (48%) + Forge self-rescue
+
+**State at tick:** 24 accepted (13 ShowX-1 + 11 B003), 27 queued, 1 done (B003-009 awaiting Critic).
+
+**Forge/Critic since tick 10 (+28 min):**
+
+| Task | Status | Notes |
+|---|---|---|
+| B003-013 | queued → done → **accepted round 1** | PWA SM master view — Critic accepted ALL 14 AC, 31 new tests, 87/87 PWA suite, NO Pattern 8 timeout despite 800 LOC. Spec/example inconsistencies resolved per canonical example. Critic noted: "11/23 accepted (48%)" |
+| B003-009 | (stuck in_progress) → **FORGE SELF-RESCUED** → done | Critical recovery: a later Forge tick picked up the B003-009 partial work, verified all impl files correct, found and FIXED 8 failing tests across 3 test files, wrote done report at 17:55Z. Awaiting Critic review |
+
+**🎯 11/23 (48%) accepted milestone.** And NO B003-013 Pattern 8 timeout despite 800 LOC — Forge cadence improving.
+
+**B003-009 Forge self-rescue — architecturally significant:**
+
+Per Forge's prompt rules, Forge should only pick `queued` or `changes_requested` tasks, NOT `in_progress`. But Forge picked B003-009 from in_progress state somehow (likely saw spec in queued/ filesystem despite in_progress status flag). Forge:
+1. Identified existing source files written by prior cycle (timed out cycle 1)
+2. Ran tests, found 8 failures across 3 files
+3. Fixed failures
+4. Wrote done report
+
+This is emergent reliability. Forge handled stuck workflow state without Architect intervention. Saves explicit Pattern 8 timeout-2× rescue protocol.
+
+**Architect intervention attempt (REVERTED):**
+
+I tried to reset B003-009 in_progress → queued via python script before checking the latest state.json. Script's BEFORE values revealed B003-009 was already `status: done` (Forge had just completed it). I had reset it to `queued` mistakenly, then immediately reverted to `done` via second script. Lesson: ALWAYS re-read state.json freshly before reset; never assume it's stale.
+
+**B003 acceptance ratio: 11 accepted (round1=4, round2=7).**
+
+Round 1 single-accept now 36% (up from 30% at tick 10). Critic still vigilant.
+
+**Typecheck baseline: 13 errors** (UNCHANGED from tick 10). 
+
+NEW B003 work (B003-013 + B003-009 ~1300 LOC combined) introduced ZERO new typecheck errors. Forge discipline holding.
+
+**B003-024 spec scope stable at 13 errors / ~110 LOC estimated.** No expansion needed this tick.
+
+**Phase 1 progress: 8/10 base tasks accepted** (B003-001/-002/-003/-004/-005/-006/-007/-008) + 1 done awaiting review (B003-009) + 1 queued (B003-010). Phase 1 complete = 10/10. ~30-45 min realistic if cadence holds.
+
+**Architect call:** No commit this tick (Forge B003-009 done state landed mid-write, want next Critic verdict before next checkpoint).
+
