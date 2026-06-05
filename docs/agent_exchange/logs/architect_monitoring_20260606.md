@@ -436,3 +436,43 @@ NEW B003 work (B003-013 + B003-009 ~1300 LOC combined) introduced ZERO new typec
 
 **Architect call:** No commit this tick (Forge B003-009 done state landed mid-write, want next Critic verdict before next checkpoint).
 
+
+## Tick 12 — 18:13 CEST — 🎯🎯 13/23 B003 ACCEPTED (57%) — MASSIVE JUMP
+
+**State at tick:** 26 accepted (13 ShowX-1 + 13 B003), 26 queued, ZERO in_progress, ZERO done, ZERO changes_requested. **CLEAN board.**
+
+**Forge/Critic since tick 11 (+29 min):**
+
+| Task | Status | Notes |
+|---|---|---|
+| B003-009 | done → **accepted round 1** | Critic verified Forge self-rescue: 49 dispatch tests, sourceURI removal correct (LX consoles reject trailing args), `_internal` flag correctly suppresses nested cue-complete for group children. 11/23 milestone |
+| B003-014 | queued → done → **accepted round 1** | PWA Operator View — 30 new tests, 804/804 suite, all 15 AC, PyroOperatorView triple-guards Fire, NO Pattern 8 timeout (700 LOC borderline risk — Forge crushed it) |
+
+**🎯🎯 13/23 (57%) accepted — Phase 1 effectively done in spirit (B003-001..009 all green; B003-010 is publish-layer not runtime path).**
+
+**Phase 2 (PWA UI) status: 4/6 already accepted** — B003-011/-012/-013/-014. Only B003-015 (GO button) + B003-016 (cue editor) remain.
+
+**B003 acceptance ratio: 13 accepted (round1=6, round2=7).**
+
+Round-1 single-accept rate: 46% (up from 36%). Forge cadence sharpening.
+
+**Why B003-010 wasn't picked:**
+
+B003-010 depends on B003-009. At Forge tick 15:49Z, B003-009 was `done` but NOT YET `accepted` (Critic finished at 15:50Z). Forge dependency check requires accepted. So Forge picked lowest-ID queued with deps fully met: B003-014.
+
+Forge tick at 16:09Z (running NOW, ~4 min in) should pick B003-010.
+
+**Critic notes for Architect (from B003-014 review):**
+- Promote `highlightedPayloads` / `visibleCues` from PWA-side to `showx-shared` (retire duplication)
+- Decide whether Pyro should ever be usable in `per_dept` go_authority mode (semantic policy)
+
+Both deferred — post-bundle architectural cleanup, not blocking current work.
+
+**Typecheck baseline: 13 errors UNCHANGED.** B003-014 (PWA Operator View, 30 new tests, ~700 LOC) introduced ZERO new typecheck errors. Forge discipline is excellent.
+
+**B003-024 spec scope STABLE at 13 errors / ~110 LOC.** No expansion this tick.
+
+**Forge in_flight PID 76739** — B003-010 likely. Expected done ~16:25-16:30Z. Phase 1 → 10/10 within reach.
+
+**Next bigger Pattern 8 risk: B003-016 PWA cue editor (REHEARSAL mode) — 800 LOC. Per handoff, likely splittable. Will watch carefully.**
+
