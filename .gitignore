@@ -4,9 +4,12 @@ node_modules/
 
 # Build outputs
 dist/
-build/
 out/
 *.tsbuildinfo
+
+# Build dir contains source assets (icon, entitlements, logo) — track them
+# But ignore the generated iconset/ intermediate files
+build/icon.iconset/
 
 # Electron
 release/

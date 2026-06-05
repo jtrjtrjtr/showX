@@ -1,0 +1,57 @@
+appId: cz.xlab.showx
+productName: ShowX
+copyright: "Copyright © 2026 XLAB s.r.o."
+
+# Override packed package.json so Electron finds the right entry after flatten
+extraMetadata:
+  main: index.js
+  name: showx
+  version: 0.1.0
+
+# Build inputs
+files:
+  - from: src/main/dist
+    to: .
+    filter:
+      - "**/*"
+  - from: pwa/dist
+    to: pwa
+    filter:
+      - "**/*"
+  - package.json
+
+directories:
+  buildResources: build
+  output: dist-electron
+
+# macOS target — UNSIGNED DMG for beta distribution
+# Users will need to right-click → Open on first launch (Gatekeeper bypass)
+mac:
+  category: public.app-category.productivity
+  identity: null
+  hardenedRuntime: false
+  gatekeeperAssess: false
+  icon: build/icon.icns
+  target:
+    - target: dmg
+      arch:
+        - arm64
+        - x64
+
+dmg:
+  title: "ShowX ${version}"
+  icon: build/icon.icns
+  iconSize: 128
+  contents:
+    - x: 130
+      y: 220
+    - x: 410
+      y: 220
+      type: link
+      path: /Applications
+  window:
+    width: 540
+    height: 380
+
+# No auto-update for 0.1
+publish: null
