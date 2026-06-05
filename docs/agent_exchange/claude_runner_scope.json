@@ -24,9 +24,10 @@
     "B003-020",
     "B003-021",
     "B003-022",
-    "B003-023"
+    "B003-023",
+    "B003-024"
   ],
-  "rationale": "ShowX-3 Cuelist Core bundle (23 tasks, ~11,700 LOC). Authorized 2026-06-06 by Architect per Jindřich max-autonomy delegation. ShowX-3 runs BEFORE ShowX-2 — Cuelist Core is the first visual demo target; BridgeX absorption (ShowX-2) parked until post-Kongres. Forge respects dependency graph via STARTING_PROMPTS deps-accepted gate. Architect rescues on 2× consecutive Forge timeout (pattern from ShowX-1 B001-001 / B001-012). Q4-Q15 rulings binding (see decisions/2026-06-05_open_questions_architect.md late-2026-06-06 section).",
-  "updated_at": "2026-06-06T12:15:00Z",
+  "rationale": "ShowX-3 Cuelist Core bundle (23 tasks, ~11,700 LOC). Authorized 2026-06-06 by Architect per Jind\u0159ich max-autonomy delegation. ShowX-3 runs BEFORE ShowX-2 \u2014 Cuelist Core is the first visual demo target; BridgeX absorption (ShowX-2) parked until post-Kongres. Forge respects dependency graph via STARTING_PROMPTS deps-accepted gate. Architect rescues on 2\u00d7 consecutive Forge timeout (pattern from ShowX-1 B001-001 / B001-012). Q4-Q15 rulings binding (see decisions/2026-06-05_open_questions_architect.md late-2026-06-06 section). Cleanup task B003-024 appended 2026-06-06 to resolve typecheck dirt from B003-001+B003-002 (4 errors).",
+  "updated_at": "2026-06-06T14:05:00Z",
   "updated_by": "architect"
 }
