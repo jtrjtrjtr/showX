@@ -127,6 +127,8 @@ export function SMMasterView({ cuelistId }: SMMasterViewProps) {
   }, [cues, search]);
 
   const armedCue = armedCueId ? (cues.find((c) => c.id === armedCueId) ?? null) : null;
+  // Strip the :seq counter suffix before display
+  const displayReason = rejectedReason ? rejectedReason.replace(/:\d+$/, '') : null;
 
   const handleGoOverride = useCallback(() => {
     if (armedCueId) setShowConfirmDialog(true);
@@ -231,6 +233,24 @@ export function SMMasterView({ cuelistId }: SMMasterViewProps) {
       />
       <CallingText armedCue={armedCue} lastFired={lastDispatched} />
       <div style={{ padding: tokens.space.m, flexShrink: 0 }}>
+        {displayReason && (
+          <div
+            role="alert"
+            aria-live="assertive"
+            style={{
+              padding: `${tokens.space.s}px ${tokens.space.m}px`,
+              marginBottom: tokens.space.s,
+              background: tokens.color.red,
+              color: '#fff',
+              borderRadius: tokens.radius.m,
+              fontSize: 13,
+              textAlign: 'center',
+              fontWeight: 600,
+            }}
+          >
+            Rejected: {displayReason}
+          </div>
+        )}
         <GoButton
           armedCueId={armedCueId}
           cueLabel={armedCue?.label}

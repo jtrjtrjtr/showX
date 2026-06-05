@@ -1,0 +1,4 @@
+Q#,Label,Department,LX-cue,OSC-address,Standby
+Q1,House down,LX,1,,House lights pre-show
+Q2,Music up,SX,,/cue/preshow/start,Pre-show music
+Q3,Curtain,"LX,VIDEO",2,/cue/curtain/up,Curtain rise

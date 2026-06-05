@@ -1,0 +1,3 @@
+Number,Name,Type,Notes,Pre-wait,Continue
+Q1,Opening sequence,Audio,Audio element,0,
+Q1,Opening sequence,Video,Video element,0,

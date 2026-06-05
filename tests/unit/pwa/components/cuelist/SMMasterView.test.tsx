@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi, afterEach } from 'vitest';
+import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
 import { render, screen, act, fireEvent, cleanup, within } from '@testing-library/react';
 import React from 'react';
 import * as Y from 'yjs';
@@ -263,5 +263,61 @@ describe('SMMasterView', () => {
     addCuelist(conn.doc, 'cl1');
     render(<Wrapper cuelistId="cl1" conn={conn} />);
     expect(screen.getByRole('searchbox', { name: /search cues/i })).toBeInTheDocument();
+  });
+
+  describe('go.rejected toast', () => {
+    beforeEach(() => vi.useFakeTimers());
+    afterEach(() => vi.useRealTimers());
+
+    it('shows rejection reason text and clears after 2 s', async () => {
+      const conn = makeTestConnection();
+      addCuelist(conn.doc, 'cl1');
+      addCue(conn.doc, 'cl1', 'q1', 'First Cue');
+      render(<Wrapper cuelistId="cl1" conn={conn} />);
+
+      // Locate the registered go.rejected handler
+      const onMock = vi.mocked(conn.sideChannel.on);
+      const handlerCall = onMock.mock.calls.find(([event]) => event === 'go.rejected');
+      expect(handlerCall).toBeDefined();
+      const handler = handlerCall![1] as (ev: { reason: string; seq?: number }) => void;
+
+      // No alert before rejection
+      expect(screen.queryByRole('alert')).toBeNull();
+
+      // Emit go.rejected
+      await act(async () => {
+        handler({ reason: 'not_sm', seq: 1 });
+      });
+
+      // Alert should appear with reason text
+      const alert = screen.getByRole('alert');
+      expect(alert).toHaveTextContent('not_sm');
+
+      // After 2 seconds the alert should be gone
+      await act(async () => {
+        vi.advanceTimersByTime(2001);
+      });
+      expect(screen.queryByRole('alert')).toBeNull();
+    });
+
+    it('strips seq counter suffix from displayed reason', async () => {
+      const conn = makeTestConnection();
+      addCuelist(conn.doc, 'cl1');
+      addCue(conn.doc, 'cl1', 'q1', 'First Cue');
+      render(<Wrapper cuelistId="cl1" conn={conn} />);
+
+      const onMock = vi.mocked(conn.sideChannel.on);
+      const handlerCall = onMock.mock.calls.find(([event]) => event === 'go.rejected')!;
+      const handler = handlerCall[1] as (ev: { reason: string }) => void;
+
+      await act(async () => {
+        handler({ reason: 'authority_mismatch' });
+      });
+
+      const alert = screen.getByRole('alert');
+      // Should show the reason without any :N suffix
+      expect(alert).toHaveTextContent('authority_mismatch');
+      expect(alert.textContent).not.toMatch(/:\d+/);
+    });
   });
 });

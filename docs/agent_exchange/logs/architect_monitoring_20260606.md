@@ -557,3 +557,47 @@ This race condition keeps repeating but doesn't cause issues — revision priori
 
 **Cuelist demo target:** B003-015 round 2 + B003-016 accept = **full cuelist UI operational**. Realistic next tick or 2. We're in the final stretch.
 
+
+## Tick 15 — 19:34 CEST — 🎯🎯🎯 PHASE 2 COMPLETE + 16/23 (70%) + Forge discipline breach
+
+**State at tick:** 29 accepted (13 ShowX-1 + 16 B003), 21 queued, 1 done (B003-017 awaiting Critic), 1 in_progress (B003-018 JSON export).
+
+**Forge/Critic since tick 14 (+27 min):**
+
+| Task | Status | Notes |
+|---|---|---|
+| B003-015 | changes_requested round 2 → **accepted round 2** | Forge added `displayReason` strip + `<div role="alert" aria-live="assertive">` toast above GO button auto-clear 2s + 2 tests. Surgical 25 LOC + 56 test LOC |
+| B003-016 | done → **accepted round 1** | 18 ACs, 44 tests across 9 files (target 25+), all 121 cuelist tests, full 895/896 (1 pre-existing flake in cueCatalog.test.ts). New `setCueDurationHint` mutator in scope (same pattern as siblings) |
+| B003-017 | queued → in_progress → **done** | CSV import (QLab+Eos+generic dialect heuristics), 4 files ~300 LOC + 4 CSV fixtures + 44 unit tests, 942 total |
+| B003-018 | queued → in_progress | JSON export — Forge active (PID 5157, ~4 min in) |
+
+**🎯🎯🎯 PHASE 2 COMPLETE (B003-011..016 ALL 6 ACCEPTED).**
+
+**Cuelist demo target ACHIEVED.** Full UI operational: SM master view + Operator views (7 dept variants) + GO button + cue editor + REHEARSAL/SHOW mode lock + multi-operator Yjs collab + GO event side-channel + dispatch + catalog publishing.
+
+**B003 acceptance ratio: 16 accepted (round1=8, round2=8) = 50/50.**
+
+**Bundle progress:**
+- Phase 1 cuelist data layer: **10/10 ✅**
+- Phase 2 PWA UI: **6/6 ✅**
+- Phase 3 import/export: 0/3 (B003-017 done awaiting review, B003-018 in flight, B003-019 queued)
+- Phase 4 integration + SD: 0/2
+- Phase 5 first pilot + ship: 0/2
+
+**⚠️ Forge discipline breach: typecheck baseline 13 → 21 (+8 new errors).**
+
+**B003-017 NEW errors (Forge discipline miss):**
+- `csvHeuristics.ts:14 TS6133 'warnings' unused` — minor
+- `csvImport.ts:189 TS2304 Cannot find name 'skipped'` — **REAL BUG** (undefined variable). Forge claimed "942 tests pass" but TS catches undefined name. Either tests don't exercise that path OR vitest's esbuild strips TS check
+
+**B003-018 in-progress errors (may resolve before done report):**
+- `showxExport.ts:90,95 TS2322/TS2345 Dirent<NonSharedBuffer>` Node fs typing (Node 22+ change)
+- `singleFileExport.ts:53 TS2352 ShowJson cast` — same pattern as B003-008 fix
+- `singleFileExport.ts:155,162,163` multiple Dirent + NonSharedBuffer
+
+**Architect expectation:** Critic should catch B003-017 TS2304 (real bug). Critic was running at 17:29Z spawning review. If accepted without flag → Architect files urgent follow-up. If changes_requested → Forge fixes in single cycle.
+
+**B003-018 typecheck errors:** Forge may clean these during done report writing. Watch tick 16.
+
+**B003-024 cleanup SCOPE STILL STABLE at 13 errors / ~110 LOC.** New errors will fold into next B003-024 revision if not fixed organically.
+

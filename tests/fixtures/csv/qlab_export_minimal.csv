@@ -1,0 +1,4 @@
+Number,Name,Type,Notes,Pre-wait,Continue
+Q1,House lights down,Audio,House lights and pre-show fade,0,
+Q2,Music up,Audio,Pre-show music,0.5,Auto-continue
+Q3,Curtain rise,Video,Video sting,0,
