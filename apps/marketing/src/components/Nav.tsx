@@ -4,10 +4,8 @@ import { useI18n } from '../lib/i18n'
 export function Nav() {
   const { t, lang, setLang } = useI18n()
   const items = [
-    { to: '/features', label: t('nav.features') },
-    { to: '/pricing', label: t('nav.pricing') },
-    { to: '/compare', label: t('nav.compare') },
-    { to: '/get-started', label: t('nav.get-started') },
+    { to: '/try-it', label: t('nav.try-it') },
+    { to: '/status', label: t('nav.status') },
     { to: '/downloads', label: t('nav.downloads') },
     { to: '/docs', label: t('nav.docs') },
   ]
@@ -39,10 +37,10 @@ export function Nav() {
             {lang === 'cs' ? 'EN' : 'CS'}
           </button>
           <a
-            href="mailto:hello@xlabproject.net?subject=ShowX%20beta"
+            href="mailto:hello@xlabproject.net?subject=ShowX%20dev%20preview%20cohort&body=Hi%20XLAB%2C%0A%0AI'd%20like%20a%20seat%20in%20the%20ShowX%20dev%20preview%20cohort.%0A%0AWho%20I%20am%3A%20%0AVenue%20%2F%20role%3A%20%0AWhat%20I%20want%20to%20see%20from%20ShowX%3A%20%0A%0AThanks!"
             className="btn-primary text-xs px-4 py-2"
           >
-            {t('nav.beta')}
+            {t('nav.preview')}
           </a>
         </div>
       </div>

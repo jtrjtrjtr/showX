@@ -12,42 +12,42 @@ interface Release {
 const releases: Release[] = [
   {
     version: '0.5',
-    name: { cs: 'Internal preview', en: 'Internal preview' },
+    name: { cs: 'Internal release', en: 'Internal release' },
     target: 'End-2026',
     status: 'development',
     notes: {
-      cs: 'EventX Bridge module reaches BridgeX 0.3.x feature parity. Electron shell + module loader + embedded sync broker + mDNS + local pairing. Žádné public binaries; výhradně pro 5-10 BridgeX zákazníků na ručním testu.',
-      en: 'EventX Bridge module reaches BridgeX 0.3.x feature parity. Electron shell + module loader + embedded sync broker + mDNS + local pairing. No public binaries; for 5-10 BridgeX customers on hand-rolled test only.',
+      cs: 'EventX Bridge module reaches BridgeX 0.3.x feature parity. Electron shell + module loader + 11 shared services + signed + notarized DMG (Apple Developer ID rebrand). Bez public download — výhradně pro 5-10 BridgeX zákazníků na hand-rolled testu.',
+      en: 'EventX Bridge module reaches BridgeX 0.3.x feature parity. Electron shell + module loader + 11 shared services + signed + notarized DMG (Apple Developer ID rebrand). No public download — for 5-10 BridgeX customers on hand-rolled test only.',
     },
   },
   {
     version: '0.1',
-    name: { cs: 'Public preview', en: 'Public preview' },
+    name: { cs: 'První public binary', en: 'First public binary' },
     target: 'Q1 2027',
     status: 'planned',
     notes: {
-      cs: 'První public binary. Cuelist Core module + REHEARSAL mode. EventX Bridge ships ve stejném binary. CSV import, JSON .showx export, PDF cue-sheet export. macOS only.',
-      en: 'First public binary. Cuelist Core module + REHEARSAL mode. EventX Bridge ships in the same binary. CSV import, JSON .showx export, PDF cue-sheet export. macOS only.',
+      cs: 'První download-able DMG. Cuelist Core module + REHEARSAL mode. EventX Bridge ships ve stejném binary. CSV import, JSON .showx export, PDF cue-sheet export. macOS only.',
+      en: 'First downloadable DMG. Cuelist Core module + REHEARSAL mode. EventX Bridge ships in the same binary. CSV import, JSON .showx export, PDF cue-sheet export. macOS only.',
     },
   },
   {
     version: '0.2',
-    name: { cs: 'SHOW mode + Cloud Sync', en: 'SHOW mode + Cloud Sync' },
+    name: { cs: 'SHOW mode + první placený pilot', en: 'SHOW mode + first paid pilot' },
     target: 'Q2 2027',
     status: 'planned',
     notes: {
-      cs: 'SHOW mode module + edit proposal queue + history snapshots. Cloud Sync opt-in module. MSC out, USITT ASCII import, Stream Deck via Companion (komunitní modul).',
-      en: 'SHOW mode module + edit proposal queue + history snapshots. Cloud Sync opt-in module. MSC out, USITT ASCII import, Stream Deck via Companion (community module).',
+      cs: 'SHOW mode module + edit proposal queue + history snapshots. MSC out, USITT ASCII import, Stream Deck via Companion (komunitní modul). První placený pilot s vybraným venuem.',
+      en: 'SHOW mode module + edit proposal queue + history snapshots. MSC out, USITT ASCII import, Stream Deck via Companion (community module). First paid pilot with a select venue.',
     },
   },
   {
     version: '0.3',
-    name: { cs: 'Multi-cuelist + Master Timeline', en: 'Multi-cuelist + Master Timeline' },
+    name: { cs: 'Cloud Sync + Custom Router + 5 zákazníků', en: 'Cloud Sync + Custom Router + 5 customers' },
     target: 'Q3 2027',
     status: 'planned',
     notes: {
-      cs: 'Multiple cuelists per show + Showlist container (Pre-show / Act 1 / Interval / Act 2 / Encore). Master Timeline read-only (LTC/MTC chase). Custom Router rule table polished.',
-      en: 'Multiple cuelists per show + Showlist container (Pre-show / Act 1 / Interval / Act 2 / Encore). Master Timeline read-only (LTC/MTC chase). Custom Router rule table polished.',
+      cs: 'Cloud Sync opt-in module. Custom Router rule table (WD-style OSC↔MIDI↔DMX glue). Multi-cuelist per show + Master Timeline read-only (LTC/MTC chase). Cíl: 5 platících zákazníků.',
+      en: 'Cloud Sync opt-in module. Custom Router rule table (WD-style OSC↔MIDI↔DMX glue). Multi-cuelist per show + Master Timeline read-only (LTC/MTC chase). Target: 5 paying customers.',
     },
   },
   {
@@ -56,7 +56,7 @@ const releases: Release[] = [
     target: 'Q4 2027',
     status: 'planned',
     notes: {
-      cs: 'Open signups. Marketing site + docs portal. iPad PWA fully polished. Companion community module published. Path k 50 paying customers do konce 2027.',
+      cs: 'Open signups. Marketing site + docs portal. iPad PWA fully polished. Companion community modul published. Path k 50 paying customers do konce 2027.',
       en: 'Open signups. Marketing site + docs portal. iPad PWA fully polished. Companion community module published. Path to 50 paying customers by end of 2027.',
     },
   },
@@ -114,7 +114,7 @@ export function Downloads() {
             </div>
           </div>
         </div>
-        <div className="absolute -bottom-10 -right-20 display-serif text-[18rem] leading-none text-accent/[0.08] select-none pointer-events-none">06</div>
+        <div className="absolute -bottom-10 -right-20 display-serif text-[18rem] leading-none text-accent/[0.08] select-none pointer-events-none">04</div>
       </section>
 
       {/* RELEASES */}
@@ -122,12 +122,11 @@ export function Downloads() {
         <div className="max-w-[1280px] mx-auto px-6 lg:px-12 py-20">
           <div className="grid grid-cols-12 gap-8 mb-12">
             <div className="col-span-12 md:col-span-3">
-              <div className="section-label">{cs ? 'Roadmapa' : 'Roadmap'}</div>
+              <div className="section-label">{t('dl.roadmap.label')}</div>
             </div>
             <div className="col-span-12 md:col-span-9">
               <h2 className="display-serif text-display-2 leading-tight">
-                {cs ? 'Pět vydání' : 'Five releases'}<br />
-                <em className="text-muted italic font-light">{cs ? 'do public bety.' : 'to public beta.'}</em>
+                {t('dl.roadmap.h')}
               </h2>
             </div>
           </div>
@@ -161,12 +160,32 @@ export function Downloads() {
         </div>
       </section>
 
-      {/* BUNDLE PROGRESS */}
+      {/* DEV PREVIEW PATH */}
       <section className="rule-top bg-paper/30">
+        <div className="max-w-[1280px] mx-auto px-6 lg:px-12 py-20">
+          <div className="grid grid-cols-12 gap-8 items-start">
+            <div className="col-span-12 md:col-span-3">
+              <div className="section-label">{t('dl.dev.label')}</div>
+            </div>
+            <div className="col-span-12 md:col-span-9">
+              <h2 className="display-serif text-display-2 leading-tight">
+                {t('dl.dev.h')}
+              </h2>
+              <p className="copy mt-6 max-w-2xl">{t('dl.dev.body')}</p>
+              <div className="mt-8">
+                <Link to="/try-it" className="btn-primary">{t('dl.dev.cta')}</Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* BUNDLE PROGRESS */}
+      <section className="rule-top">
         <div className="max-w-[1280px] mx-auto px-6 lg:px-12 py-20">
           <div className="grid grid-cols-12 gap-8 mb-12">
             <div className="col-span-12 md:col-span-3">
-              <div className="section-label">{cs ? 'Live progress' : 'Live progress'}</div>
+              <div className="section-label">{t('dl.bundle.label')}</div>
             </div>
             <div className="col-span-12 md:col-span-9">
               <h2 className="display-serif text-display-2 leading-tight">
@@ -175,11 +194,7 @@ export function Downloads() {
                   {accepted}/{bundleProgress.length} {cs ? 'tasků accepted' : 'tasks accepted'}
                 </em>
               </h2>
-              <p className="copy mt-4 max-w-2xl text-sm">
-                {cs
-                  ? 'Foundation bundle uzavřen 2026-06-06: 13/13 accepted. Architect + Forge + Critic file-based workflow. ~12,500 LOC TypeScript + 269 testů passing. Bundle ShowX-2 (BridgeX absorption) startuje post-Kongres 2026-06-17.'
-                  : 'Foundation bundle closed 2026-06-06: 13/13 accepted. Architect + Forge + Critic file-based workflow. ~12,500 LOC TypeScript + 269 tests passing. Bundle ShowX-2 (BridgeX absorption) starts post-Kongres 2026-06-17.'}
-              </p>
+              <p className="copy mt-4 max-w-2xl text-sm">{t('dl.bundle.body')}</p>
             </div>
           </div>
           <div className="border border-rule rounded-sm bg-ground overflow-hidden">
@@ -214,15 +229,25 @@ export function Downloads() {
             </table>
           </div>
           <div className="mt-6 flex flex-wrap gap-3">
-            <a
-              href="https://github.com/xlab/showx"
-              target="_blank"
-              rel="noreferrer"
-              className="btn-ghost"
-            >
-              {cs ? 'GitHub repo' : 'GitHub repo'} →
-            </a>
+            <Link to="/status" className="btn-ghost">{cs ? 'Detailní status' : 'Full status'} →</Link>
             <Link to="/docs" className="btn-ghost">{cs ? 'Bundle docs' : 'Bundle docs'}</Link>
+          </div>
+        </div>
+      </section>
+
+      {/* WHEN DMG */}
+      <section className="rule-top bg-ink text-cream">
+        <div className="max-w-[1280px] mx-auto px-6 lg:px-12 py-20">
+          <div className="grid grid-cols-12 gap-8 items-start">
+            <div className="col-span-12 md:col-span-3">
+              <div className="section-label text-cream/60">{t('dl.dmg.label')}</div>
+            </div>
+            <div className="col-span-12 md:col-span-9">
+              <h2 className="display-serif text-display-2 text-cream leading-tight">
+                {t('dl.dmg.h')}
+              </h2>
+              <p className="text-cream/80 mt-6 max-w-3xl text-sm leading-relaxed">{t('dl.dmg.body')}</p>
+            </div>
           </div>
         </div>
       </section>
@@ -233,13 +258,21 @@ export function Downloads() {
           <div className="grid grid-cols-12 gap-8 items-end">
             <div className="col-span-12 md:col-span-8">
               <h2 className="display-serif text-display-2 leading-tight">
-                {cs ? 'Když chcete být první,' : 'If you want to be first,'}<br />
-                <em className="text-accent-deep italic font-light not-italic">{cs ? 'přidejte se do bety.' : 'join the beta.'}</em>
+                {cs ? 'Čekat na DMG?' : 'Wait for the DMG?'}<br />
+                <em className="text-accent-deep italic font-light not-italic">
+                  {cs ? 'Nebo si to vyzkoušet teď ze sourcu.' : 'Or try it from source now.'}
+                </em>
               </h2>
             </div>
-            <div className="col-span-12 md:col-span-4 flex md:justify-end">
-              <a href="mailto:hello@xlabproject.net?subject=ShowX%20beta" className="btn-primary">
-                {cs ? 'Beta access' : 'Beta access'} →
+            <div className="col-span-12 md:col-span-4 flex md:justify-end flex-wrap gap-3">
+              <Link to="/try-it" className="btn-primary">
+                {cs ? 'Návod /try-it' : 'Walkthrough /try-it'} →
+              </Link>
+              <a
+                href="mailto:hello@xlabproject.net?subject=ShowX%20dev%20preview%20cohort"
+                className="btn-ghost"
+              >
+                {cs ? 'Preview přístup' : 'Preview access'}
               </a>
             </div>
           </div>

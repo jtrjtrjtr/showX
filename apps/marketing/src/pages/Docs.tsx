@@ -134,7 +134,7 @@ export function Docs() {
             </div>
           </div>
         </div>
-        <div className="absolute -bottom-10 -right-20 display-serif text-[18rem] leading-none text-accent/[0.08] select-none pointer-events-none">07</div>
+        <div className="absolute -bottom-10 -right-20 display-serif text-[18rem] leading-none text-accent/[0.08] select-none pointer-events-none">05</div>
       </section>
 
       {/* DOC GRID */}
