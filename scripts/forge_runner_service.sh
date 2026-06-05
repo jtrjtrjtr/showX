@@ -32,14 +32,13 @@ LOG="docs/agent_exchange/logs/forge_runner_service.log"
   echo "Spawning Forge (Sonnet)..."
 
   # 1200s (20 min) timeout per attempt.
-  # --add-dir grants read access to bridgeX (absorption source) + eventx (channel-catalog contract).
+  # NO --add-dir flags by default — they cause Claude to index sibling repos at startup,
+  # which 2x Forge cycles 2026-06-05T01:38Z and 02:02Z both timed out trying. Forge can
+  # request specific files from sibling repos via Read tool on absolute paths if needed.
   /usr/bin/python3 scripts/_run_with_timeout.py 1200 \
     /Users/machintoshhd/.local/bin/claude --model claude-sonnet-4-6 \
     --print \
     --permission-mode acceptEdits \
-    --add-dir /Users/machintoshhd/Daniel-local/bridgeX \
-    --add-dir /Users/machintoshhd/Daniel-local/eventx \
-    --add-dir /Users/machintoshhd/Daniel-local/xlab-strategy \
     "$(cat docs/agent_exchange/STARTING_PROMPTS.md | sed -n '/^## FORGE/,/^---/p')" \
     || echo "Forge subprocess exited with code $? (may be timeout, normal completion, or scope-empty)"
 

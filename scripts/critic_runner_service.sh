@@ -42,9 +42,6 @@ print(n)
     /Users/machintoshhd/.local/bin/claude --model claude-opus-4-7 \
     --print \
     --permission-mode acceptEdits \
-    --add-dir /Users/machintoshhd/Daniel-local/bridgeX \
-    --add-dir /Users/machintoshhd/Daniel-local/eventx \
-    --add-dir /Users/machintoshhd/Daniel-local/xlab-strategy \
     "$(awk '/^## CRITIC/{f=1;next} f && /^---$/{exit} f' docs/agent_exchange/STARTING_PROMPTS.md)" \
     || echo "Critic subprocess exited with code $?"
 
