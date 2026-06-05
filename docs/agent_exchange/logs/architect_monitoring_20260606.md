@@ -28,3 +28,160 @@ Ran `pnpm install` (lockfile updated for new cuelist-core workspace deps: yjs@13
 4. If B003-002 accepted but typecheck still dirty → file follow-up cleanup task
 
 ## (next ticks appended below)
+
+## Tick 2 — 13:29 CEST
+
+**State at tick:** 14 accepted, 36 queued, 1 in_progress (B003-002 still).
+
+**B003-002 status:**
+- Cycle 1 TIMED OUT at 11:08Z (`[TIMEOUT] Process exceeded 1200s`) — Pattern 8 risk materialized exactly as flagged in handoff
+- Cycle 2 spawned 11:12Z (PID 93908), running ~17 min at tick time, ~3 min until timeout deadline
+- File evidence: cycle 2 IS productive
+  - `document/cue.ts` 251 LOC, mtime 13:26
+  - `document/cuelist.ts` 50 LOC, mtime 13:26
+  - `document/payload.ts` 204 LOC, mtime 13:06
+  - `document/show.ts` 97 LOC, mtime 13:28 (1 min before tick)
+  - `document/schema.ts` 9 LOC
+  - `document/uuid.ts` 3 LOC
+  - 5 test files in `tests/unit/modules/cuelist-core/document/` modified up to 13:28
+  - Source: 614 LOC, tests: ~30 KB (estimate ~1500 LOC)
+- Shared types touched: `src/shared/src/types/{show,cue,payload}.ts` updated (175 LOC) — within Forge scope per B003-002 spec
+
+**Action:** NO RESCUE this tick. Forge is actively writing (last mtime 1 min before tick check). High probability cycle 2 completes before 1:32Z timeout. Re-check in 4.5 min (past timeout deadline).
+
+**Rescue plan if cycle 2 ALSO times out:**
+- Don't split per pre-emptive recommendation (002a/002b/002c) — Forge already 75%+ done on disk
+- Instead: Architect inspects current Forge state, writes done report manually summarizing what landed, declares blocking issues for Critic
+- ALTERNATIVELY: kill cycle 2 cleanly, harvest written code as-is, split remaining test/validation work into a B003-002 round-2 changes_requested cycle
+
+**Opportunistic typecheck:** SKIP this tick — Forge mid-write, would interfere with subprocess concurrency.
+
+## Forge run — ~15:50 CEST
+
+**State at run:** B003-002 status = `done`, no Critic review yet.
+
+**Eligibility scan result:**
+- No `changes_requested` tasks in scope.
+- All queued B003 tasks (B003-003 through B003-023) depend on B003-002 being `accepted`. Gate not satisfied.
+- **No eligible task. Waiting on deps.**
+
+Blocked tasks: B003-003, B003-005, B003-007, B003-011, B003-012 (direct B003-002 dependents) + all downstream.
+
+Next eligible run: after Critic accepts B003-002.
+
+
+## Tick 2.5 — 13:35 CEST — B003-002 SUCCESS, but typecheck dirty
+
+**Outcome:** Forge cycle 2 COMPLETED at 11:30Z (wall time ~18 min for cycle 2). B003-002 status = `done`. Forge tick 11:34Z already started — picking up next task (likely B003-003).
+
+**Forge done report highlights (3 key decisions documented in Forge report):**
+1. `sort_key` field workaround for Yjs 13.6.x integrated Y.Map reorder limitation
+2. Prelim Y.Map reads require integration before `.get()` — tests use `integrate()` helper
+3. CRDT concurrent reorders converge via sort_key LWW — verified in crdt-merge test
+
+**Test count:** 351/351 tests pass, 60 new for B003-002 — no regressions.
+
+**Opportunistic typecheck on cuelist-core: 4 errors found.**
+
+| File | Error | Source | Cause |
+|---|---|---|---|
+| `CuelistCore.ts:6` | TS6133 `config` unused | B003-001 | B003-001 stored config for future use; B003-002 didn't wire it in CuelistCore (only document model done) |
+| `document/cue.ts:5` | TS6133 `getPayloads` unused | B003-002 | Helper declared but not exported / referenced |
+| `document/payload.ts:2` | TS6196 `PayloadType` unused | B003-002 | Type import not referenced |
+| `document/uuid.ts:2` | TS2307 Cannot find module 'uuid' | B003-002 | **REAL ISSUE** — uuid@10 ships NO .d.ts; needs `@types/uuid` in devDeps |
+
+**Decision: NO Architect source edit.**
+- Forge tests pass (351/351) — vitest doesn't enforce strict TS unused warnings
+- TS strict mode catches these on full typecheck — should block CI
+- Critic will review B003-002 → expected verdict path:
+  - Best case: Critic notes typecheck issue, returns changes_requested → Forge fixes in revision (add @types/uuid + clean unused imports)
+  - Worst case: Critic accepts on code inspection only (bash perm blocks typecheck) → Architect files a B003-002-cleanup task spec post-Critic accept
+
+**Action this tick:** Log + wait. Re-check after next 25-min cycle.
+
+**B003-002 wall time:** 18 min cycle 2 only (cycle 1 timeout was wasted 20 min). Total task elapsed: 38 min including dead cycle. Net: well within target.
+
+
+## Tick 3 — 14:02 CEST
+
+**State at tick:** 15 accepted, 34 queued, 1 changes_requested, 1 in_progress, +1 queued (B003-024 cleanup).
+
+**Forge/Critic since tick 2.5:**
+
+| Task | Status | Verdict | Wall time |
+|---|---|---|---|
+| B003-002 | accepted | Critic round 1 | 18 min Forge cycle 2 + 15 min Critic |
+| B003-003 | changes_requested | Critic round 1 | 35 min Forge + 30 min Critic |
+| B003-005 | in_progress | — | started ~16:50Z (12 min in at tick) |
+
+**Critic notes on B003-002 (accepted):**
+- sort_key reorder workaround for Yjs 13.6 — defensible, documented, CRDT-converging
+- 60 doc tests + 351/351 total — clean
+- Non-blocking observations: (a) `setMode`/`setMetaField` don't auto-touch `last_meta_editor` — Critic says "acceptable, calling layer responsibility"; (b) two-copy types `src/types/` vs `src/shared/src/types/` — Critic recommends dedup before B003-005 — TOO LATE, B003-005 already in_progress; defer to architectural cleanup post-B003-005
+- Re-export pattern `schema.ts` — fine
+
+**Critic note on B003-003 (changes_requested):**
+- Real bug in showxPackage.ts:75-103 — when migrations are applied to existing `doc.yjs`, the un-migrated Y.Doc gets persisted again, silently un-applying the migration
+- Required: (1) Rebuild Y.Doc from migrated JSON whenever `applied.length > 0`; (2) add dummy-migration test
+- Dormant in MVP (empty migration catalog) but breaks future migrations — correct catch
+
+**Architect action: B003-024 cleanup spec filed.**
+
+Scope:
+1. Add `@types/uuid` devDep (uuid@10 ships no .d.ts)
+2. Rename `private config?` → `_config?` (intentional-unused marker) in CuelistCore.ts
+3. Resolve `getPayloads` import in cue.ts (either remove or re-export)
+4. Remove unused `PayloadType` from payload.ts:2
+5. Verify uuid.ts resolves clean after install
+- Estimated 60 LOC, P1, depends on B003-002 accepted (it is)
+- Scope updated to include B003-024
+- Forge will pick up after B003-005 in_progress finishes + B003-003 revision
+
+**Deferred to later cleanup (NOT this task):**
+- Two-copy types deduplication `src/types/` vs `src/shared/src/types/` — needs architectural decision (canonical source choice), risky during B003-005 in_progress, defer to post-B003-005 cleanup
+
+**Forge productivity check:**
+- 3 tasks accepted (B001 + B003-001 + B003-002) + 1 revision pending + 1 in_progress in ~7 hours of autonomous run
+- Pattern 8 risk on B003-002 (800 LOC) → 1 timeout cycle wasted, but cycle 2 succeeded — total elapsed within target
+- Forge skipped B003-004 in favor of B003-005 because B003-005 deps satisfied (B003-002 only) and B003-004 wasn't queued first — Forge picked lowest-ID queued with deps met
+
+**Architect projection:**
+- B003-005 done ~+15 min (per Forge cadence)
+- B003-003 revision (changes_requested) → Forge priority, ~+30 min after B003-005
+- B003-024 cleanup → ~60 LOC, should be 1 round single accept
+- Critic review of each → ~15 min
+- Bundle should reach ~B003-008 by end of day if cadence holds
+
+
+## Tick 4 — 14:31 CEST
+
+**State at tick:** 17 accepted, 34 queued, 1 in_progress. ZERO changes_requested. No round ≥ 3 (except historical B001-012 round 3 from ShowX-1 — not current).
+
+**Forge/Critic since tick 3 (+30 min):**
+
+| Task | Status change | Notes |
+|---|---|---|
+| B003-003 | changes_requested → accepted round 2 | Migration bug fixed in 4-line structural change (`applied.length > 0` now gates before `docYjsExists`). New showxPackageMigration test (3 tests) verifies fix + idempotency |
+| B003-005 | in_progress → changes_requested round 1 | DepartmentTag re-export missing — TS2459 in shared workspace typecheck |
+| B003-005 | changes_requested → accepted round 2 | One-line `export type { DepartmentTag } from './department.js';` fix in two files. Critic accepted |
+| B003-004 | queued → in_progress | Forge picked at 14:24, ~7 min in at tick time |
+
+**Forge productivity:** 5 B003 tasks landed (B003-001/-002/-003/-005 accepted, B003-004 in_progress) in ~1.7h since scope-enable. Cadence ~20 min/task avg.
+
+**Critic observation in B003-005 round 2 review:**
+> `pnpm -r typecheck` confirms only pre-existing cuelist-core errors remain (TS6133/TS6196/TS2307/TS6307 from B003-001/-002/-003) — explicitly the B003-024 cleanup scope, not introduced by this task.
+
+Critic is correctly tracking B003-024 cleanup scope. New TS6307 error joined the list (unknown source, likely re-export side effect).
+
+**B003-024 NOT picked yet:** Forge picks lowest-ID queued (B003-004 < B003-024). After B003-004 → B003-006 → ... → B003-023 → B003-024. Means B003-024 runs LAST.
+
+**Concern:** dirty typecheck baseline persists through entire bundle. Each subsequent Forge task can't tell its own warnings from B003-024 scope errors.
+
+**Mitigation:** Critic robustly tracks pre-existing vs new errors. Forge prompt also includes "MANDATORY: Run pnpm typecheck and fix any errors before flipping to done" — Forge has discipline. Risk accepted. If errors accumulate beyond what B003-024 covers → file B003-024b cleanup later.
+
+**No Architect action this tick beyond commit checkpoint** — Forge runs, Critic verifies, cadence good.
+
+**Action: batch commit Forge/Critic output checkpoint** (29 paths changed since last commit).
+
+**Forge projection:** B003-004 done ~+15 min → B003-006/-007 chain (trigger taxonomy + GO channel — moderate complexity, ~500 LOC each) → may see more Pattern 8 risk on B003-013 (PWA SM master 800 LOC) + B003-016 (cue editor 800 LOC).
+

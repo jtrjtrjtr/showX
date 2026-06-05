@@ -1,0 +1,13 @@
+{"ts":"2026-06-10T14:00:00.000Z","kind":"show_opened","show_id":"01907d2e-0000-7000-8000-000000000001","by":"op_fixture"}
+{"ts":"2026-06-10T14:05:00.000Z","kind":"cue_inserted","cuelist_id":"01907d2e-0000-7000-8000-000000000010","cue_id":"01907d2e-0000-7000-8000-000000000021","after_cue_id":"01907d2e-0000-7000-8000-000000000020","by":"op_fixture"}
+{"ts":"2026-06-10T14:10:00.000Z","kind":"cue_inserted","cuelist_id":"01907d2e-0000-7000-8000-000000000010","cue_id":"01907d2e-0000-7000-8000-000000000022","after_cue_id":"01907d2e-0000-7000-8000-000000000021","by":"op_fixture"}
+{"ts":"2026-06-10T18:00:00.000Z","kind":"cue_fired","cuelist_id":"01907d2e-0000-7000-8000-000000000010","cue_id":"01907d2e-0000-7000-8000-000000000020","cue_label":"Q 1","station_id":"stn_ipad_sm","operator_id":"op_fixture","payloads_dispatched":2,"sequence":1}
+{"ts":"2026-06-10T18:00:10.000Z","kind":"save","reason":"autosave","by":"system"}
+{"ts":"2026-06-05T11:48:08.296Z","kind":"recovery_from_json","show_id":"01907d2e-0000-7000-8000-000000000001","cuelist_count":1,"total_cues":3}
+{"ts":"2026-06-05T11:50:56.535Z","kind":"recovery_from_json","show_id":"01907d2e-0000-7000-8000-000000000001","cuelist_count":1,"total_cues":3}
+{"ts":"2026-06-05T11:51:03.712Z","kind":"recovery_from_json","show_id":"01907d2e-0000-7000-8000-000000000001","cuelist_count":1,"total_cues":3}
+{"ts":"2026-06-05T12:05:10.185Z","kind":"recovery_from_json","show_id":"01907d2e-0000-7000-8000-000000000001","cuelist_count":1,"total_cues":3}
+{"ts":"2026-06-05T12:13:28.035Z","kind":"recovery_from_json","show_id":"01907d2e-0000-7000-8000-000000000001","cuelist_count":1,"total_cues":3}
+{"ts":"2026-06-05T12:13:36.276Z","kind":"recovery_from_json","show_id":"01907d2e-0000-7000-8000-000000000001","cuelist_count":1,"total_cues":3}
+{"ts":"2026-06-05T12:19:07.804Z","kind":"recovery_from_json","show_id":"01907d2e-0000-7000-8000-000000000001","cuelist_count":1,"total_cues":3}
+{"ts":"2026-06-05T12:19:13.833Z","kind":"recovery_from_json","show_id":"01907d2e-0000-7000-8000-000000000001","cuelist_count":1,"total_cues":3}

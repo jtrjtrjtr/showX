@@ -1,6 +1,7 @@
 import type { CueCatalog } from './cue.js';
 import type { HealthStatus } from './services.js';
 import type { ModuleState } from './module.js';
+import type { ShowMode } from './show.js';
 
 export interface CueFiredEvent {
   type: 'cue-fired';
@@ -37,10 +38,19 @@ export interface PairingChangedEvent {
   deviceId: string;
 }
 
+export interface ShowModeChangeEvent {
+  type: 'show-mode-change';
+  show_id: string;
+  from: ShowMode;
+  to: ShowMode;
+  by_operator_id: string;
+}
+
 export type ShowxEvent =
   | CueFiredEvent
   | CueCatalogUpdatedEvent
   | ModuleStateChangedEvent
   | HealthChangedEvent
-  | PairingChangedEvent;
+  | PairingChangedEvent
+  | ShowModeChangeEvent;
 

@@ -1,0 +1,13 @@
+{
+  "operators": [
+    {
+      "id": "op_fixture",
+      "name": "Fixture Operator",
+      "role": "stage_manager",
+      "owned_departments": ["SM"],
+      "watched_departments": ["LX", "SX", "VIDEO", "AUTO"],
+      "default_view": "global"
+    }
+  ],
+  "stations": []
+}
