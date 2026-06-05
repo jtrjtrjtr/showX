@@ -1,3 +1,8 @@
 export { Logger } from './Logger.js';
 export { EventBus } from './EventBus.js';
 export { HealthBus } from './HealthBus.js';
+export { PersistedStore } from './PersistedStore.js';
+export { SecretStore } from './SecretStore.js';
+export { resolvePaths, moduleConfigPath, secretFallbackPath } from './paths.js';
+export type { PathLayout } from './paths.js';
+export type { SecretStoreOptions } from './SecretStore.js';

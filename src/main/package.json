@@ -10,7 +10,9 @@
     "dev": "tsx watch src/index.ts"
   },
   "dependencies": {
-    "showx-shared": "workspace:*"
+    "showx-shared": "workspace:*",
+    "zod": "^3.22.0",
+    "keytar": "^7.9.0"
   },
   "devDependencies": {
     "tsx": "^4.7.0",
