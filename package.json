@@ -60,5 +60,24 @@
   "engines": {
     "node": ">=20.0.0"
   },
-  "main": "src/main/dist/index.js"
+  "main": "src/main/dist/index.js",
+  "dependencies": {
+    "zod": "^3.22.0",
+    "keytar": "^7.9.0",
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "bonjour-service": "^1.2.1",
+    "http-proxy-middleware": "^2.0.6",
+    "ws": "^8.16.0",
+    "yjs": "^13.6.10",
+    "y-protocols": "^1.0.6",
+    "lib0": "^0.2.88",
+    "osc-min": "^1.1.2",
+    "@julusian/midi": "^3.5.0",
+    "dmxnet": "^0.9.0",
+    "e131": "^1.1.2",
+    "qrcode": "^1.5.3",
+    "uuid": "^10.0.0",
+    "pdf-lib": "^1.17.1"
+  }
 }
