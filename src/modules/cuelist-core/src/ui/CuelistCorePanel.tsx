@@ -3,6 +3,8 @@ import { tokens } from './tokens.js';
 import { ShowFilePicker } from './ShowFilePicker.js';
 import { StationsTable, type Awareness } from './StationsTable.js';
 import { StatusStrip, type HealthLevel } from './StatusStrip.js';
+import { DevicesTable } from './DevicesTable.js';
+import { RoutingTable } from './RoutingTable.js';
 
 export interface IpcBridge {
   invoke<T = unknown>(channel: string, ...args: unknown[]): Promise<T>;
@@ -24,6 +26,8 @@ interface ShowState {
 interface PanelProps {
   ipc: IpcBridge;
 }
+
+type ActiveTab = 'show' | 'devices' | 'routing';
 
 function ModeBadge({
   mode,
@@ -59,11 +63,66 @@ function ModeBadge({
   );
 }
 
+function TabBar({
+  active,
+  onChange,
+}: {
+  active: ActiveTab;
+  onChange: (t: ActiveTab) => void;
+}) {
+  const tabs: { key: ActiveTab; label: string }[] = [
+    { key: 'show', label: 'Show' },
+    { key: 'devices', label: 'Devices' },
+    { key: 'routing', label: 'Routing' },
+  ];
+
+  return (
+    <div
+      role="tablist"
+      style={{
+        display: 'flex',
+        borderBottom: `2px solid ${tokens.color.gray_50}`,
+        marginBottom: tokens.space.l,
+      }}
+    >
+      {tabs.map(({ key, label }) => (
+        <button
+          key={key}
+          role="tab"
+          aria-selected={active === key}
+          onClick={() => onChange(key)}
+          style={{
+            fontFamily: tokens.font.ui,
+            fontSize: 14,
+            fontWeight: active === key ? 600 : 400,
+            color: active === key ? tokens.color.teal : tokens.color.gray_700,
+            background: 'none',
+            border: 'none',
+            borderBottom: active === key ? `2px solid ${tokens.color.teal}` : '2px solid transparent',
+            padding: `${tokens.space.s}px ${tokens.space.l}px`,
+            cursor: 'pointer',
+            marginBottom: -2,
+          }}
+        >
+          {label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export function CuelistCorePanel({ ipc }: PanelProps) {
   const [showState, setShowState] = useState<ShowState>({ open: false });
   const [stations, setStations] = useState<Awareness[]>([]);
   const [health, setHealth] = useState<HealthLevel>('unknown');
   const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<ActiveTab>(() => {
+    try {
+      const saved = window.localStorage.getItem('cuelist-core:active-tab');
+      if (saved === 'devices' || saved === 'routing') return saved;
+    } catch { /* no-op */ }
+    return 'show';
+  });
 
   useEffect(() => {
     const offState = ipc.on('cuelist-core/show-state', (s) => setShowState(s as ShowState));
@@ -78,6 +137,11 @@ export function CuelistCorePanel({ ipc }: PanelProps) {
       offHealth();
     };
   }, [ipc]);
+
+  const handleTabChange = (tab: ActiveTab) => {
+    setActiveTab(tab);
+    try { window.localStorage.setItem('cuelist-core:active-tab', tab); } catch { /* no-op */ }
+  };
 
   const openShow = async () => {
     try {
@@ -178,21 +242,37 @@ export function CuelistCorePanel({ ipc }: PanelProps) {
 
       <StatusStrip health={health} pkgPath={showState.pkgPath ?? ''} />
 
-      <section style={{ marginTop: tokens.space.xl }}>
-        <h2 style={{ color: tokens.color.ink, marginBottom: tokens.space.s }}>Cuelist</h2>
-        <p style={{ color: tokens.color.gray_700 }}>
-          {showState.cuelistName ?? '—'} &mdash; {showState.cueCount ?? 0} cues
-        </p>
-      </section>
+      <div style={{ marginTop: tokens.space.xl }}>
+        <TabBar active={activeTab} onChange={handleTabChange} />
 
-      <section style={{ marginTop: tokens.space.xl }}>
-        <h2 style={{ color: tokens.color.ink, marginBottom: tokens.space.s }}>Stations</h2>
-        <StationsTable
-          stations={stations}
-          canKick={!!showState.isSm}
-          onKick={(id) => void ipc.invoke('cuelist-core/kick-station', id)}
-        />
-      </section>
+        {activeTab === 'show' && (
+          <>
+            <section>
+              <h2 style={{ color: tokens.color.ink, marginBottom: tokens.space.s }}>Cuelist</h2>
+              <p style={{ color: tokens.color.gray_700 }}>
+                {showState.cuelistName ?? '—'} &mdash; {showState.cueCount ?? 0} cues
+              </p>
+            </section>
+
+            <section style={{ marginTop: tokens.space.xl }}>
+              <h2 style={{ color: tokens.color.ink, marginBottom: tokens.space.s }}>Stations</h2>
+              <StationsTable
+                stations={stations}
+                canKick={!!showState.isSm}
+                onKick={(id) => void ipc.invoke('cuelist-core/kick-station', id)}
+              />
+            </section>
+          </>
+        )}
+
+        {activeTab === 'devices' && (
+          <DevicesTable ipc={ipc} mode={showState.mode} />
+        )}
+
+        {activeTab === 'routing' && (
+          <RoutingTable ipc={ipc} mode={showState.mode} />
+        )}
+      </div>
 
       {error && (
         <div

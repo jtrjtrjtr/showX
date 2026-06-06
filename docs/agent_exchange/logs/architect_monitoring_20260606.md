@@ -888,3 +888,34 @@ After B003-023 acceptance, Forge tick at 19:42Z and 19:46Z correctly identified:
 
 **Next monitoring:** Tick 22 at 02:27 CEST (already scheduled from earlier wake-up call). Will check cycle 2 outcome + B003-102 pickup.
 
+
+## Tick 22 — 02:27 CEST — 🎯 B003-101 ACCEPTED round 1
+
+**State at tick:** 38 accepted (13 ShowX-1 + 24 ShowX-3 + 1 ShowX-3.1), 16 queued, 1 in_progress (B003-102).
+
+**Forge/Critic since tick 21 (+23 min):**
+
+| Task | Status | Notes |
+|---|---|---|
+| B003-101 | done → **accepted round 1** | Forge cycle 2 (00:02Z spawn) wrote done report by 00:12Z, Critic reviewed at 00:14Z, accepted at 00:22Z. 85 new tests pass. Critic flagged: 2 minor deviations defensible (tab state via localStorage; Driver hidden vs disabled); 3 non-blocking Architect notes (see below) |
+| B003-102 | queued → in_progress | Forge picked up after B003-101 accepted. Cycle started 00:26Z. Real-time playhead awareness broadcast. PID 67843 active |
+| B003-103 | queued | Waiting for B003-102 finish |
+
+**🚨 Critic notes for Architect (3 non-blocking from B003-101):**
+
+1. **cuelist-core IPC handlers not wired in main process** — pre-existing gap, not B003-101's fault. CuelistCorePanel buttons (Open/New) likely don't actually wire to main process. File as ShowX-3.2 follow-up.
+2. **`target_device_id` RoutingRule shape is incompatible with existing `dispatch/resolveRouting.ts`** — out of scope per spec, but routing rules created via UI WON'T actually route until follow-up. File as ShowX-3.2 follow-up.
+3. **Spec typos in `assertEditAllowed` signature** — minor doc cleanup.
+
+**Pattern 8 outcome:** B003-101 (~600 LOC) was the cycle 1 timeout #1 of ShowX-3.1. Cycle 2 finished cleanly within 12 min — pattern from B003-002 / B003-009 holds. Forge self-rescue / cycle-2 finish is the dominant recovery path.
+
+**Typecheck baseline: 14 errors** (up 4 from 10 ShowX-3-close baseline).
+- 4 new errors from B003-101 likely related to incompatible RoutingRule shape (Critic note #2)
+- Should be addressed in ShowX-3.2 hygiene
+
+**Forge productivity ShowX-3.1:**
+- B003-101 accepted: 33 min wall (cycle 1 + cycle 2 + Critic review)
+- B003-102 in flight at 00:26Z+ — should finish ~00:46Z if pattern holds
+
+**Bundle close projection:** B003-102 + B003-103 remaining. ~1h total realistic. ETA ~03:30 CEST.
+
