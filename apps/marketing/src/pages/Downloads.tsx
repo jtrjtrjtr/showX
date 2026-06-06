@@ -138,11 +138,11 @@ export function Downloads() {
               </p>
               <div className="mt-8 flex flex-col sm:flex-row gap-4">
                 <a
-                  href="/showx.dmg"
+                  href="/ShowX-0.1.1-arm64.dmg"
                   className="btn-primary"
-                  download="ShowX.dmg"
+                  download
                 >
-                  {cs ? 'Stáhnout ShowX (arm64, ~93 MB)' : 'Download ShowX (arm64, ~93 MB)'}
+                  {cs ? 'Stáhnout ShowX 0.1.1 (arm64, ~102 MB)' : 'Download ShowX 0.1.1 (arm64, ~102 MB)'}
                 </a>
                 <a
                   href="https://github.com/jtrjtrjtr/showX/releases/tag/v0.1.1"

@@ -16,6 +16,7 @@ release/
 dist-electron/
 
 # DMG copied into marketing public/ for Netlify serve (not in git history, deployed only)
+apps/marketing/public/ShowX-*.dmg
 apps/marketing/public/showx.dmg
 
 # IDEs
