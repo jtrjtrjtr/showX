@@ -1,12 +1,8 @@
 {
-  "enabled": true,
-  "bundle_id": "ShowX-3.1",
-  "allowed_task_ids": [
-    "B003-101",
-    "B003-102",
-    "B003-103"
-  ],
-  "rationale": "ShowX-3.1 hotfix bundle authorized 2026-06-06 by Architect per Jind\u0159ich's request. Three task specs addressing critical Cuelist UI gaps: Routing+Devices UI (B003-101), Real-time playhead broadcast via Yjs awareness (B003-102), Demo show fixture + first-launch picker with Open Demo/Open Existing/New From Scratch flow (B003-103). Bundle decision note: docs/agent_exchange/bundles/ShowX-3-1-hotfix.md. Forge picks tasks in lowest-ID order; all 3 are independent (no inter-deps).",
-  "updated_at": "2026-06-06T22:30:00Z",
+  "enabled": false,
+  "bundle_id": "ShowX-3.1-CLOSED",
+  "allowed_task_ids": [],
+  "rationale": "ShowX-3.1 hotfix bundle complete 2026-06-07T01:55Z — all 3 task specs accepted. Scope DISABLED post-bundle close. Next bundle (ShowX-3.2 follow-up or ShowX-2 absorption) will need fresh scope. Decision note: docs/agent_exchange/decisions/2026-06-07_showx_3_1_hotfix_complete.md",
+  "updated_at": "2026-06-07T01:55:00Z",
   "updated_by": "architect"
 }

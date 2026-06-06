@@ -27,12 +27,15 @@ function createMockIpc(overrides: Partial<IpcBridge> = {}): IpcBridge & { emit: 
   };
 }
 
-describe('CuelistCorePanel — empty state', () => {
-  it('renders Open .showx and New show buttons when no show is open', () => {
-    const ipc = createMockIpc();
+describe('CuelistCorePanel — empty state (no recents)', () => {
+  it('renders FirstLaunchPicker when no show is open and no recent shows', () => {
+    const ipc = createMockIpc({
+      invoke: vi.fn().mockResolvedValue(null),
+    });
     render(<CuelistCorePanel ipc={ipc} />);
-    expect(screen.getByText(/open \.showx/i)).toBeTruthy();
-    expect(screen.getByText(/new show/i)).toBeTruthy();
+    expect(screen.getByText('Open Demo Show')).toBeTruthy();
+    expect(screen.getByText('Open Existing Show')).toBeTruthy();
+    expect(screen.getByText('Create New from Scratch')).toBeTruthy();
   });
 
   it('renders action-oriented empty state copy', () => {
@@ -44,33 +47,118 @@ describe('CuelistCorePanel — empty state', () => {
   it('does NOT render Cuelist section heading in empty state', () => {
     const ipc = createMockIpc();
     render(<CuelistCorePanel ipc={ipc} />);
-    // h2 "Cuelist" only appears in the loaded state; h1 "Cuelist Core" is in empty state
     expect(screen.queryByRole('heading', { level: 2, name: /^cuelist$/i })).toBeNull();
   });
 
-  it('calls cuelist-core/pick-show-file then cuelist-core/open-show when Open is clicked with a path', async () => {
-    const ipc = createMockIpc();
-    (ipc.invoke as ReturnType<typeof vi.fn>)
-      .mockResolvedValueOnce(null) // get-state initial call
-      .mockResolvedValueOnce('/path/to/show.showx') // pick-show-file
-      .mockResolvedValueOnce(undefined); // open-show
-
+  it('Open Demo button calls cuelist-core:open-demo then cuelist-core/open-show', async () => {
+    const demoPath = '/docs/ShowX/Demo Show.showx';
+    const invoke = vi.fn()
+      .mockResolvedValueOnce(null)               // get-state
+      .mockResolvedValueOnce([])                 // recent-shows-get
+      .mockResolvedValueOnce({ path: demoPath }) // open-demo
+      .mockResolvedValueOnce(undefined);         // open-show
+    const ipc = createMockIpc({ invoke });
     render(<CuelistCorePanel ipc={ipc} />);
+
+    await waitFor(() => screen.getByRole('button', { name: 'Open Demo' }));
+
     await act(async () => {
-      fireEvent.click(screen.getByText(/open \.showx/i));
+      fireEvent.click(screen.getByRole('button', { name: 'Open Demo' }));
     });
 
-    expect(ipc.invoke).toHaveBeenCalledWith('cuelist-core/pick-show-file');
-    expect(ipc.invoke).toHaveBeenCalledWith('cuelist-core/open-show', '/path/to/show.showx');
+    await waitFor(() => {
+      expect(invoke).toHaveBeenCalledWith('cuelist-core:open-demo');
+      expect(invoke).toHaveBeenCalledWith('cuelist-core/open-show', demoPath);
+    });
   });
 
-  it('calls cuelist-core/new-show-flow when New show is clicked', async () => {
-    const ipc = createMockIpc();
+  it('Browse button calls cuelist-core:open-file-picker', async () => {
+    const invoke = vi.fn()
+      .mockResolvedValueOnce(null)              // get-state
+      .mockResolvedValueOnce([])                // recent-shows-get
+      .mockResolvedValueOnce({ cancelled: true }); // open-file-picker
+    const ipc = createMockIpc({ invoke });
     render(<CuelistCorePanel ipc={ipc} />);
+
+    await waitFor(() => screen.getByRole('button', { name: 'Browse…' }));
+
     await act(async () => {
-      fireEvent.click(screen.getByText(/new show/i));
+      fireEvent.click(screen.getByRole('button', { name: 'Browse…' }));
     });
-    expect(ipc.invoke).toHaveBeenCalledWith('cuelist-core/new-show-flow');
+
+    expect(invoke).toHaveBeenCalledWith('cuelist-core:open-file-picker');
+  });
+
+  it('Create button calls cuelist-core:create-new', async () => {
+    const invoke = vi.fn()
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce({ cancelled: true });
+    const ipc = createMockIpc({ invoke });
+    render(<CuelistCorePanel ipc={ipc} />);
+
+    await waitFor(() => screen.getByRole('button', { name: 'Create…' }));
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Create…' }));
+    });
+
+    expect(invoke).toHaveBeenCalledWith('cuelist-core:create-new');
+  });
+});
+
+describe('CuelistCorePanel — empty state (with recents)', () => {
+  const sampleRecent = {
+    path: '/shows/Kongres 2026.showx',
+    last_opened_at: new Date().toISOString(),
+    cue_count: 42,
+  };
+
+  it('renders RecentShowsList when recent shows exist', async () => {
+    const invoke = vi.fn()
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce([sampleRecent]);
+    const ipc = createMockIpc({ invoke });
+    render(<CuelistCorePanel ipc={ipc} />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Recent shows')).toBeTruthy();
+    });
+  });
+
+  it('shows recent show name in the list', async () => {
+    const invoke = vi.fn()
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce([sampleRecent]);
+    const ipc = createMockIpc({ invoke });
+    render(<CuelistCorePanel ipc={ipc} />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Kongres 2026')).toBeTruthy();
+    });
+  });
+
+  it('renders "Select a recent show or start fresh" copy when recents exist', async () => {
+    const invoke = vi.fn()
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce([sampleRecent]);
+    const ipc = createMockIpc({ invoke });
+    render(<CuelistCorePanel ipc={ipc} />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/select a recent show or start fresh/i)).toBeTruthy();
+    });
+  });
+
+  it('does NOT render FirstLaunchPicker when recent shows exist', async () => {
+    const invoke = vi.fn()
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce([sampleRecent]);
+    const ipc = createMockIpc({ invoke });
+    render(<CuelistCorePanel ipc={ipc} />);
+
+    await waitFor(() => screen.getByText('Recent shows'));
+    expect(screen.queryByText('Open Demo Show')).toBeNull();
   });
 });
 
@@ -173,31 +261,10 @@ describe('CuelistCorePanel — mode toggle', () => {
   });
 });
 
-describe('CuelistCorePanel — error toast', () => {
-  it('shows error toast when IPC rejects', async () => {
-    const ipc = createMockIpc();
-    (ipc.invoke as ReturnType<typeof vi.fn>)
-      .mockResolvedValueOnce(null) // get-state
-      .mockRejectedValueOnce(new Error('IPC error: module not started')); // new-show-flow
-
-    render(<CuelistCorePanel ipc={ipc} />);
-    await act(async () => {
-      fireEvent.click(screen.getByText(/new show/i));
-    });
-
-    await waitFor(() => {
-      const alert = screen.getByRole('alert');
-      expect(alert).toBeTruthy();
-      expect(alert.textContent).toContain('IPC error: module not started');
-    });
-  });
-});
-
 describe('CuelistCorePanel — health indicator', () => {
   it('renders health status strip with unknown health by default', async () => {
     const ipc = createMockIpc();
     render(<CuelistCorePanel ipc={ipc} />);
-    // Health indicator only visible when show is open; push show state + health
     await act(async () => {
       (ipc as ReturnType<typeof createMockIpc>).emit('cuelist-core/show-state', {
         open: true, mode: 'rehearsal', isSm: false, cueCount: 0,

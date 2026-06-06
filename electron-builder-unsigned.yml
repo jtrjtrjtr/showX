@@ -8,6 +8,13 @@ extraMetadata:
   name: showx
   version: 0.1.0
 
+# Extra resources bundled into the app (read-only inside .app/Contents/Resources)
+extraResources:
+  - from: resources/demo-show
+    to: demo-show
+    filter:
+      - "**/*"
+
 # Build inputs
 files:
   - from: src/main/dist

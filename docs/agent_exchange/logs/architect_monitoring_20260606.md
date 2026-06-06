@@ -994,3 +994,52 @@ Note on B003-102 round number: Critic verdict says "round 1" (state.json never w
 - Best case: B003-103 cycle 2 finishes by 01:34Z + Critic accept by 01:54Z → 03:54 CEST bundle close
 - Realistic: cycle 2 timeout → Architect rescue (~15 min) → Critic accept next tick → 04:30 CEST bundle close
 
+
+## Tick 25 — 03:51 CEST — 🎉🎉🎉 ShowX-3.1 BUNDLE COMPLETE 3/3
+
+**FINAL STATE:** 40 accepted (13 ShowX-1 + 24 ShowX-3 + 3 ShowX-3.1), 15 queued (B002-001..015 ShowX-2 parked post-Kongres), 0 in_progress, 0 changes_requested, 0 done.
+
+**Forge/Critic since tick 24 (+30 min):**
+
+| Task | Status | Notes |
+|---|---|---|
+| B003-103 | done → changes_requested round 1 → done round 2 → **accepted round 2** | Round 1 Critic catch (AC #9 menubar wiring missing). Forge round 2 added `buildAppMenu` (File menu with Open Demo / Open / Open Recent / New Show), exported handler functions for menu click reuse. 10 new tests in showActions.appMenu.test.ts. 1156 pass / 4 pre-existing failures. Critic accepted at 01:50Z |
+
+**🎉 BUNDLE COMPLETE 3/3 (100%).**
+
+**B003 acceptance ratio final ShowX-3.1: 3 accepted (round1=2, round2=1).** Round-1 67%, round-2 33%, no round-3.
+
+**Pattern 8 stats ShowX-3.1 final:** 3/3 (100%) cycle 1 timeouts. ALL recovered via cycle 2 / Architect rescue / Forge consolidation. 1 Architect rescue (B003-102).
+
+**Cumulative session stats (ShowX-3 + ShowX-3.1):**
+- 27 tasks accepted (24 + 3)
+- Pattern 8: 7/27 (26%) cycle 1 timeouts
+- Architect rescues: 2 (B003-020 main bundle, B003-102 hotfix)
+- Round-3+ rate: 0% across both bundles
+- Total wall time: ~12h Architect + ~16h Forge subprocess
+
+**Bundle close actions executed:**
+- `docs/agent_exchange/decisions/2026-06-07_showx_3_1_hotfix_complete.md` — 100-line decision note
+- `docs/agent_exchange/claude_runner_scope.json` — `enabled: false`, scope disabled
+- state.json phase → `bundle_ShowX-3.1_complete`
+
+**Typecheck baseline: 14 errors** (4 from B003-101 RoutingRule shape — ShowX-3.2 follow-up).
+
+**Critic non-blocking notes consolidated (7 items, defer to ShowX-3.2):**
+1. cuelist-core IPC handlers not wired in main process (B003-101 review)
+2. RoutingRule target_device_id incompatible with resolveRouting.ts (B003-101)
+3. Spec typos in assertEditAllowed signature (B003-101)
+4. CueRow doesn't thread smOnline to PlayheadIndicator (B003-102)
+5. Demo devices only in code constant, not bundled demo.showx JSON (B003-103)
+6. pushRecent only on open, not close (B003-103)
+7. process.cwd() dev path brittle (B003-103)
+
+**🎯 Next session deliverables for Architect+Jindřich:**
+1. Build new DMG with demo show bundled (v0.1.1) → push GitHub Release
+2. Update marketing site Downloads page with v0.1.1 features
+3. Jindřich self-demo session: install v0.1.1, click "Open Demo", drive 60-sec test
+4. File ShowX-3.2 follow-up for 7 non-blocking items
+5. First customer outreach per B003-022 playbook
+
+**Monitoring loop ENDS.**
+

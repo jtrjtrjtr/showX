@@ -6,6 +6,7 @@ import type { PairingStore } from '../shared/PairingStore.js';
 import type { PinManager } from '../shared/pairing/pinManager.js';
 import type { Logger } from '../shared/Logger.js';
 import type { ShellConfigStore } from '../Shell.js';
+import { registerShowActions } from './showActions.js';
 
 export type { ShellConfigStore } from '../Shell.js';
 
@@ -68,4 +69,6 @@ export function registerIpcHandlers(deps: IpcDeps, ipc: IpcMainBridge = ipcMain)
     await deps.shellConfig.set(key, value);
     return { ok: true };
   });
+
+  registerShowActions(deps.shellConfig, ipc);
 }

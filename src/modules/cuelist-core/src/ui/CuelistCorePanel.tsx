@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { tokens } from './tokens.js';
-import { ShowFilePicker } from './ShowFilePicker.js';
 import { StationsTable, type Awareness } from './StationsTable.js';
 import { StatusStrip, type HealthLevel } from './StatusStrip.js';
 import { DevicesTable } from './DevicesTable.js';
 import { RoutingTable } from './RoutingTable.js';
+import { FirstLaunchPicker } from './FirstLaunchPicker.js';
+import { RecentShowsList, type RecentShow } from './RecentShowsList.js';
 
 export interface IpcBridge {
   invoke<T = unknown>(channel: string, ...args: unknown[]): Promise<T>;
@@ -116,6 +117,7 @@ export function CuelistCorePanel({ ipc }: PanelProps) {
   const [stations, setStations] = useState<Awareness[]>([]);
   const [health, setHealth] = useState<HealthLevel>('unknown');
   const [error, setError] = useState<string | null>(null);
+  const [recentShows, setRecentShows] = useState<RecentShow[] | null>(null);
   const [activeTab, setActiveTab] = useState<ActiveTab>(() => {
     try {
       const saved = window.localStorage.getItem('cuelist-core:active-tab');
@@ -131,6 +133,9 @@ export function CuelistCorePanel({ ipc }: PanelProps) {
     void ipc.invoke<ShowState>('cuelist-core/get-state').then((s) => {
       if (s && typeof s === 'object') setShowState(s);
     });
+    void ipc.invoke<RecentShow[]>('cuelist-core:recent-shows-get').then((r) => {
+      setRecentShows(Array.isArray(r) ? r : []);
+    }).catch(() => setRecentShows([]));
     return () => {
       offState();
       offStations();
@@ -141,23 +146,6 @@ export function CuelistCorePanel({ ipc }: PanelProps) {
   const handleTabChange = (tab: ActiveTab) => {
     setActiveTab(tab);
     try { window.localStorage.setItem('cuelist-core:active-tab', tab); } catch { /* no-op */ }
-  };
-
-  const openShow = async () => {
-    try {
-      const path = await ipc.invoke<string | null>('cuelist-core/pick-show-file');
-      if (path) await ipc.invoke('cuelist-core/open-show', path);
-    } catch (e) {
-      setError(String(e));
-    }
-  };
-
-  const newShow = async () => {
-    try {
-      await ipc.invoke('cuelist-core/new-show-flow');
-    } catch (e) {
-      setError(String(e));
-    }
   };
 
   const toggleMode = async () => {
@@ -177,18 +165,28 @@ export function CuelistCorePanel({ ipc }: PanelProps) {
           background: tokens.color.cream,
           minHeight: '100vh',
           padding: tokens.space.xxl,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
           fontFamily: tokens.font.ui,
         }}
       >
-        <h1 style={{ color: tokens.color.ink, marginBottom: tokens.space.m }}>Cuelist Core</h1>
+        <h1 style={{ color: tokens.color.ink, marginBottom: tokens.space.m, marginTop: 0 }}>
+          ShowX
+        </h1>
         <p style={{ color: tokens.color.gray_700, marginBottom: tokens.space.xl }}>
-          Open a show file or create a new one to start.
+          {Array.isArray(recentShows) && recentShows.length > 0
+            ? 'Select a recent show or start fresh.'
+            : 'Open a show file or create a new one to start.'}
         </p>
-        <ShowFilePicker onOpen={() => void openShow()} onNew={() => void newShow()} />
+
+        {Array.isArray(recentShows) && recentShows.length > 0 ? (
+          <RecentShowsList
+            ipc={ipc}
+            recentShows={recentShows}
+            onShowOpened={() => setError(null)}
+          />
+        ) : (
+          <FirstLaunchPicker ipc={ipc} onShowOpened={() => setError(null)} />
+        )}
+
         {error && (
           <div
             role="alert"
