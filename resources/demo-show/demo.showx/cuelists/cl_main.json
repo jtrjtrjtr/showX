@@ -1,0 +1,501 @@
+{
+  "id": "01900000-0002-7000-8000-000000000001",
+  "name": "Main Show",
+  "default_trigger": "manual",
+  "go_authority": "sm_called",
+  "sm_offline_policy": { "kind": "freeze" },
+  "playhead": { "cue_id": null, "armed_cue_id": null },
+  "show_snapshot_id": null,
+  "cues": [
+    {
+      "id": "01900000-0003-7000-8000-000000000001",
+      "label": "House up",
+      "description": "",
+      "department": ["LX"],
+      "standby_note": "Open house — bring lights to preset",
+      "script_line_ref": null,
+      "trigger": { "kind": "manual" },
+      "payloads": [
+        { "id": "01900000-0005-7000-0001-000000000001", "type": "lx_ref", "tag": "LX", "note": "", "cue_list": 1, "cue_number": 0 }
+      ],
+      "duration_hint_ms": null,
+      "notes": "",
+      "payload_frozen_at": null,
+      "created_at": "2026-06-01T10:00:00.000Z",
+      "created_by": "demo",
+      "modified_at": "2026-06-01T10:00:00.000Z",
+      "modified_by": "demo"
+    },
+    {
+      "id": "01900000-0003-7000-8000-000000000002",
+      "label": "Preset: Warm amber",
+      "description": "",
+      "department": ["LX"],
+      "standby_note": "",
+      "script_line_ref": null,
+      "trigger": { "kind": "manual" },
+      "payloads": [
+        { "id": "01900000-0005-7000-0002-000000000001", "type": "lx_ref", "tag": "LX", "note": "", "cue_list": 1, "cue_number": 10 }
+      ],
+      "duration_hint_ms": null,
+      "notes": "",
+      "payload_frozen_at": null,
+      "created_at": "2026-06-01T10:00:00.000Z",
+      "created_by": "demo",
+      "modified_at": "2026-06-01T10:00:00.000Z",
+      "modified_by": "demo"
+    },
+    {
+      "id": "01900000-0003-7000-8000-000000000003",
+      "label": "Stage wash",
+      "description": "",
+      "department": ["LX"],
+      "standby_note": "",
+      "script_line_ref": null,
+      "trigger": { "kind": "manual" },
+      "payloads": [
+        { "id": "01900000-0005-7000-0003-000000000001", "type": "lx_ref", "tag": "LX", "note": "", "cue_list": 1, "cue_number": 20 }
+      ],
+      "duration_hint_ms": null,
+      "notes": "",
+      "payload_frozen_at": null,
+      "created_at": "2026-06-01T10:00:00.000Z",
+      "created_by": "demo",
+      "modified_at": "2026-06-01T10:00:00.000Z",
+      "modified_by": "demo"
+    },
+    {
+      "id": "01900000-0003-7000-8000-000000000004",
+      "label": "Doors open",
+      "description": "",
+      "department": ["LX"],
+      "standby_note": "Front of house doors opening — reduce house level",
+      "script_line_ref": null,
+      "trigger": { "kind": "manual" },
+      "payloads": [
+        { "id": "01900000-0005-7000-0004-000000000001", "type": "lx_ref", "tag": "LX", "note": "", "cue_list": 1, "cue_number": 30 }
+      ],
+      "duration_hint_ms": null,
+      "notes": "",
+      "payload_frozen_at": null,
+      "created_at": "2026-06-01T10:00:00.000Z",
+      "created_by": "demo",
+      "modified_at": "2026-06-01T10:00:00.000Z",
+      "modified_by": "demo"
+    },
+    {
+      "id": "01900000-0003-7000-8000-000000000005",
+      "label": "Announce",
+      "description": "",
+      "department": ["LX"],
+      "standby_note": "Begin 5-minute announcement from FOH",
+      "script_line_ref": null,
+      "trigger": { "kind": "manual" },
+      "payloads": [
+        { "id": "01900000-0005-7000-0005-000000000001", "type": "lx_ref", "tag": "LX", "note": "", "cue_list": 1, "cue_number": 40 }
+      ],
+      "duration_hint_ms": null,
+      "notes": "",
+      "payload_frozen_at": null,
+      "created_at": "2026-06-01T10:00:00.000Z",
+      "created_by": "demo",
+      "modified_at": "2026-06-01T10:00:00.000Z",
+      "modified_by": "demo"
+    },
+    {
+      "id": "01900000-0003-7000-8000-000000000006",
+      "label": "Act 1 open",
+      "description": "",
+      "department": ["LX"],
+      "standby_note": "Fade house; SM calls Go on dialogue start",
+      "script_line_ref": null,
+      "trigger": { "kind": "manual" },
+      "payloads": [
+        { "id": "01900000-0005-7000-0006-000000000001", "type": "lx_ref", "tag": "LX", "note": "", "cue_list": 2, "cue_number": 0 }
+      ],
+      "duration_hint_ms": null,
+      "notes": "",
+      "payload_frozen_at": null,
+      "created_at": "2026-06-01T10:00:00.000Z",
+      "created_by": "demo",
+      "modified_at": "2026-06-01T10:00:00.000Z",
+      "modified_by": "demo"
+    },
+    {
+      "id": "01900000-0003-7000-8000-000000000007",
+      "label": "Door slam",
+      "description": "",
+      "department": ["SX"],
+      "standby_note": "",
+      "script_line_ref": null,
+      "trigger": { "kind": "auto_follow", "prev_cue_id": "01900000-0003-7000-8000-000000000006" },
+      "payloads": [
+        { "id": "01900000-0005-7000-0007-000000000001", "type": "osc", "tag": "SX", "note": "", "address": "/cue/7/start", "args": [] }
+      ],
+      "duration_hint_ms": null,
+      "notes": "",
+      "payload_frozen_at": null,
+      "created_at": "2026-06-01T10:00:00.000Z",
+      "created_by": "demo",
+      "modified_at": "2026-06-01T10:00:00.000Z",
+      "modified_by": "demo"
+    },
+    {
+      "id": "01900000-0003-7000-8000-000000000008",
+      "label": "Scene: Library",
+      "description": "",
+      "department": ["LX"],
+      "standby_note": "",
+      "script_line_ref": null,
+      "trigger": { "kind": "manual" },
+      "payloads": [
+        { "id": "01900000-0005-7000-0008-000000000001", "type": "lx_ref", "tag": "LX", "note": "", "cue_list": 2, "cue_number": 10 }
+      ],
+      "duration_hint_ms": null,
+      "notes": "",
+      "payload_frozen_at": null,
+      "created_at": "2026-06-01T10:00:00.000Z",
+      "created_by": "demo",
+      "modified_at": "2026-06-01T10:00:00.000Z",
+      "modified_by": "demo"
+    },
+    {
+      "id": "01900000-0003-7000-8000-000000000009",
+      "label": "Wind rises",
+      "description": "",
+      "department": ["SX"],
+      "standby_note": "",
+      "script_line_ref": null,
+      "trigger": { "kind": "auto_follow", "prev_cue_id": "01900000-0003-7000-8000-000000000008" },
+      "payloads": [
+        { "id": "01900000-0005-7000-0009-000000000001", "type": "osc", "tag": "SX", "note": "", "address": "/cue/9/start", "args": [] }
+      ],
+      "duration_hint_ms": null,
+      "notes": "",
+      "payload_frozen_at": null,
+      "created_at": "2026-06-01T10:00:00.000Z",
+      "created_by": "demo",
+      "modified_at": "2026-06-01T10:00:00.000Z",
+      "modified_by": "demo"
+    },
+    {
+      "id": "01900000-0003-7000-8000-000000000010",
+      "label": "Storm builds",
+      "description": "",
+      "department": ["LX", "SX"],
+      "standby_note": "",
+      "script_line_ref": null,
+      "trigger": { "kind": "manual" },
+      "payloads": [
+        { "id": "01900000-0005-7000-0010-000000000001", "type": "lx_ref", "tag": "LX", "note": "", "cue_list": 2, "cue_number": 20 },
+        { "id": "01900000-0005-7000-0010-000000000002", "type": "osc", "tag": "SX", "note": "", "address": "/cue/10/start", "args": [] }
+      ],
+      "duration_hint_ms": null,
+      "notes": "",
+      "payload_frozen_at": null,
+      "created_at": "2026-06-01T10:00:00.000Z",
+      "created_by": "demo",
+      "modified_at": "2026-06-01T10:00:00.000Z",
+      "modified_by": "demo"
+    },
+    {
+      "id": "01900000-0003-7000-8000-000000000011",
+      "label": "Storm starts",
+      "description": "",
+      "department": ["LX", "SX"],
+      "standby_note": "COMPOUND: LX scene 47 + SX music cue fire together",
+      "script_line_ref": null,
+      "trigger": { "kind": "manual" },
+      "payloads": [
+        { "id": "01900000-0005-7000-0011-000000000001", "type": "lx_ref", "tag": "LX", "note": "", "cue_list": 2, "cue_number": 30 },
+        { "id": "01900000-0005-7000-0011-000000000002", "type": "osc", "tag": "SX", "note": "", "address": "/cue/11/start", "args": [] }
+      ],
+      "duration_hint_ms": null,
+      "notes": "",
+      "payload_frozen_at": null,
+      "created_at": "2026-06-01T10:00:00.000Z",
+      "created_by": "demo",
+      "modified_at": "2026-06-01T10:00:00.000Z",
+      "modified_by": "demo"
+    },
+    {
+      "id": "01900000-0003-7000-8000-000000000012",
+      "label": "Rain intensifies",
+      "description": "",
+      "department": ["SX"],
+      "standby_note": "",
+      "script_line_ref": null,
+      "trigger": { "kind": "auto_follow", "prev_cue_id": "01900000-0003-7000-8000-000000000011" },
+      "payloads": [
+        { "id": "01900000-0005-7000-0012-000000000001", "type": "osc", "tag": "SX", "note": "", "address": "/cue/12/start", "args": [] }
+      ],
+      "duration_hint_ms": null,
+      "notes": "",
+      "payload_frozen_at": null,
+      "created_at": "2026-06-01T10:00:00.000Z",
+      "created_by": "demo",
+      "modified_at": "2026-06-01T10:00:00.000Z",
+      "modified_by": "demo"
+    },
+    {
+      "id": "01900000-0003-7000-8000-000000000013",
+      "label": "Sunset",
+      "description": "",
+      "department": ["LX"],
+      "standby_note": "",
+      "script_line_ref": null,
+      "trigger": { "kind": "manual" },
+      "payloads": [
+        { "id": "01900000-0005-7000-0013-000000000001", "type": "lx_ref", "tag": "LX", "note": "", "cue_list": 2, "cue_number": 40 }
+      ],
+      "duration_hint_ms": null,
+      "notes": "",
+      "payload_frozen_at": null,
+      "created_at": "2026-06-01T10:00:00.000Z",
+      "created_by": "demo",
+      "modified_at": "2026-06-01T10:00:00.000Z",
+      "modified_by": "demo"
+    },
+    {
+      "id": "01900000-0003-7000-8000-000000000014",
+      "label": "Battle climax",
+      "description": "",
+      "department": ["LX", "SX", "VIDEO"],
+      "standby_note": "GROUP: fires Storm builds + Storm starts + Rain intensifies in parallel",
+      "script_line_ref": null,
+      "trigger": { "kind": "manual" },
+      "payloads": [
+        {
+          "id": "01900000-0005-7000-0014-000000000001",
+          "type": "group",
+          "tag": null,
+          "note": "",
+          "child_cue_ids": [
+            "01900000-0003-7000-8000-000000000010",
+            "01900000-0003-7000-8000-000000000011",
+            "01900000-0003-7000-8000-000000000012"
+          ]
+        }
+      ],
+      "duration_hint_ms": null,
+      "notes": "",
+      "payload_frozen_at": null,
+      "created_at": "2026-06-01T10:00:00.000Z",
+      "created_by": "demo",
+      "modified_at": "2026-06-01T10:00:00.000Z",
+      "modified_by": "demo"
+    },
+    {
+      "id": "01900000-0003-7000-8000-000000000015",
+      "label": "Act 1 out",
+      "description": "",
+      "department": ["LX", "SX"],
+      "standby_note": "",
+      "script_line_ref": null,
+      "trigger": { "kind": "manual" },
+      "payloads": [
+        { "id": "01900000-0005-7000-0015-000000000001", "type": "lx_ref", "tag": "LX", "note": "", "cue_list": 2, "cue_number": 50 },
+        { "id": "01900000-0005-7000-0015-000000000002", "type": "osc", "tag": "SX", "note": "", "address": "/cue/15/start", "args": [] }
+      ],
+      "duration_hint_ms": null,
+      "notes": "",
+      "payload_frozen_at": null,
+      "created_at": "2026-06-01T10:00:00.000Z",
+      "created_by": "demo",
+      "modified_at": "2026-06-01T10:00:00.000Z",
+      "modified_by": "demo"
+    },
+    {
+      "id": "01900000-0003-7000-8000-000000000016",
+      "label": "Intermission lights",
+      "description": "",
+      "department": ["LX"],
+      "standby_note": "",
+      "script_line_ref": null,
+      "trigger": { "kind": "manual" },
+      "payloads": [
+        { "id": "01900000-0005-7000-0016-000000000001", "type": "lx_ref", "tag": "LX", "note": "", "cue_list": 3, "cue_number": 0 }
+      ],
+      "duration_hint_ms": null,
+      "notes": "",
+      "payload_frozen_at": null,
+      "created_at": "2026-06-01T10:00:00.000Z",
+      "created_by": "demo",
+      "modified_at": "2026-06-01T10:00:00.000Z",
+      "modified_by": "demo"
+    },
+    {
+      "id": "01900000-0003-7000-8000-000000000017",
+      "label": "Act 2 open",
+      "description": "",
+      "department": ["LX", "VIDEO"],
+      "standby_note": "Full bleed on video wall + LX cross",
+      "script_line_ref": null,
+      "trigger": { "kind": "manual" },
+      "payloads": [
+        { "id": "01900000-0005-7000-0017-000000000001", "type": "lx_ref", "tag": "LX", "note": "", "cue_list": 3, "cue_number": 10 },
+        { "id": "01900000-0005-7000-0017-000000000002", "type": "osc", "tag": "VIDEO", "note": "", "address": "/cue/17/start", "args": [] }
+      ],
+      "duration_hint_ms": null,
+      "notes": "",
+      "payload_frozen_at": null,
+      "created_at": "2026-06-01T10:00:00.000Z",
+      "created_by": "demo",
+      "modified_at": "2026-06-01T10:00:00.000Z",
+      "modified_by": "demo"
+    },
+    {
+      "id": "01900000-0003-7000-8000-000000000018",
+      "label": "Video: Projection 1",
+      "description": "",
+      "department": ["VIDEO"],
+      "standby_note": "",
+      "script_line_ref": null,
+      "trigger": { "kind": "auto_continue", "delay_ms": 1000 },
+      "payloads": [
+        { "id": "01900000-0005-7000-0018-000000000001", "type": "osc", "tag": "VIDEO", "note": "", "address": "/cue/18/start", "args": [] }
+      ],
+      "duration_hint_ms": null,
+      "notes": "",
+      "payload_frozen_at": null,
+      "created_at": "2026-06-01T10:00:00.000Z",
+      "created_by": "demo",
+      "modified_at": "2026-06-01T10:00:00.000Z",
+      "modified_by": "demo"
+    },
+    {
+      "id": "01900000-0003-7000-8000-000000000019",
+      "label": "Scene: Courtyard",
+      "description": "",
+      "department": ["LX"],
+      "standby_note": "",
+      "script_line_ref": null,
+      "trigger": { "kind": "manual" },
+      "payloads": [
+        { "id": "01900000-0005-7000-0019-000000000001", "type": "lx_ref", "tag": "LX", "note": "", "cue_list": 3, "cue_number": 20 }
+      ],
+      "duration_hint_ms": null,
+      "notes": "",
+      "payload_frozen_at": null,
+      "created_at": "2026-06-01T10:00:00.000Z",
+      "created_by": "demo",
+      "modified_at": "2026-06-01T10:00:00.000Z",
+      "modified_by": "demo"
+    },
+    {
+      "id": "01900000-0003-7000-8000-000000000020",
+      "label": "Video: Timeline B",
+      "description": "",
+      "department": ["VIDEO"],
+      "standby_note": "",
+      "script_line_ref": null,
+      "trigger": { "kind": "auto_continue", "delay_ms": 500 },
+      "payloads": [
+        { "id": "01900000-0005-7000-0020-000000000001", "type": "osc", "tag": "VIDEO", "note": "", "address": "/cue/20/start", "args": [] }
+      ],
+      "duration_hint_ms": null,
+      "notes": "",
+      "payload_frozen_at": null,
+      "created_at": "2026-06-01T10:00:00.000Z",
+      "created_by": "demo",
+      "modified_at": "2026-06-01T10:00:00.000Z",
+      "modified_by": "demo"
+    },
+    {
+      "id": "01900000-0003-7000-8000-000000000021",
+      "label": "Climax: Full stage",
+      "description": "",
+      "department": ["LX", "VIDEO"],
+      "standby_note": "Biggest moment — LX full intensity + VIDEO grand reveal",
+      "script_line_ref": null,
+      "trigger": { "kind": "manual" },
+      "payloads": [
+        { "id": "01900000-0005-7000-0021-000000000001", "type": "lx_ref", "tag": "LX", "note": "", "cue_list": 3, "cue_number": 30 },
+        { "id": "01900000-0005-7000-0021-000000000002", "type": "osc", "tag": "VIDEO", "note": "", "address": "/cue/21/start", "args": [] }
+      ],
+      "duration_hint_ms": null,
+      "notes": "",
+      "payload_frozen_at": null,
+      "created_at": "2026-06-01T10:00:00.000Z",
+      "created_by": "demo",
+      "modified_at": "2026-06-01T10:00:00.000Z",
+      "modified_by": "demo"
+    },
+    {
+      "id": "01900000-0003-7000-8000-000000000022",
+      "label": "Video: Grand finale",
+      "description": "",
+      "department": ["VIDEO"],
+      "standby_note": "",
+      "script_line_ref": null,
+      "trigger": { "kind": "auto_continue", "delay_ms": 2000 },
+      "payloads": [
+        { "id": "01900000-0005-7000-0022-000000000001", "type": "osc", "tag": "VIDEO", "note": "", "address": "/cue/22/start", "args": [] }
+      ],
+      "duration_hint_ms": null,
+      "notes": "",
+      "payload_frozen_at": null,
+      "created_at": "2026-06-01T10:00:00.000Z",
+      "created_by": "demo",
+      "modified_at": "2026-06-01T10:00:00.000Z",
+      "modified_by": "demo"
+    },
+    {
+      "id": "01900000-0003-7000-8000-000000000023",
+      "label": "Blackout",
+      "description": "",
+      "department": ["LX"],
+      "standby_note": "Full blackout — all LX to zero",
+      "script_line_ref": null,
+      "trigger": { "kind": "manual" },
+      "payloads": [
+        { "id": "01900000-0005-7000-0023-000000000001", "type": "lx_ref", "tag": "LX", "note": "", "cue_list": 3, "cue_number": 40 }
+      ],
+      "duration_hint_ms": null,
+      "notes": "",
+      "payload_frozen_at": null,
+      "created_at": "2026-06-01T10:00:00.000Z",
+      "created_by": "demo",
+      "modified_at": "2026-06-01T10:00:00.000Z",
+      "modified_by": "demo"
+    },
+    {
+      "id": "01900000-0003-7000-8000-000000000024",
+      "label": "Curtain call",
+      "description": "",
+      "department": ["LX"],
+      "standby_note": "",
+      "script_line_ref": null,
+      "trigger": { "kind": "manual" },
+      "payloads": [
+        { "id": "01900000-0005-7000-0024-000000000001", "type": "lx_ref", "tag": "LX", "note": "", "cue_list": 3, "cue_number": 50 }
+      ],
+      "duration_hint_ms": null,
+      "notes": "",
+      "payload_frozen_at": null,
+      "created_at": "2026-06-01T10:00:00.000Z",
+      "created_by": "demo",
+      "modified_at": "2026-06-01T10:00:00.000Z",
+      "modified_by": "demo"
+    },
+    {
+      "id": "01900000-0003-7000-8000-000000000025",
+      "label": "House up (end)",
+      "description": "",
+      "department": ["LX"],
+      "standby_note": "",
+      "script_line_ref": null,
+      "trigger": { "kind": "auto_follow", "prev_cue_id": "01900000-0003-7000-8000-000000000024" },
+      "payloads": [
+        { "id": "01900000-0005-7000-0025-000000000001", "type": "lx_ref", "tag": "LX", "note": "", "cue_list": 3, "cue_number": 60 }
+      ],
+      "duration_hint_ms": null,
+      "notes": "",
+      "payload_frozen_at": null,
+      "created_at": "2026-06-01T10:00:00.000Z",
+      "created_by": "demo",
+      "modified_at": "2026-06-01T10:00:00.000Z",
+      "modified_by": "demo"
+    }
+  ]
+}

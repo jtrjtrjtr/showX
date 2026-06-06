@@ -1,0 +1,40 @@
+{
+  "entries": [
+    {
+      "rule_id": "01900000-0004-7000-8000-000000000001",
+      "sort_key": 1000,
+      "match": { "payload_type": "lx_ref" },
+      "target_device_id": "lx_eos",
+      "notes": "LX payloads → ETC Eos",
+      "added_by": "demo",
+      "added_at": "2026-06-01T10:00:00.000Z"
+    },
+    {
+      "rule_id": "01900000-0004-7000-8000-000000000002",
+      "sort_key": 2000,
+      "match": { "tag_pattern": "SX" },
+      "target_device_id": "sx_qlab",
+      "notes": "SX payloads → QLab",
+      "added_by": "demo",
+      "added_at": "2026-06-01T10:00:00.000Z"
+    },
+    {
+      "rule_id": "01900000-0004-7000-8000-000000000003",
+      "sort_key": 3000,
+      "match": { "tag_pattern": "VIDEO" },
+      "target_device_id": "video_disguise",
+      "notes": "VIDEO payloads → disguise",
+      "added_by": "demo",
+      "added_at": "2026-06-01T10:00:00.000Z"
+    },
+    {
+      "rule_id": "01900000-0004-7000-8000-000000000004",
+      "sort_key": 4000,
+      "match": {},
+      "target_device_id": "lx_eos",
+      "notes": "Default fallback → ETC Eos (lowest priority)",
+      "added_by": "demo",
+      "added_at": "2026-06-01T10:00:00.000Z"
+    }
+  ]
+}

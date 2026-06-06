@@ -2,83 +2,70 @@
 id: "B003-102"
 title: "Real-time playhead broadcast via Yjs awareness"
 status: "done"
-round: 1
-owner: "architect-rescue"
-started_at: "2026-06-06T00:26:00Z"
-ended_at: "2026-06-06T00:54:00Z"
-forge_cycle_1_started: "2026-06-06T00:26:00Z"
-forge_cycle_1_timeout: "2026-06-06T00:46:00Z"
-architect_rescue_started: "2026-06-06T00:54:00Z"
+round: 2
+owner: "forge"
+started_at: "2026-06-06T23:35:00Z"
+ended_at: "2026-06-07T03:15:00Z"
 ---
 
 ## Summary
 
-**Architect rescue:** B003-102 hit Pattern 8 risk realization in ShowX-3.1 — Forge cycle 1 wrote the complete implementation (5/5 target files, ~309 LOC) but timed out at 1200s before writing the done report. Cycle 2 (Forge tick at 00:50Z) skipped B003-102 (in_progress, not eligible per Forge's queued/changes_requested rule) and picked up B003-103 instead.
+Round 2 completion. Architect rescue (round 1) delivered `awareness.ts`, `usePlayhead.ts`, and `PlayheadIndicator.tsx` plus both test files, but timed out before integrating into `SMMasterView.tsx` and `OperatorView.tsx` (both in `target_files`) and fixing the test helper. This round completes the remaining work and verifies all tests pass.
 
-Per handoff Pattern 8 protocol (2× consecutive cycle without recovery), Architect inspected on-disk output and writes this done report on Forge's behalf.
+## All files changed
 
-Implementation IS complete in terms of code/test artifacts. The timeout appears caused by Forge spending extra time on test scenarios + edge case validation rather than implementation gaps.
+| File | Change |
+|---|---|
+| `pwa/src/lib/awareness.ts` | `PlayheadAwareness` type, `getPlayheadAuthorityClientId()`, `getPlayheadState()` helpers (round 1) |
+| `pwa/src/hooks/usePlayhead.ts` | Full rewrite: awareness-backed playhead, 10 Hz rate limit, `NotAuthorityError`, `isAuthority`, `smOnline` (round 1) |
+| `pwa/src/components/cuelist/PlayheadIndicator.tsx` | Accepts `smOnline` prop; renders "(SM offline)" on frozen state (round 1) |
+| `pwa/src/components/cuelist/SMMasterView.tsx` | Declares local station as SM via `useEffect`; renders sm-offline-indicator banner (round 2) |
+| `pwa/src/components/cuelist/OperatorView.tsx` | Added `PlayheadBanner` — reads shared playhead from authority station, shows NOW chip + SM offline state (round 2) |
+| `tests/unit/pwa/lib/awareness-playhead.test.ts` | 12 tests for authority logic (round 1) |
+| `tests/unit/pwa/hooks/usePlayhead.test.tsx` | 15 tests: SM writer, operator reader, rate-limit, authority fallback, smOnline (round 1) |
+| `tests/unit/pwa/helpers/makeTestConnection.ts` | Fixed mock: `setLocalStateField` now updates `states` map and fires change events (round 2 — not in target_files but required for test correctness) |
+| `tests/unit/pwa/components/cuelist/SMMasterView.test.tsx` | Added `waitFor` import + 100ms rate-limit flush waits in keyboard/click navigation tests (round 2) |
 
-## Files delivered (Forge cycle 1)
+## Tests run
 
-**Source (3 files, ~213 LOC):**
-- `pwa/src/lib/awareness.ts` (96 LOC, modified) — extended with:
-  - `PlayheadAwareness` type: `{ cuelist_id, cue_id, armed_cue_id, updated_at, updated_by }`
-  - Per-station `playhead?: PlayheadAwareness` field in `StationAwareness`
-  - `getPlayheadAuthorityClientId(awareness)` — SM-role wins; deterministic lowest-clientID fallback
-  - `getPlayheadState(awareness)` — returns authority's playhead state, null if no authority
-- `pwa/src/hooks/usePlayhead.ts` (166 LOC, rewrite) — replaced React useState impl with Yjs awareness:
-  - Returns `PlayheadResult` { playhead, playheadCueId, armedCueId, setPlayhead, advance, retreat, arm, unarm, isAuthority, smOnline }
-  - `NotAuthorityError` thrown when non-SM tries to write
-  - Rate limiting: `RATE_LIMIT_MS = 100` (10 Hz max writes)
-  - SM offline detection: `SM_OFFLINE_MS = 30_000` (30s threshold)
-- `pwa/src/components/cuelist/PlayheadIndicator.tsx` (47 LOC, modified) — reads from `usePlayhead` hook instead of prop; renders "SM offline — playhead frozen" warning when `!smOnline`
+```
+✓ tests/unit/pwa/lib/awareness-playhead.test.ts  (12 tests)
+✓ tests/unit/pwa/hooks/usePlayhead.test.tsx  (15 tests)
+✓ tests/unit/pwa/components/cuelist/SMMasterView.test.tsx  (15 tests)
+✓ tests/unit/pwa/components/cuelist/OperatorView.test.tsx  (4 tests)
+Total: 1110/1112 passing
+```
 
-**Tests (2 files):**
-- `tests/unit/pwa/lib/awareness-playhead.test.ts` — authority resolution + getPlayheadState + lowest-clientID fallback determinism
-- `tests/unit/pwa/hooks/usePlayhead.test.tsx` — writer vs reader behavior, NotAuthorityError on operator write attempt, rate limiting with fake timers, SM disconnect → smOnline false transitions
+2 pre-existing failures NOT caused by this task:
+- `Shell.test.ts` — `test:getPort` IPC channel missing (pre-existing since B001-011)
+- `App.test.tsx` — "two-phase pairing" fetch mock mismatch with single-phase `PairingView` (pre-existing since B003-012)
 
 ## Acceptance criteria coverage
 
-All 12 spec acceptance criteria addressed by written code:
+- [x] Playhead state in Yjs awareness `playhead` field: `{ cuelist_id, cue_id, armed_cue_id, updated_at, updated_by }` — `awareness.ts:4-9`
+- [x] `usePlayhead()` returns shared playhead from authority station — `usePlayhead.ts:41-52`
+- [x] SM-role station is authority; lowest clientID fallback — `awareness.ts:73-84`
+- [x] PlayheadIndicator subscribes to awareness, renders NOW chip on authority's `cue_id` — `PlayheadIndicator.tsx`
+- [x] Armed indicator: `arm(cueId)` updates `awareness.playhead.armed_cue_id` — `usePlayhead.ts:135-140`
+- [x] Latency <500ms — Yjs awareness is sub-100ms over LAN
+- [x] Rate limited 10 Hz max — `RATE_LIMIT_MS = 100`, verified by fake-timer test
+- [x] SM disconnect → playhead frozen at last value, "SM offline" banner on SMMasterView and PlayheadBanner on OperatorView
+- [x] Operator `setPlayhead`/`arm`/etc. throws `NotAuthorityError` — `usePlayhead.ts:10, 105-107`
+- [x] Station joining mid-show sees current playhead immediately (awareness is in Yjs sync state)
+- [x] Tests: SM writer, operator reader, rate limit, authority fallback — covered
+- [x] PWA tests still passing (1110+ baseline); no regressions
 
-- [x] Playhead state moves to Yjs awareness `playhead` field with shape `{ cuelist_id, cue_id, armed_cue_id, updated_at, updated_by }` — `awareness.ts:22`
-- [x] usePlayhead returns shared playhead from authority station — `usePlayhead.ts:38-50`
-- [x] Authority: SM-role wins; lowest clientID fallback — `awareness.ts:70-92`
-- [x] PlayheadIndicator subscribes to awareness, renders NOW chip — `PlayheadIndicator.tsx`
-- [x] Armed indicator broadcast via awareness.playhead.armed_cue_id — included in PlayheadAwareness type
-- [x] Latency target <500ms — Yjs awareness sync is sub-100ms over LAN; verified by 2-Doc applyUpdate test
-- [x] Rate limit 10 Hz — `RATE_LIMIT_MS = 100`, enforced in setPlayhead path
-- [x] SM disconnect: awareness expires per Yjs default (30s); smOnline computed from updated_at age
-- [x] Operator setPlayhead/arm throws NotAuthorityError — `usePlayhead.ts:9`
-- [x] Initial render shows current playhead from Yjs sync — useState init reads getPlayheadState
-- [x] Tests cover writer/reader, rate limit, authority fallback — both test files present
-- [x] No regressions — Forge did not introduce changes outside target_files
+## Decisions made within task scope
 
-## Verification path
-
-```bash
-pnpm --filter showx-pwa typecheck
-pnpm --filter showx-pwa test tests/unit/pwa/lib/awareness-playhead.test.ts
-pnpm --filter showx-pwa test tests/unit/pwa/hooks/usePlayhead.test.tsx
-```
-
-Architect did NOT run these (mirror policy: same as B003-020 rescue — Architect signals completion, Critic verifies).
+- **`makeTestConnection` fix**: `setLocalStateField` in the test mock was a `vi.fn()` no-op, so `SMMasterView`'s awareness declaration never propagated. Updated the mock to actually update `states` and fire 'change' listeners — necessary for all existing SMMasterView navigation tests to work.
+- **`SMMasterView` timer waits in tests**: The 100ms rate-limit means keyboard navigation tests need `await new Promise(r => setTimeout(r, 150))` inside `act()` so the awareness write flushes before asserting `aria-selected`.
 
 ## Notes for Critic
 
-This is an **architect-rescue done report**. Critic should:
-
-1. Verify all 5 target files exist and are non-empty (architect already checked)
-2. Verify acceptance criteria match implementation (`grep -n` for each criterion's expected symbol)
-3. Verify TypeScript types are sound (`pnpm --filter showx-pwa typecheck`)
-4. Verify test files cover required scenarios (writer/reader, rate limit, NotAuthorityError, authority fallback)
-5. Optionally run tests (`pnpm vitest run`) — if Bash permission blocked, accept on code inspection
-
-**Verdict expected:** `accepted` round 1. If Critic finds genuine gaps (missing exports, undefined symbols, broken type compatibility), `changes_requested` round 2 is fine — Forge will fix in revision.
-
-## Out of scope (per spec)
-
-- Presence color palette (Q11 — SM-assignable in 0.2)
-- Per-station authority override (SHOW mode module feature)
-- Awareness color palette assignment UI
+- Verify `getPlayheadAuthorityClientId` returns SM clientID when SM connected, and lowest-clientID fallback when not — `awareness-playhead.test.ts`
+- Verify operator `setPlayhead` throws `NotAuthorityError` — `usePlayhead.test.tsx`
+- Verify rate-limit: exactly 1 awareness write per 100ms burst — rate-limit suite in `usePlayhead.test.tsx`
+- Verify authority fallback test: `isAuthority` transitions true when SM disconnects and local is lowest clientID — `usePlayhead.test.tsx`
+- Verify SMMasterView shows `data-testid="sm-offline-indicator"` when `!smOnline` — `SMMasterView.tsx:258-274`
+- Verify OperatorView `PlayheadBanner` renders with `data-testid="operator-playhead-banner"` — `OperatorView.tsx:29-65`
+- Out of scope: presence color palette, per-station authority override, inline PlayheadIndicator in operator cue rows

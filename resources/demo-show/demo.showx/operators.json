@@ -1,0 +1,21 @@
+{
+  "operators": [
+    {
+      "id": "01900000-0006-7000-8000-000000000001",
+      "label": "Stage Manager",
+      "department": "SM",
+      "role": "sm",
+      "added_by": "demo",
+      "added_at": "2026-06-01T10:00:00.000Z"
+    },
+    {
+      "id": "01900000-0006-7000-8000-000000000002",
+      "label": "LX Operator",
+      "department": "LX",
+      "role": "operator",
+      "added_by": "demo",
+      "added_at": "2026-06-01T10:00:00.000Z"
+    }
+  ],
+  "stations": []
+}

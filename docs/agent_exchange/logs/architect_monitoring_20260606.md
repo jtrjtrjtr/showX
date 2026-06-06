@@ -961,3 +961,36 @@ Writing done report on Forge's behalf is the cleanest path:
 
 **Bundle close projection:** B003-102 done (pending Critic) + B003-103 in flight. If B003-103 single-cycle: bundle close ~03:30 CEST. If cycle 2 needed: ~04:00 CEST.
 
+
+## Tick 24 — 03:22 CEST — 🎯 B003-102 ACCEPTED + B003-103 cycle 2 in flight
+
+**State at tick:** 39 accepted (13 ShowX-1 + 24 ShowX-3 + 2 ShowX-3.1), 15 queued, 1 in_progress (B003-103).
+
+**Forge/Critic since tick 23 (+28 min):**
+
+| Task | Status | Notes |
+|---|---|---|
+| B003-102 | architect-rescue done → **accepted round 1** | Critic verdict 01:06Z. Forge actually overwrote the Architect rescue done report with a round-2-style report that INCLUDED additional work (SMMasterView + OperatorView integration + makeTestConnection mock fix + SMMasterView test timing fixes). All 12 ACs met with file:line citations. 1110/1112 tests pass (2 pre-existing failures unrelated). |
+| B003-103 | cycle 1 TIMEOUT 01:10Z → cycle 2 spawn 01:14Z | Demo show fixture WRITTEN to disk (cuelists/, history.jsonl, operators.json, routing.json, show.json + media). demoFactory.ts exists. UI components (FirstLaunchPicker, RecentShowsList) + IPC handler + electron-builder extraResources still pending. Cycle 2 actively writing UI; deadline 01:34Z UTC = 03:34 CEST |
+
+**Critic non-blocking notes (B003-102):**
+- CueRow doesn't thread `smOnline` to PlayheadIndicator (view-level banners cover spec UX)
+- Architect's claim "PlayheadIndicator reads from usePlayhead" inaccurate (it still uses props; code fine)
+
+Note on B003-102 round number: Critic verdict says "round 1" (state.json never went changes_requested), but done report self-reports "round 2" because Forge consolidated my rescue + integration work. Cosmetic mismatch — verdict is what counts.
+
+**🚨 Pattern 8 saturation in ShowX-3.1:** ALL 3 tasks have hit cycle 1 timeout:
+- B003-101: cycle 1 timeout → cycle 2 success → accepted
+- B003-102: cycle 1 timeout → Architect rescue → Forge consolidated → accepted
+- B003-103: cycle 1 timeout → cycle 2 in flight
+
+**100% Pattern 8 rate** in this bundle (vs 17% in main ShowX-3). Hypothesis: ShowX-3.1 tasks are individually more wiring-heavy (UI + IPC + integration across multiple workspaces) vs main bundle's more isolated implementation work.
+
+**Architect call:** Don't lower timeout. Don't reset B003-103. Cycle 2 has demo fixture + demoFactory already done (heavy lift); UI + IPC + done report achievable in remaining 12 min. If cycle 2 also times out, will do rescue similar to B003-102.
+
+**Typecheck baseline: 14 errors unchanged.** B003-102 PWA-only changes don't affect cuelist-core typecheck.
+
+**Bundle close projection:** 
+- Best case: B003-103 cycle 2 finishes by 01:34Z + Critic accept by 01:54Z → 03:54 CEST bundle close
+- Realistic: cycle 2 timeout → Architect rescue (~15 min) → Critic accept next tick → 04:30 CEST bundle close
+

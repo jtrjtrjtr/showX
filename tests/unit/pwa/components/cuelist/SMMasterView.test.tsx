@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
-import { render, screen, act, fireEvent, cleanup, within } from '@testing-library/react';
+import { render, screen, act, fireEvent, cleanup, within, waitFor } from '@testing-library/react';
 import React from 'react';
 import * as Y from 'yjs';
 import { SMMasterView } from '../../../../../pwa/src/components/cuelist/SMMasterView.js';
@@ -125,6 +125,8 @@ describe('SMMasterView', () => {
 
     await act(async () => {
       fireEvent.keyDown(window, { code: 'ArrowDown' });
+      // Wait for 100ms rate-limit flush in usePlayhead
+      await new Promise<void>((r) => setTimeout(r, 150));
     });
 
     // First row should now be selected
@@ -140,11 +142,14 @@ describe('SMMasterView', () => {
     addCue(conn.doc, 'cl1', 'q2', 'Second Cue');
     render(<Wrapper cuelistId="cl1" conn={conn} />);
 
+    // Each keypress flushes rate-limit after 100ms; wait between presses
     await act(async () => {
       fireEvent.keyDown(window, { code: 'ArrowDown' });
+      await new Promise<void>((r) => setTimeout(r, 150));
     });
     await act(async () => {
       fireEvent.keyDown(window, { code: 'ArrowDown' });
+      await new Promise<void>((r) => setTimeout(r, 150));
     });
 
     const rows = screen.getAllByRole('row');
@@ -162,9 +167,11 @@ describe('SMMasterView', () => {
     // Move to first cue then up — wrapping behavior: goes to last cue
     await act(async () => {
       fireEvent.keyDown(window, { code: 'ArrowDown' });
+      await new Promise<void>((r) => setTimeout(r, 150));
     });
     await act(async () => {
       fireEvent.keyDown(window, { code: 'ArrowUp' });
+      await new Promise<void>((r) => setTimeout(r, 150));
     });
 
     const rows = screen.getAllByRole('row');
@@ -177,11 +184,12 @@ describe('SMMasterView', () => {
     addCue(conn.doc, 'cl1', 'q1', 'Target Cue');
     render(<Wrapper cuelistId="cl1" conn={conn} />);
 
-    // Navigate to first cue
+    // Navigate to first cue — must wait for rate-limit flush so playheadCueId is set
     await act(async () => {
       fireEvent.keyDown(window, { code: 'ArrowDown' });
+      await new Promise<void>((r) => setTimeout(r, 150));
     });
-    // Press Q to arm
+    // Press Q to arm (standby + arm); standby calls sendArmRequest immediately
     await act(async () => {
       fireEvent.keyDown(window, { code: 'KeyQ' });
     });
@@ -195,12 +203,15 @@ describe('SMMasterView', () => {
     addCue(conn.doc, 'cl1', 'q1', 'Fire This');
     render(<Wrapper cuelistId="cl1" conn={conn} />);
 
-    // Navigate and arm
+    // Navigate — wait for playheadCueId to be set
     await act(async () => {
       fireEvent.keyDown(window, { code: 'ArrowDown' });
+      await new Promise<void>((r) => setTimeout(r, 150));
     });
+    // Arm — wait for armedCueId to propagate via awareness
     await act(async () => {
       fireEvent.keyDown(window, { code: 'KeyQ' });
+      await new Promise<void>((r) => setTimeout(r, 150));
     });
     // Fire
     await act(async () => {
@@ -217,8 +228,10 @@ describe('SMMasterView', () => {
     render(<Wrapper cuelistId="cl1" conn={conn} />);
 
     const rows = screen.getAllByRole('row');
+    // Click calls setPlayhead which is rate-limited; wait for flush
     await act(async () => {
       fireEvent.click(rows[0]);
+      await new Promise<void>((r) => setTimeout(r, 150));
     });
     expect(rows[0]).toHaveAttribute('aria-selected', 'true');
   });
