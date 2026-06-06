@@ -866,3 +866,25 @@ After B003-023 acceptance, Forge tick at 19:42Z and 19:46Z correctly identified:
 
 **Monitoring loop ENDS. Final commit.**
 
+
+## Tick 21 — 02:04 CEST — ShowX-3.1 cycle 1 monitoring
+
+**State at tick:** 37 accepted (unchanged from ShowX-3 close), 17 queued, 1 in_progress (B003-101 cycle 2).
+
+**Forge/Critic since scope re-enable (~01:38 CEST):**
+
+| Task | Status | Notes |
+|---|---|---|
+| B003-101 | queued → in_progress (cycle 1 TIMEOUT 23:58Z) → cycle 2 spawned 00:02Z | Pattern 8 risk #1 of ShowX-3.1. Cycle 1 wrote 9/11 target files before timeout: DevicesTable.tsx, RoutingTable.tsx, RoutingRuleEditDialog.tsx, devices.ts, routing.ts, 4 test files. Missing: DeviceEditDialog.tsx, CuelistCorePanel tab change, done report. |
+| B003-102 / -103 | queued | Waiting on B003-101 finish (Forge picks lowest-ID; no inter-task deps but only one task at a time) |
+
+**Pattern 8 expectation:** Like B003-002 / B003-009 in main bundle, cycle 2 should finish the remaining 2 files + done report. Forge tends to skip re-doing files that exist on disk.
+
+**Typecheck baseline: 14 errors** (up 4 from 10 post B003-024).
+- 4 new errors likely from B003-101 partial work in devices.ts / routing.ts (unused imports, type mismatches mid-edit)
+- Expected to drop back when cycle 2 lands cleanly
+
+**No Architect action this tick** — Forge cycle 2 actively running (~2 min in to 1200s budget, deadline 00:22Z UTC = 02:22 CEST).
+
+**Next monitoring:** Tick 22 at 02:27 CEST (already scheduled from earlier wake-up call). Will check cycle 2 outcome + B003-102 pickup.
+
