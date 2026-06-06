@@ -22,12 +22,12 @@ const releases: Release[] = [
   },
   {
     version: '0.1',
-    name: { cs: 'První public beta — DOSTUPNÝ', en: 'First public beta — AVAILABLE' },
-    target: 'Released 2026-06-06',
+    name: { cs: '0.1.1 — první použitelná beta', en: '0.1.1 — first usable beta' },
+    target: 'Released 2026-06-07',
     status: 'preview',
     notes: {
-      cs: 'První download-able DMG dostupný nyní. Cuelist Core module + REHEARSAL mode + 7 dept Operator views + GO button + cue editor. CSV import (QLab/Eos), JSON .showx export, PDF cue-sheet export, Stream Deck Companion module. macOS Apple Silicon (arm64). Unsigned beta — viz instalační instrukce níže.',
-      en: 'First downloadable DMG available now. Cuelist Core module + REHEARSAL mode + 7-department Operator views + GO button + cue editor. CSV import (QLab/Eos), JSON .showx export, PDF cue-sheet export, Stream Deck Companion module. macOS Apple Silicon (arm64). Unsigned beta — see install instructions below.',
+      cs: 'Cuelist Core + REHEARSAL/SHOW + 7 dept Operator views + GO button + cue editor + Routing/Devices UI + real-time playhead broadcast přes Yjs awareness + bundled demo show (25 cues, 3 oddělení, compound + group cue) + first-launch picker (Open Demo / Open / New) + native File menubar. CSV import, JSON export, PDF cue-sheet, Stream Deck Companion. macOS Apple Silicon. Unsigned beta — viz instalační instrukce níže.',
+      en: 'Cuelist Core + REHEARSAL/SHOW + 7-dept Operator views + GO button + cue editor + Routing/Devices UI + real-time playhead broadcast via Yjs awareness + bundled demo show (25 cues, 3 depts, compound + group cue) + first-launch picker (Open Demo / Open / New) + native File menubar. CSV import, JSON export, PDF cue-sheet, Stream Deck Companion. macOS Apple Silicon. Unsigned beta — see install instructions below.',
     },
   },
   {
@@ -126,26 +126,26 @@ export function Downloads() {
             </div>
             <div className="col-span-12 md:col-span-9">
               <h2 className="display-serif text-display-2 leading-tight">
-                ShowX 0.1.0<br />
+                ShowX 0.1.1<br />
                 <em className="text-accent-deep font-light not-italic">
                   {cs ? 'beta — dostupné nyní' : 'beta — available now'}
                 </em>
               </h2>
               <p className="copy mt-6 max-w-2xl">
                 {cs
-                  ? 'První public beta ShowX. Cuelist Core modul + REHEARSAL/SHOW mode + multi-operator collab. macOS Apple Silicon. Unsigned beta — Gatekeeper bypass instrukce dole.'
-                  : 'First public beta of ShowX. Cuelist Core module + REHEARSAL/SHOW mode + multi-operator collab. macOS Apple Silicon. Unsigned beta — Gatekeeper bypass instructions below.'}
+                  ? 'První použitelná beta. Cuelist Core + REHEARSAL/SHOW + bundled demo show (25 cues) + Routing/Devices UI + real-time playhead broadcast. Klikneš "Open Demo Show" a v 60 vteřinách jsi v reálném cuelist workflow. macOS Apple Silicon. Unsigned beta — Gatekeeper bypass instrukce dole.'
+                  : 'First usable beta. Cuelist Core + REHEARSAL/SHOW + bundled demo show (25 cues) + Routing/Devices UI + real-time playhead broadcast. Click "Open Demo Show" and you\'re in a real cuelist workflow in 60 seconds. macOS Apple Silicon. Unsigned beta — Gatekeeper bypass instructions below.'}
               </p>
               <div className="mt-8 flex flex-col sm:flex-row gap-4">
                 <a
-                  href="https://github.com/jtrjtrjtr/showX/releases/download/v0.1.0/ShowX-0.1.0-arm64.dmg"
+                  href="https://github.com/jtrjtrjtr/showX/releases/download/v0.1.1/ShowX-0.1.1-arm64.dmg"
                   className="btn-primary"
                   download
                 >
                   {cs ? 'Stáhnout DMG (arm64, ~96 MB)' : 'Download DMG (arm64, ~96 MB)'}
                 </a>
                 <a
-                  href="https://github.com/jtrjtrjtr/showX/releases/tag/v0.1.0"
+                  href="https://github.com/jtrjtrjtr/showX/releases/tag/v0.1.1"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-sm copy underline decoration-1 underline-offset-4 self-center"
