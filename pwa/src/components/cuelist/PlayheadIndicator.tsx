@@ -2,9 +2,10 @@ import { tokens } from './tokens.js';
 
 interface PlayheadIndicatorProps {
   visible: boolean;
+  smOnline?: boolean;
 }
 
-export function PlayheadIndicator({ visible }: PlayheadIndicatorProps) {
+export function PlayheadIndicator({ visible, smOnline = true }: PlayheadIndicatorProps) {
   if (!visible) return null;
   return (
     <div
@@ -15,7 +16,7 @@ export function PlayheadIndicator({ visible }: PlayheadIndicatorProps) {
         top: 0,
         bottom: 0,
         width: 3,
-        background: tokens.color.teal,
+        background: smOnline ? tokens.color.teal : tokens.color.gray_300,
         borderRadius: `${tokens.radius.s}px 0 0 ${tokens.radius.s}px`,
       }}
     >
@@ -25,7 +26,7 @@ export function PlayheadIndicator({ visible }: PlayheadIndicatorProps) {
           top: '50%',
           transform: 'translateY(-50%)',
           left: 6,
-          background: tokens.color.teal,
+          background: smOnline ? tokens.color.teal : tokens.color.gray_300,
           color: '#fff',
           fontSize: 10,
           fontWeight: 700,
@@ -35,6 +36,11 @@ export function PlayheadIndicator({ visible }: PlayheadIndicatorProps) {
         }}
       >
         NOW
+        {!smOnline && (
+          <span style={{ marginLeft: 4, fontWeight: 400, fontSize: 9 }}>
+            (SM offline)
+          </span>
+        )}
       </span>
     </div>
   );

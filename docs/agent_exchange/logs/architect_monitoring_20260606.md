@@ -919,3 +919,45 @@ After B003-023 acceptance, Forge tick at 19:42Z and 19:46Z correctly identified:
 
 **Bundle close projection:** B003-102 + B003-103 remaining. ~1h total realistic. ETA ~03:30 CEST.
 
+
+## Tick 23 — 02:54 CEST — 🚨 ARCHITECT RESCUE #2 (B003-102)
+
+**State at tick:** 38 accepted, 15 queued, 2 in_progress → 1 done (B003-102 after rescue) + 1 in_progress (B003-103). After rescue: 38 accepted, 15 queued, 1 done, 1 in_progress.
+
+**Forge/Critic since tick 22 (+27 min):**
+
+| Task | Status | Notes |
+|---|---|---|
+| B003-102 | in_progress → cycle 1 TIMEOUT 00:46Z → **ARCHITECT RESCUE done** | Forge wrote 5/5 target files (~309 LOC) but timed out before done report. Cycle 2 at 00:50Z skipped B003-102 (in_progress not eligible) and picked B003-103 instead. Architect rescue done report at done/B003-102_..._done.md (94 lines) — 12 ACs mapped to file:line. |
+| B003-103 | queued → in_progress | Forge tick 00:50Z claimed. Demo show fixture (~500 LOC + 25-cue demo). PID 78888 active. Cycle started ~00:50Z, deadline 01:10Z |
+
+**🚨 Architect rescue #2 this session.** Pattern matches B003-020 multi-op E2E from main bundle — Forge wrote implementation but cycle ran long on auxiliary work (testing scenarios, edge cases) and timed out before done report. Self-rescue from a later cycle blocked by Forge's "queued/changes_requested only" rule.
+
+**Architect intervention rationale (vs reset to queued like B003-009 case):**
+
+Cannot reset B003-102 → queued because Forge is already actively working B003-103. Two parallel Forge subprocesses are not the architecture (Forge prompt: "One task per subprocess"). Resetting would cause confusion or duplicate claim.
+
+Writing done report on Forge's behalf is the cleanest path:
+- Critic next tick reviews done report independently
+- No interference with B003-103 in flight
+- Forge gets to focus B003-103 cycle without distraction
+
+**B003-102 implementation verification (Architect inspection):**
+
+- ✅ All 5 target files exist + non-empty
+- ✅ `PlayheadAwareness` type defined in awareness.ts:22
+- ✅ `getPlayheadAuthorityClientId` + `getPlayheadState` exported
+- ✅ `usePlayhead` hook returns full PlayheadResult interface
+- ✅ `NotAuthorityError` class implemented (usePlayhead.ts:9)
+- ✅ Rate limit constant `RATE_LIMIT_MS = 100` (10 Hz)
+- ✅ SM offline detection `SM_OFFLINE_MS = 30_000`
+- ✅ Both test files present (awareness-playhead.test.ts + usePlayhead.test.tsx)
+
+**Critic verdict expected:** `accepted` round 1. If genuine gaps found, `changes_requested` is fine — Forge will fix.
+
+**Typecheck baseline: 14 errors** (unchanged from tick 22; B003-102 PWA changes don't affect cuelist-core typecheck).
+
+**B003-103 progress:** Forge cycle currently running on demo show + first-launch picker. This is the biggest task in the bundle (~500 LOC + 25-cue fixture + 2 React components + IPC handlers + menu wiring + electron-builder extraResources). High Pattern 8 risk — may need cycle 2.
+
+**Bundle close projection:** B003-102 done (pending Critic) + B003-103 in flight. If B003-103 single-cycle: bundle close ~03:30 CEST. If cycle 2 needed: ~04:00 CEST.
+

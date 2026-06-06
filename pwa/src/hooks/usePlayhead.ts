@@ -1,76 +1,166 @@
-import * as Y from 'yjs';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useConnection } from '../lib/ConnectionProvider.js';
 import { useCuelist } from './useCuelist.js';
+import {
+  getPlayheadAuthorityClientId,
+  getPlayheadState,
+  type PlayheadAwareness,
+} from '../lib/awareness.js';
 
-export interface PlayheadState {
+export class NotAuthorityError extends Error {
+  constructor() {
+    super('Only SM can write playhead state');
+    this.name = 'NotAuthorityError';
+  }
+}
+
+export interface PlayheadResult {
+  playhead: PlayheadAwareness | null;
+  /** Convenience alias for playhead?.cue_id ?? null */
   playheadCueId: string | null;
+  /** Convenience alias for playhead?.armed_cue_id ?? null */
   armedCueId: string | null;
   setPlayhead(cueId: string): void;
   advance(): void;
   retreat(): void;
   arm(cueId: string): void;
   unarm(): void;
+  /** True when local station is the playhead authority (SM or lowest clientID fallback) */
+  isAuthority: boolean;
+  /** True when playhead was updated within the last 30s */
+  smOnline: boolean;
 }
 
-function findCuelistMap(doc: Y.Doc, cuelistId: string): Y.Map<unknown> | undefined {
-  return doc
-    .getArray<Y.Map<unknown>>('cuelists')
-    .toArray()
-    .find((m) => m.get('id') === cuelistId);
-}
+/** Max awareness write rate: 10 Hz */
+const RATE_LIMIT_MS = 100;
+/** Playhead is "stale" (SM offline) if not updated within this window */
+const SM_OFFLINE_MS = 30_000;
 
-type PlayheadData = { cue_id: string | null; armed_cue_id: string | null };
+type AwarenessLike = Parameters<typeof getPlayheadState>[0];
 
-function mutatePlayhead(doc: Y.Doc, cl: Y.Map<unknown>, patch: Partial<PlayheadData>): void {
-  const ph = (cl.get('playhead') as PlayheadData | undefined) ?? {
-    cue_id: null,
-    armed_cue_id: null,
-  };
-  doc.transact(() => cl.set('playhead', { ...ph, ...patch }));
-}
-
-export function usePlayhead(cuelistId: string): PlayheadState {
+export function usePlayhead(cuelistId: string): PlayheadResult {
   const conn = useConnection();
-  const { cuelist, cues } = useCuelist(cuelistId);
+  const { cues } = useCuelist(cuelistId);
+  const { awareness } = conn;
+  // Use doc.clientID — same as awareness.clientID in Yjs, and available on the mock too
+  const localClientId = conn.doc.clientID;
 
-  const playheadCueId = cuelist?.playhead?.cue_id ?? null;
-  const armedCueId = cuelist?.playhead?.armed_cue_id ?? null;
+  const aw = awareness as unknown as AwarenessLike;
 
-  const setPlayhead = (cueId: string) => {
-    const cl = findCuelistMap(conn.doc, cuelistId);
-    if (!cl) return;
-    mutatePlayhead(conn.doc, cl, { cue_id: cueId });
-  };
+  const [playhead, setPlayheadState] = useState<PlayheadAwareness | null>(() =>
+    getPlayheadState(aw),
+  );
+  const [isAuthority, setIsAuthority] = useState<boolean>(
+    () => getPlayheadAuthorityClientId(aw) === localClientId,
+  );
 
-  const advance = () => {
+  // Rate-limit state for writes
+  const pendingRef = useRef<PlayheadAwareness | null>(null);
+  const scheduledRef = useRef(false);
+
+  const flushPending = useCallback(() => {
+    if (pendingRef.current) {
+      awareness.setLocalStateField('playhead', pendingRef.current as unknown as Record<string, unknown>);
+    }
+    pendingRef.current = null;
+    scheduledRef.current = false;
+  }, [awareness]);
+
+  const writePlayhead = useCallback(
+    (patch: Partial<Omit<PlayheadAwareness, 'updated_at' | 'updated_by'>>) => {
+      const current: PlayheadAwareness = pendingRef.current ?? {
+        cuelist_id: cuelistId,
+        cue_id: null,
+        armed_cue_id: null,
+        updated_at: new Date().toISOString(),
+        updated_by: String(localClientId),
+      };
+      pendingRef.current = {
+        ...current,
+        ...patch,
+        cuelist_id: cuelistId,
+        updated_at: new Date().toISOString(),
+        updated_by: String(localClientId),
+      };
+      if (!scheduledRef.current) {
+        scheduledRef.current = true;
+        setTimeout(flushPending, RATE_LIMIT_MS);
+      }
+    },
+    [localClientId, cuelistId, flushPending],
+  );
+
+  // Subscribe to awareness changes
+  useEffect(() => {
+    const onAwarenessChange = () => {
+      setPlayheadState(getPlayheadState(aw));
+      setIsAuthority(getPlayheadAuthorityClientId(aw) === localClientId);
+    };
+    awareness.on('change', onAwarenessChange);
+    onAwarenessChange();
+    return () => awareness.off('change', onAwarenessChange);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [awareness, localClientId]);
+
+  const assertAuthority = useCallback(() => {
+    if (!isAuthority) throw new NotAuthorityError();
+  }, [isAuthority]);
+
+  const setPlayhead = useCallback(
+    (cueId: string) => {
+      assertAuthority();
+      writePlayhead({ cue_id: cueId });
+    },
+    [assertAuthority, writePlayhead],
+  );
+
+  const advance = useCallback(() => {
+    assertAuthority();
     if (cues.length === 0) return;
-    const cl = findCuelistMap(conn.doc, cuelistId);
-    if (!cl) return;
-    const idx = cues.findIndex((c) => c.id === playheadCueId);
+    const currentId = pendingRef.current?.cue_id ?? playhead?.cue_id ?? null;
+    const idx = cues.findIndex((c) => c.id === currentId);
     const next = idx >= 0 && idx < cues.length - 1 ? cues[idx + 1] : cues[0];
-    if (next) mutatePlayhead(conn.doc, cl, { cue_id: next.id });
-  };
+    if (next) writePlayhead({ cue_id: next.id });
+  }, [assertAuthority, cues, playhead, writePlayhead]);
 
-  const retreat = () => {
+  const retreat = useCallback(() => {
+    assertAuthority();
     if (cues.length === 0) return;
-    const cl = findCuelistMap(conn.doc, cuelistId);
-    if (!cl) return;
-    const idx = cues.findIndex((c) => c.id === playheadCueId);
+    const currentId = pendingRef.current?.cue_id ?? playhead?.cue_id ?? null;
+    const idx = cues.findIndex((c) => c.id === currentId);
     const prev = idx > 0 ? cues[idx - 1] : cues[cues.length - 1];
-    if (prev) mutatePlayhead(conn.doc, cl, { cue_id: prev.id });
-  };
+    if (prev) writePlayhead({ cue_id: prev.id });
+  }, [assertAuthority, cues, playhead, writePlayhead]);
 
-  const arm = (cueId: string) => {
-    const cl = findCuelistMap(conn.doc, cuelistId);
-    if (!cl) return;
-    mutatePlayhead(conn.doc, cl, { armed_cue_id: cueId });
-  };
+  const arm = useCallback(
+    (cueId: string) => {
+      assertAuthority();
+      writePlayhead({ armed_cue_id: cueId });
+    },
+    [assertAuthority, writePlayhead],
+  );
 
-  const unarm = () => {
-    const cl = findCuelistMap(conn.doc, cuelistId);
-    if (!cl) return;
-    mutatePlayhead(conn.doc, cl, { armed_cue_id: null });
-  };
+  const unarm = useCallback(() => {
+    assertAuthority();
+    writePlayhead({ armed_cue_id: null });
+  }, [assertAuthority, writePlayhead]);
 
-  return { playheadCueId, armedCueId, setPlayhead, advance, retreat, arm, unarm };
+  const smOnline = (() => {
+    if (!playhead) return false;
+    const age = Date.now() - new Date(playhead.updated_at).getTime();
+    return age < SM_OFFLINE_MS;
+  })();
+
+  return {
+    playhead,
+    playheadCueId: playhead?.cue_id ?? null,
+    armedCueId: playhead?.armed_cue_id ?? null,
+    setPlayhead,
+    advance,
+    retreat,
+    arm,
+    unarm,
+    isAuthority,
+    smOnline,
+  };
 }

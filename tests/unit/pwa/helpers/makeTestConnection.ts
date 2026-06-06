@@ -21,9 +21,24 @@ function makeMockSideChannel(): SideChannelClient {
 function makeMockAwareness(localClientId: number) {
   const states = new Map<number, Record<string, unknown>>();
   const listeners = new Map<string, Set<() => void>>();
+
+  // Seed local station so getPlayheadAuthorityClientId finds at least one entry
+  states.set(localClientId, {});
+
+  function fire(event: string) {
+    listeners.get(event)?.forEach((fn) => fn());
+  }
+
   return {
-    setLocalState: vi.fn(),
-    setLocalStateField: vi.fn(),
+    setLocalState: vi.fn((state: Record<string, unknown>) => {
+      states.set(localClientId, state);
+      fire('change');
+    }),
+    setLocalStateField: vi.fn((field: string, value: unknown) => {
+      const cur = states.get(localClientId) ?? {};
+      states.set(localClientId, { ...cur, [field]: value });
+      fire('change');
+    }),
     getStates: vi.fn(() => states),
     on: vi.fn((event: string, cb: () => void) => {
       if (!listeners.has(event)) listeners.set(event, new Set());

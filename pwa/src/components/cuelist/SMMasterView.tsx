@@ -65,8 +65,13 @@ export function SMMasterView({ cuelistId }: SMMasterViewProps) {
   const { mode, transition } = useMode();
   const stations = useStations();
   const { go, standby, lastDispatched, lastHistoric } = useGoChannel(cuelistId);
-  const { playheadCueId, armedCueId, setPlayhead, advance, retreat, arm, unarm } =
+  const { playheadCueId, armedCueId, setPlayhead, advance, retreat, arm, unarm, smOnline } =
     usePlayhead(cuelistId);
+
+  // Declare this station as SM in awareness so all stations can identify the authority
+  useEffect(() => {
+    conn.awareness.setLocalStateField('role', 'sm');
+  }, [conn.awareness]);
 
   const [search, setSearch] = useState('');
   const [showHelp, setShowHelp] = useState(false);
@@ -250,6 +255,23 @@ export function SMMasterView({ cuelistId }: SMMasterViewProps) {
         }}
       />
       <CallingText armedCue={armedCue} lastFired={lastDispatched} />
+      {!smOnline && (
+        <div
+          data-testid="sm-offline-indicator"
+          aria-live="polite"
+          style={{
+            padding: `${tokens.space.xs}px ${tokens.space.m}px`,
+            background: tokens.color.gray_50,
+            borderTop: `1px solid ${tokens.color.gray_300}`,
+            fontSize: 11,
+            color: tokens.color.gray_700,
+            textAlign: 'center',
+            fontFamily: tokens.font.ui,
+          }}
+        >
+          SM offline — playhead frozen
+        </div>
+      )}
       <div style={{ padding: tokens.space.m, flexShrink: 0 }}>
         {displayReason && (
           <div
