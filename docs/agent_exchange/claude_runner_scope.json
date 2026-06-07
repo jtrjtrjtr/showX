@@ -1,8 +1,12 @@
 {
-  "enabled": false,
-  "bundle_id": "ShowX-3.1-CLOSED",
-  "allowed_task_ids": [],
-  "rationale": "ShowX-3.1 hotfix bundle complete 2026-06-07T01:55Z — all 3 task specs accepted. Scope DISABLED post-bundle close. Next bundle (ShowX-3.2 follow-up or ShowX-2 absorption) will need fresh scope. Decision note: docs/agent_exchange/decisions/2026-06-07_showx_3_1_hotfix_complete.md",
-  "updated_at": "2026-06-07T01:55:00Z",
+  "enabled": true,
+  "bundle_id": "ShowX-3.2",
+  "allowed_task_ids": [
+    "B003-201",
+    "B003-202",
+    "B003-203"
+  ],
+  "rationale": "ShowX-3.2 wiring bundle authorized 2026-06-07. Three task specs closing the integration gap exposed by v0.1.2 install: shell mode mounts FirstLaunchPicker/CuelistCorePanel (B003-201), station mode mounts SMMasterView/OperatorView (B003-202), routing UI rules drive dispatch (B003-203). Bundle outline: docs/agent_exchange/bundles/ShowX-3-2-wiring.md.",
+  "updated_at": "2026-06-07T15:50:00Z",
   "updated_by": "architect"
 }

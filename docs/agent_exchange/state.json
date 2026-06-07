@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "project": "showX",
-  "phase": "bundle_ShowX-3.1_complete",
-  "updated_at": "2026-06-07T01:55:00Z",
-  "active_bundle": "ShowX-3.1",
+  "phase": "bundle_ShowX-3.2_wiring",
+  "updated_at": "2026-06-07T15:50:00Z",
+  "active_bundle": "ShowX-3.2",
   "tasks": [
     {
       "id": "B001-001",
@@ -1020,6 +1020,51 @@
       "reviewed_at": "2026-06-07T04:50:00Z",
       "review_round": 2,
       "spawned_from": "ShowX-3.1 hotfix bundle architect-filed",
+      "depends_on": []
+    },
+    {
+      "id": "B003-201",
+      "slug": "shell_pwa_wiring",
+      "title": "Shell PWA wiring \u2014 mount FirstLaunchPicker / RecentShowsList / CuelistCorePanel in shell mode",
+      "status": "queued",
+      "owner": null,
+      "task_path": "docs/agent_exchange/queued/B003-201_shell_pwa_wiring.md",
+      "created_at": "2026-06-07T15:50:00Z",
+      "started_at": null,
+      "ended_at": null,
+      "reviewed_at": null,
+      "review_round": 0,
+      "spawned_from": "ShowX-3.2 wiring bundle architect-filed",
+      "depends_on": []
+    },
+    {
+      "id": "B003-202",
+      "slug": "station_mode_wiring",
+      "title": "Station mode wiring \u2014 mount SMMasterView / OperatorView per role + Yjs connection",
+      "status": "queued",
+      "owner": null,
+      "task_path": "docs/agent_exchange/queued/B003-202_station_mode_wiring.md",
+      "created_at": "2026-06-07T15:50:00Z",
+      "started_at": null,
+      "ended_at": null,
+      "reviewed_at": null,
+      "review_round": 0,
+      "spawned_from": "ShowX-3.2 wiring bundle architect-filed",
+      "depends_on": []
+    },
+    {
+      "id": "B003-203",
+      "slug": "routing_dispatcher_integration",
+      "title": "Routing UI dispatcher integration \u2014 wire RoutingRule shape into resolveRouting",
+      "status": "queued",
+      "owner": null,
+      "task_path": "docs/agent_exchange/queued/B003-203_routing_dispatcher_integration.md",
+      "created_at": "2026-06-07T15:50:00Z",
+      "started_at": null,
+      "ended_at": null,
+      "reviewed_at": null,
+      "review_round": 0,
+      "spawned_from": "ShowX-3.2 wiring bundle architect-filed",
       "depends_on": []
     }
   ]
