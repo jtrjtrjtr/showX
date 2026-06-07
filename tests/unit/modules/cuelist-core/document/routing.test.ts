@@ -213,3 +213,97 @@ describe('reference integrity with devices', () => {
     expect(rules[0].target_device_id).toBe('lx_eos');
   });
 });
+
+describe('getRoutingRules — migration and backward compat', () => {
+  it('is idempotent: calling twice returns same rules', () => {
+    const doc = makeDocWithDevices();
+    const r1 = getRoutingRules(doc);
+    const r2 = getRoutingRules(doc);
+    expect(r1.map((r) => r.rule_id)).toEqual(r2.map((r) => r.rule_id));
+    expect(r1.map((r) => r.target_device_id)).toEqual(r2.map((r) => r.target_device_id));
+  });
+
+  it('plain objects stored in Y.Map (old test fixture style) are skipped without crash', () => {
+    const doc = makeDocWithDevices();
+    // Clear existing rules then store a plain object (old RoutingEntry style) directly in Y.Map
+    const initialRules = getRoutingRules(doc);
+    for (const r of initialRules) removeRoutingRule(doc, r.rule_id, ctx);
+
+    const routingYMap = doc.getMap('routing');
+    const oldEntry = {
+      id: 'legacy-r1',
+      match: { payload_type: 'osc' },
+      transport: { kind: 'osc', host: '1.2.3.4', port: 8000 },
+      enabled: true,
+      notes: '',
+    };
+    doc.transact(() => routingYMap.set('legacy-r1', oldEntry));
+
+    // Should not throw; old plain objects are excluded from results
+    expect(() => getRoutingRules(doc)).not.toThrow();
+    const rules = getRoutingRules(doc);
+    expect(rules.every((r) => r.target_device_id !== undefined)).toBe(true);
+  });
+
+  it('Y.Map rule without target_device_id is excluded from results', () => {
+    const doc = makeDocWithDevices();
+    const initialRules = getRoutingRules(doc);
+    for (const r of initialRules) removeRoutingRule(doc, r.rule_id, ctx);
+
+    // Store a Y.Map rule missing target_device_id (old Y.Map shape)
+    const routingYMap = doc.getMap('routing');
+    const oldYMap = new Y.Map<unknown>();
+    oldYMap.set('id', 'old-ym-rule');
+    oldYMap.set('match', { payload_type: 'osc', tag: 'LX' });
+    oldYMap.set('transport', { kind: 'osc', host: '5.6.7.8', port: 9000 });
+    oldYMap.set('enabled', true);
+    doc.transact(() => routingYMap.set('old-ym-rule', oldYMap));
+
+    const rules = getRoutingRules(doc);
+    // Old rule excluded (no target_device_id), but no crash
+    expect(rules.find((r) => (r as unknown as { id?: string }).id === 'old-ym-rule')).toBeUndefined();
+  });
+
+  it('migration renames id → rule_id and tag → tag_pattern in old Y.Map rule (idempotent)', () => {
+    const doc = makeDocWithDevices();
+    const initialRules = getRoutingRules(doc);
+    for (const r of initialRules) removeRoutingRule(doc, r.rule_id, ctx);
+
+    const routingYMap = doc.getMap('routing');
+    const oldYMap = new Y.Map<unknown>();
+    oldYMap.set('id', 'migrated-rule');
+    oldYMap.set('match', { payload_type: 'osc', tag: 'LX' });
+    oldYMap.set('transport', { kind: 'osc', host: '5.6.7.8', port: 9000 });
+    oldYMap.set('enabled', true);
+    doc.transact(() => routingYMap.set('migrated-rule', oldYMap));
+
+    // First call runs migration (renames fields)
+    getRoutingRules(doc);
+    expect(oldYMap.get('rule_id')).toBe('migrated-rule');
+    expect(oldYMap.has('sort_key')).toBe(true);
+
+    const matchAfter = oldYMap.get('match') as Record<string, unknown>;
+    expect('tag_pattern' in matchAfter).toBe(true);
+    expect(matchAfter['tag_pattern']).toBe('LX');
+
+    // Second call: idempotent — same state
+    getRoutingRules(doc);
+    expect(oldYMap.get('rule_id')).toBe('migrated-rule');
+    expect(Object.prototype.hasOwnProperty.call(oldYMap.get('match'), 'tag_pattern')).toBe(true);
+  });
+
+  it('new-shape rules (from B003-101) are returned correctly after idempotent migration call', () => {
+    const doc = makeDocWithDevices();
+    const initialRules = getRoutingRules(doc);
+
+    // All auto-created rules should have target_device_id
+    for (const r of initialRules) {
+      expect(r.target_device_id).toBeTruthy();
+      expect(r.rule_id).toBeTruthy();
+    }
+
+    // Second call — same rules
+    const secondCall = getRoutingRules(doc);
+    expect(secondCall.map((r) => r.rule_id)).toEqual(initialRules.map((r) => r.rule_id));
+  });
+});

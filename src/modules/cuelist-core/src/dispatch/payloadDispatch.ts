@@ -10,6 +10,7 @@ import { dispatchWait } from './transports/wait.js';
 import { dispatchGroup } from './transports/group.js';
 import type { DispatchDeps, SingleDispatchResult } from './types.js';
 import type { RoutingEntry } from './resolveRouting.js';
+import { buildDispatchRoutingTable } from './resolveRouting.js';
 
 export type { DispatchDeps } from './types.js';
 
@@ -91,7 +92,7 @@ export async function dispatchCue(
   cycleCtx.enter(cue.id);
 
   try {
-    const routing = deps.doc.getMap('routing').toJSON() as Record<string, RoutingEntry>;
+    const routing = buildDispatchRoutingTable(deps.doc);
 
     for (const p of cue.payloads) {
       if (deps.abortSignal.aborted) {

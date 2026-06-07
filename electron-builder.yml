@@ -2,6 +2,13 @@ appId: cz.xlab.showx
 productName: ShowX
 copyright: "Copyright © 2026 XLAB s.r.o."
 
+# Extra resources bundled into the app (read-only inside .app/Contents/Resources)
+extraResources:
+  - from: resources/demo-show
+    to: demo-show
+    filter:
+      - "**/*"
+
 # Build inputs
 files:
   - from: src/main/dist

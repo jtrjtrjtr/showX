@@ -48,7 +48,48 @@ function ruleMapToPlain(m: Y.Map<unknown>): RoutingRule {
 export function getRoutingRules(doc: Y.Doc): RoutingRule[] {
   const routing = getRouting(doc);
   const rules: RoutingRule[] = [];
-  routing.forEach((m) => rules.push(ruleMapToPlain(m as Y.Map<unknown>)));
+  const toMigrate: Array<Y.Map<unknown>> = [];
+
+  routing.forEach((m) => {
+    // Skip plain objects stored by old test helpers — they are not Y.Maps and cannot be operated on.
+    if (!(m instanceof Y.Map)) return;
+
+    const ymap = m as Y.Map<unknown>;
+
+    if (!ymap.has('target_device_id')) {
+      // Old shape: collect for field-rename migration but exclude from results
+      // (cannot auto-generate target_device_id without device lookup at this layer)
+      toMigrate.push(ymap);
+      return;
+    }
+
+    rules.push(ruleMapToPlain(ymap));
+  });
+
+  // Migrate field renames in a single transaction (idempotent — only runs if still needed)
+  if (toMigrate.length > 0) {
+    doc.transact(() => {
+      for (const ymap of toMigrate) {
+        // id → rule_id
+        if (!ymap.has('rule_id') && ymap.has('id')) {
+          ymap.set('rule_id', ymap.get('id'));
+        }
+        // add sort_key default if missing
+        if (!ymap.has('sort_key')) {
+          ymap.set('sort_key', 1000);
+        }
+        // match.tag → match.tag_pattern
+        const match = ymap.get('match');
+        if (match && typeof match === 'object' && !Array.isArray(match)) {
+          const matchObj = match as Record<string, unknown>;
+          if ('tag' in matchObj && !('tag_pattern' in matchObj)) {
+            ymap.set('match', { ...matchObj, tag_pattern: matchObj['tag'], tag: undefined });
+          }
+        }
+      }
+    });
+  }
+
   return rules.sort((a, b) => a.sort_key - b.sort_key);
 }
 
