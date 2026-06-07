@@ -42,7 +42,7 @@ function validateRule(init: Omit<RoutingRule, 'rule_id' | 'sort_key'>): void {
 function ruleMapToPlain(m: Y.Map<unknown>): RoutingRule {
   const obj = m.toJSON();
   const { added_by: _a, added_at: _b, modified_by: _c, modified_at: _d, ...rest } = obj as Record<string, unknown>;
-  return rest as RoutingRule;
+  return rest as unknown as RoutingRule;
 }
 
 export function getRoutingRules(doc: Y.Doc): RoutingRule[] {

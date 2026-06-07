@@ -1,5 +1,5 @@
 import * as Y from 'yjs';
-import { promises as fs } from 'node:fs';
+import { promises as fs, type Dirent } from 'node:fs';
 import path from 'node:path';
 import { saveShowxPackage } from '../persistence/showxPackage.js';
 
@@ -85,9 +85,9 @@ async function stripMedia(pkgPath: string): Promise<void> {
 
 export async function computeDirSize(dirPath: string): Promise<number> {
   let total = 0;
-  let entries: Awaited<ReturnType<typeof fs.readdir>>;
+  let entries: Dirent[];
   try {
-    entries = await fs.readdir(dirPath, { withFileTypes: true });
+    entries = await fs.readdir(dirPath, { withFileTypes: true, encoding: 'utf8' });
   } catch {
     return 0;
   }

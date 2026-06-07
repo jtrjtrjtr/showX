@@ -1,5 +1,8 @@
 import { useState } from 'react';
-import type { Cue, Payload, PayloadType, OscPayload, MscPayload, LxRefPayload, MidiPayload, WebhookPayload, WaitPayload, GroupPayload } from 'showx-shared';
+import type { Cue, Payload, PayloadType } from 'showx-shared';
+
+type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K> : never;
+type PayloadInput = DistributiveOmit<Payload, 'id'>;
 import { useConnection } from '../../lib/ConnectionProvider.js';
 import {
   addPayload,
@@ -11,7 +14,7 @@ import { AddPayloadMenu } from './AddPayloadMenu.js';
 import { summarizePayload } from './payloadSummaries.js';
 import { tokens } from './tokens.js';
 
-function makeDefaultPayload(type: PayloadType): Omit<Payload, 'id'> {
+function makeDefaultPayload(type: PayloadType): PayloadInput {
   switch (type) {
     case 'osc':
       return { type: 'osc', tag: null, note: '', device_id: '', address: '/', args: [] };

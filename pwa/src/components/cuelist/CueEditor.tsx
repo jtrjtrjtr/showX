@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import type { Cue } from 'showx-shared';
 import { useCue } from '../../hooks/useCue.js';
 import { useMode } from '../../hooks/useMode.js';
 import { useConnection } from '../../lib/ConnectionProvider.js';

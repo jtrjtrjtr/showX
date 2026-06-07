@@ -85,7 +85,7 @@ function deviceMapToPlain(m: Y.Map<unknown>): Device {
   const obj = m.toJSON();
   // Strip internal metadata fields before returning
   const { added_by: _a, added_at: _b, modified_by: _c, modified_at: _d, ...rest } = obj as Record<string, unknown>;
-  return rest as Device;
+  return rest as unknown as Device;
 }
 
 export function getDevicesList(doc: Y.Doc): Device[] {

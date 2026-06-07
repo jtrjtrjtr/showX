@@ -4,7 +4,7 @@ import { isCanonicalDepartment } from 'showx-shared';
 import { getCuelist, getCues, getCuesSorted } from '../document/cuelist.js';
 import { makeCueMap } from '../document/cue.js';
 import { addCue } from '../document/cue.js';
-import { addPayload, makePayloadMap } from '../document/payload.js';
+import { addPayload, makePayloadMap, type PayloadInput } from '../document/payload.js';
 import { assertEditAllowed } from '../mode/lockGuards.js';
 import { payloadsByDepartment } from './payloadOps.js';
 import { assertCueInvariants } from './invariants.js';
@@ -54,7 +54,7 @@ export function makeCompoundCue(
       for_department && isCanonicalDepartment(for_department)
         ? for_department
         : (p.tag ?? null);
-    addPayload(doc, cuelistId, cueId, { ...payloadRest, tag });
+    addPayload(doc, cuelistId, cueId, { ...payloadRest, tag } as PayloadInput);
   }
   const finalCueMap = getCues(getCuelist(doc, cuelistId)!).toArray().find(c => c.get('id') === cueId);
   if (finalCueMap) assertCueMapValid(finalCueMap);

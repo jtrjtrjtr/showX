@@ -9,7 +9,7 @@ export class CuelistCore implements Module {
   async init(context: ModuleContext): Promise<void> {
     this.ctx = context;
     this._config = await context.persisted.load(configSchema);
-    context.log.info('cuelist-core init complete');
+    context.log.info(`cuelist-core init complete (config: ${this._config ? 'loaded' : 'default'})`);
     this.state = 'inited';
   }
 

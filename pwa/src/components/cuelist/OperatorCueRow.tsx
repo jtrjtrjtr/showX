@@ -1,4 +1,3 @@
-import React from 'react';
 import type { Cue } from 'showx-shared';
 import { tokens } from './tokens.js';
 import { summarizePayload, highlightedPayloads } from './payloadSummaries.js';

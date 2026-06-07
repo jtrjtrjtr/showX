@@ -5,6 +5,14 @@ import { getCuelist, getCues } from './cuelist.js';
 import { assertEditAllowed } from '../mode/lockGuards.js';
 import { assertCueInvariants } from '../cue/invariants.js';
 
+type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K> : never;
+export type PayloadInput = DistributiveOmit<Payload, 'id'>;
+export type PayloadUpdate = DistributiveOmit<Payload, 'id'> extends infer U
+  ? U extends unknown
+    ? Partial<U>
+    : never
+  : never;
+
 // ── Validation ────────────────────────────────────────────────────────────────
 
 export class ValidationError extends Error {
@@ -135,7 +143,7 @@ export function addPayload(
   doc: Y.Doc,
   cuelistId: string,
   cueId: string,
-  payload: Omit<Payload, 'id'>,
+  payload: PayloadInput,
 ): string {
   assertEditAllowed(doc, 'payload');
   const cuelist = getCuelist(doc, cuelistId);
@@ -173,7 +181,7 @@ export function updatePayload(
   cuelistId: string,
   cueId: string,
   payloadId: string,
-  updates: Partial<Omit<Payload, 'id'>>,
+  updates: PayloadUpdate,
 ): void {
   assertEditAllowed(doc, 'payload');
   const cuelist = getCuelist(doc, cuelistId);

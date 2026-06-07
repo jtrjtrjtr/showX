@@ -2,7 +2,7 @@ import * as Y from 'yjs';
 import type { Cue, Payload, DepartmentTag } from 'showx-shared';
 import { isCanonicalDepartment } from 'showx-shared';
 import { getCuelist, getCues } from '../document/cuelist.js';
-import { addPayload, makePayloadMap } from '../document/payload.js';
+import { addPayload, makePayloadMap, type PayloadInput } from '../document/payload.js';
 import { assertEditAllowed } from '../mode/lockGuards.js';
 import { assertCueInvariants } from './invariants.js';
 
@@ -53,13 +53,13 @@ export function addPayloadWithDepartmentTag(
   doc: Y.Doc,
   cuelistId: string,
   cueId: string,
-  payload: Omit<Payload, 'id'>,
+  payload: PayloadInput,
   departmentTag: DepartmentTag,
 ): string {
   if (!isCanonicalDepartment(departmentTag)) {
     throw new Error(`departmentTag must be canonical; got: ${departmentTag}`);
   }
-  return addPayload(doc, cuelistId, cueId, { ...payload, tag: departmentTag });
+  return addPayload(doc, cuelistId, cueId, { ...payload, tag: departmentTag } as PayloadInput);
 }
 
 /**

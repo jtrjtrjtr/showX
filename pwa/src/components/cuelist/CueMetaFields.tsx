@@ -1,4 +1,3 @@
-import * as Y from 'yjs';
 import type { Cue, DepartmentTag, Trigger } from 'showx-shared';
 import { useConnection } from '../../lib/ConnectionProvider.js';
 import { useCuelist } from '../../hooks/useCuelist.js';

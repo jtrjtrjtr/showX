@@ -1,5 +1,4 @@
 import { useState, useMemo, useCallback } from 'react';
-import React from 'react';
 import type { FilterContext } from '../../../hooks/useDepartment.js';
 import { useDepartment } from '../../../hooks/useDepartment.js';
 import { useGoChannel } from '../../../hooks/useGoChannel.js';

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { LxOperatorView } from './variants/LxOperatorView.js';
 import { SxOperatorView } from './variants/SxOperatorView.js';
 import { VideoOperatorView } from './variants/VideoOperatorView.js';
