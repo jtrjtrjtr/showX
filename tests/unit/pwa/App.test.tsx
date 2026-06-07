@@ -3,12 +3,25 @@ import 'fake-indexeddb/auto';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor, cleanup } from '@testing-library/react';
 
-// Mock y-websocket + y-indexeddb so syncClient doesn't try real connections
+// Mock y-websocket + y-indexeddb so syncClient / connectToShow don't try real connections
+const mockAwareness = {
+  setLocalState: vi.fn(),
+  setLocalStateField: vi.fn(),
+  getStates: vi.fn(() => new Map()),
+  on: vi.fn(),
+  off: vi.fn(),
+};
 vi.mock('y-websocket', () => ({
-  WebsocketProvider: vi.fn(() => ({ on: vi.fn(), destroy: vi.fn() })),
+  WebsocketProvider: vi.fn(() => ({
+    on: vi.fn(),
+    off: vi.fn(),
+    disconnect: vi.fn(),
+    destroy: vi.fn(),
+    awareness: mockAwareness,
+  })),
 }));
 vi.mock('y-indexeddb', () => ({
-  IndexeddbPersistence: vi.fn(() => ({ destroy: vi.fn() })),
+  IndexeddbPersistence: vi.fn(() => ({ destroy: vi.fn(), whenSynced: Promise.resolve() })),
 }));
 
 // Mock auth module — includes getOrCreateClientPubkey used by PairingView
@@ -62,44 +75,42 @@ describe('App mode router', () => {
     expect(screen.queryByText(/Pair with/i)).toBeNull();
   });
 
-  it('renders AppShell when ?mode=shell', async () => {
+  it('renders ShellRouter in shell mode (Loading when showxApi absent)', async () => {
     Object.defineProperty(window, 'location', {
       writable: true,
       value: { search: '?mode=shell', hostname: 'localhost', port: '', origin: 'http://localhost', reload: vi.fn() },
     });
     render(<App />);
+    // ShellRouter renders Loading when showxApi is not available (not in Electron)
     await waitFor(() => {
-      expect(screen.getByText(/ShowX Shell/i)).toBeInTheDocument();
+      expect(screen.getByText(/Loading/i)).toBeInTheDocument();
     });
   });
 
-  it('renders PlaceholderShowView when saved session exists', async () => {
+  it('renders StationRouter (station-loading) when saved session exists', async () => {
     const session = {
       host: '192.168.1.10', port: 8088, token: 'tok', display_name: 'LX', device_id: 'dev1', paired_at: 1000,
     };
     vi.mocked(authMod.listSessions).mockResolvedValue([session]);
     render(<App />);
+    // StationRouter renders ConnectionProvider → StationContent.
+    // With empty Y.Doc (no cuelists), StationContent shows station-loading.
+    // ConnectionProvider shows "Connecting…" while connectToShow is pending (async);
+    // either state is acceptable here — both indicate StationRouter is active.
     await waitFor(() => {
-      expect(screen.getByText(/Connected to 192\.168\.1\.10:8088/i)).toBeInTheDocument();
+      const loading = screen.queryByTestId('station-loading');
+      const connecting = screen.queryByText(/Connecting/i);
+      expect(loading ?? connecting).not.toBeNull();
     });
   });
 
-  it('switches to show mode after successful two-phase pairing', async () => {
+  it('switches to show mode after successful pairing', async () => {
     vi.mocked(authMod.listSessions).mockResolvedValue([]);
-    // Two-phase fetch mock: POST /claim → {request_id}, GET /status → {status:'allowed',...}
-    vi.stubGlobal('fetch', vi.fn().mockImplementation(async (...args: unknown[]) => {
-      const url = args[0] as string;
-      if (url.includes('/status')) {
-        return {
-          ok: true,
-          json: async () => ({ status: 'allowed', token: 'new-tok', device: { device_id: 'dev-new' } }),
-        };
-      }
-      return {
-        ok: true,
-        json: async () => ({ request_id: 'req-1' }),
-      };
-    }));
+    // PairingView sends POST /claim and expects { token, device } back
+    vi.stubGlobal('fetch', vi.fn().mockImplementation(async () => ({
+      ok: true,
+      json: async () => ({ token: 'new-tok', device: { device_id: 'dev-new' } }),
+    })));
 
     render(<App />);
 
@@ -123,9 +134,11 @@ describe('App mode router', () => {
     fireEvent.change(screen.getByPlaceholderText(/6-digit PIN/i), { target: { value: '123456' } });
     fireEvent.click(screen.getByRole('button', { name: /Pair/i }));
 
-    // After two-phase pairing resolves, show view appears
+    // After two-phase pairing resolves, StationRouter is active
     await waitFor(() => {
-      expect(screen.getByText(/Connected to 10\.0\.0\.5/i)).toBeInTheDocument();
+      const loading = screen.queryByTestId('station-loading');
+      const connecting = screen.queryByText(/Connecting/i);
+      expect(loading ?? connecting).not.toBeNull();
     }, { timeout: 5000 });
   });
 });

@@ -13,6 +13,7 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "showx-shared": "workspace:*",
+    "@showx/module-cuelist-core": "workspace:*",
     "yjs": "^13.6.10",
     "y-websocket": "^2.0.3",
     "y-indexeddb": "^9.0.12"

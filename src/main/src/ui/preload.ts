@@ -25,7 +25,43 @@ const showxApi = {
     get: (key: string) => ipcRenderer.invoke(IPC.CONFIG_GET, key),
     set: (key: string, value: unknown) => ipcRenderer.invoke(IPC.CONFIG_SET, key, value),
   },
+  shell: {
+    getState: () => ipcRenderer.invoke('cuelist-core/shell.getState'),
+    openDemo: () => ipcRenderer.invoke('cuelist-core:open-demo'),
+    openExisting: () => ipcRenderer.invoke('cuelist-core:open-file-picker'),
+    createNew: () => ipcRenderer.invoke('cuelist-core:create-new'),
+    openRecent: (showPath: string) => ipcRenderer.invoke('cuelist-core:open-recent', showPath),
+    onShowChanged: (cb: () => void) => {
+      const listener = () => cb();
+      ipcRenderer.on(
+        'cuelist-core:show-changed',
+        listener as Parameters<typeof ipcRenderer.on>[1],
+      );
+      return () =>
+        ipcRenderer.off(
+          'cuelist-core:show-changed',
+          listener as Parameters<typeof ipcRenderer.on>[1],
+        );
+    },
+  },
+  cuelistCore: {
+    invoke: (channel: string, ...args: unknown[]): Promise<unknown> =>
+      ipcRenderer.invoke(channel, ...args),
+    on: (channel: string, handler: (...args: unknown[]) => void): (() => void) => {
+      const listener = (_e: unknown, ...a: unknown[]) => handler(...a);
+      ipcRenderer.on(channel, listener as Parameters<typeof ipcRenderer.on>[1]);
+      return () => ipcRenderer.off(channel, listener as Parameters<typeof ipcRenderer.on>[1]);
+    },
+  },
 };
+
+// When the menu fires cuelist-core/open-show as a push, translate to an invoke
+// so the uiPanelBridge can update activeShow state and broadcast show-changed.
+ipcRenderer.on('cuelist-core/open-show', (_e, showPath: unknown) => {
+  if (typeof showPath === 'string') {
+    void ipcRenderer.invoke('cuelist-core/open-show', showPath);
+  }
+});
 
 contextBridge.exposeInMainWorld('showxApi', showxApi);
 

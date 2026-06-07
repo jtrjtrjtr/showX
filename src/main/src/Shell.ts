@@ -32,6 +32,7 @@ import { resolvePaths, type PathLayout } from './shared/paths.js';
 import { shellVersion } from './shared/version.js';
 import { createMainWindow } from './ui/window.js';
 import { registerIpcHandlers, type IpcMainBridge } from './ipc/index.js';
+import { registerUiPanelBridge } from './ipc/uiPanelBridge.js';
 
 // ── Shell config store ──────────────────────────────────────────────────────
 
@@ -373,6 +374,7 @@ export class Shell {
         shellConfig: this.shellConfig,
         logger: this.logger,
       }, this.deps.ipcBridge);
+      registerUiPanelBridge(this.shellConfig, this.deps.ipcBridge);
     }
   }
 

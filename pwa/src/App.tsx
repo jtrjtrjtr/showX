@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { DiscoveryView } from './components/DiscoveryView.js';
 import { PairingView } from './components/PairingView.js';
-import { PlaceholderShowView } from './components/PlaceholderShowView.js';
-import { AppShell } from './components/AppShell.js';
+import { ShellRouter } from './components/ShellRouter.js';
+import { StationRouter } from './components/StationRouter.js';
 import { listSessions } from './lib/auth.js';
 import type { AppMode, PairedSession, DiscoveredHost } from './lib/types.js';
 
@@ -50,9 +50,9 @@ export function App() {
     });
   }, []);
 
-  if (mode === 'shell') return <AppShell title="ShowX Shell" subtitle="Module sidebar — UI in later bundle" />;
+  if (mode === 'shell') return <ShellRouter />;
   if (mode === 'discover') return <DiscoveryView onPick={(h) => { setHost(h); setMode('pair'); }} />;
   if (mode === 'pair' && host) return <PairingView host={host} onPaired={(s) => { setSession(s); setMode('show'); }} />;
-  if (mode === 'show' && session) return <PlaceholderShowView session={session} />;
+  if (mode === 'show' && session) return <StationRouter session={session} />;
   return <DiscoveryView onPick={(h) => { setHost(h); setMode('pair'); }} />;
 }

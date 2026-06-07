@@ -6,7 +6,8 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
-    ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" }
+    ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" },
+    "./ui": { "types": "./dist/ui/index.d.ts", "default": "./dist/ui/index.js" }
   },
   "scripts": {
     "typecheck": "pnpm --filter showx-shared build && tsc --noEmit",

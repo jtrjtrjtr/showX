@@ -1070,3 +1070,38 @@ Remaining target files (cycle 2 expected to complete): `pwa/src/App.tsx`, `pwa/s
 
 **No Architect action this tick.** Standard polling resumes.
 
+
+## Tick 27 — 18:26 CEST — 🎯 B003-201 ACCEPTED round 1 + B003-202 in_progress
+
+**State at tick:** 41 accepted (13 ShowX-1 + 24 ShowX-3 + 3 ShowX-3.1 + 1 ShowX-3.2), 16 queued, 1 in_progress (B003-202).
+
+**Forge/Critic since tick 26 (+27 min):**
+
+| Task | Status | Notes |
+|---|---|---|
+| B003-201 | cycle 2 done → **accepted round 1** | Critic 16:19Z. All 11 ACs verified with file:line. 22/22 task-relevant tests pass (ShellRouter×6, uiPanelBridge×7+6, App×1, cuelist-core UI×71). PWA Vite build 282 kB. TypeScript strict clean both sides |
+| B003-202 | queued → in_progress | Forge tick 16:12Z, PID 80387 active ~14 min in at tick. Deadline 16:32Z = 18:32 CEST. Pattern 8 risk applies (wiring task ~500 LOC) |
+
+**B003-201 delivered:**
+- `pwa/src/App.tsx` shell mode → `<ShellRouter />`
+- `pwa/src/components/ShellRouter.tsx` IPC state-driven router
+- `pwa/src/lib/uiPanelBridge.ts` + `src/main/src/ipc/uiPanelBridge.ts` bridge
+- `src/main/src/ui/preload.ts` `shell.*` + `cuelistCore.*` contextBridge
+- `src/modules/cuelist-core/src/ui/index.ts` exports FirstLaunchPicker + RecentShowsList
+
+**Critic non-blocking notes (follow-up backlog):**
+- Static import from cuelist-core (PWA imports directly, not runtime module bridge — acceptable for 0.1, reconsider when 2nd module needs it)
+- `rootDir: "src"` removed from `pwa/tsconfig.json` to allow cross-package imports
+- `_activeShow` module singleton in `ipc/uiPanelBridge.ts` (works for 0.1, refactor to instance state later)
+- `transition-mode` / `kick-station` IPC handlers stubbed (out of scope per spec)
+
+**Typecheck baseline: 0 errors** ✨ (down from 7 at tick 26). Forge cleared remaining drift during B003-201 work (refactoring touched cuelist-core ui/index.ts exports + removed `rootDir` shoved cross-package alignment).
+
+**Acceptance ratio ShowX-3.2:** 1 accepted (round 1).
+
+**Pattern 8 stats ShowX-3.2:** 1/1 cycle 1 timeouts (100%) — B003-201 cycle 1 timeout, cycle 2 success in single Critic round.
+
+**Bundle close projection:**
+- Best case: B003-202 single-cycle accept + B003-203 single → 19:30 CEST
+- Realistic with Pattern 8: each has cycle 1 timeout + cycle 2 finish → 20:30 CEST
+

@@ -12,6 +12,14 @@ export interface PairedSession {
   display_name: string;
   device_id: string;
   paired_at: number;
+  // Station identity — populated at pairing time; optional for backward compat
+  role?: 'sm' | 'operator' | 'companion' | 'observer';
+  show_id?: string;
+  station_id?: string;
+  operator_id?: string;
+  owned_departments?: string[];
+  watched_departments?: string[];
+  presence_color?: string;
 }
 
 export type AppMode = 'discover' | 'pair' | 'show' | 'shell';
