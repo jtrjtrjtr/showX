@@ -26,6 +26,16 @@ files:
     to: pwa
     filter:
       - "**/*"
+  # Cuelist Core module bundled as a runtime module the shell loads at boot
+  - from: src/modules/cuelist-core/dist
+    to: modules/cuelist-core/dist
+    filter:
+      - "**/*"
+  - from: src/modules/cuelist-core
+    to: modules/cuelist-core
+    filter:
+      - "package.json"
+      - "manifest.json"
   - package.json
 
 directories:

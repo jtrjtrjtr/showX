@@ -20,7 +20,7 @@ const STATUS_TTL_MS = 60_000;
 function StatusDot({ deviceId, statuses }: { deviceId: string; statuses: Map<string, DeviceStatus> }) {
   const s = statuses.get(deviceId);
   const now = Date.now();
-  let color = tokens.color.gray_300;
+  let color: string = tokens.color.gray_300;
   let label = 'no recent dispatch';
 
   if (s && now - s.updatedAt < STATUS_TTL_MS) {

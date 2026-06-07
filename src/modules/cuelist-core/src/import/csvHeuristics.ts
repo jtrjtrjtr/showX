@@ -11,7 +11,7 @@ function inferQlabDepartment(type: string): string {
 export function qlabToCues(
   records: Record<string, string>[],
   opts: CsvImportOpts,
-  warnings: CsvWarning[],
+  _warnings: CsvWarning[],
 ): CueSpec[] {
   return records.map((r, idx) => {
     const row = idx + 1;

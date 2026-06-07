@@ -148,12 +148,22 @@ class InputRegistrarStub implements ShowxInputRegistrar {
 
 function pwaDistPath(): string {
   const __dirname = dirname(fileURLToPath(import.meta.url));
-  return resolve(__dirname, '../../../pwa/dist');
+  // Packed (in app.asar): pwa flattened to <asar>/pwa per electron-builder files map
+  // Dev: pwa is at <repo>/pwa/dist, __dirname is <repo>/src/main/dist/
+  const packed = __dirname.includes('.asar');
+  return packed
+    ? resolve(__dirname, 'pwa')
+    : resolve(__dirname, '../../../pwa/dist');
 }
 
 function modulesRootPath(): string {
   const __dirname = dirname(fileURLToPath(import.meta.url));
-  return resolve(__dirname, '../../modules');
+  // Packed: modules bundled to <asar>/modules via electron-builder files map
+  // Dev: modules at <repo>/src/modules; __dirname is <repo>/src/main/dist/
+  const packed = __dirname.includes('.asar');
+  return packed
+    ? resolve(__dirname, 'modules')
+    : resolve(__dirname, '../../modules');
 }
 
 function preloadFilePath(): string {

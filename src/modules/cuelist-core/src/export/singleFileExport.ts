@@ -50,8 +50,8 @@ export async function exportSingleFile(
     version: '1.0',
     exported_at: new Date().toISOString(),
     source: SHOWX_SOURCE_VERSION,
-    show: show as Record<string, unknown>,
-    cuelists: cuelists as Record<string, unknown>,
+    show: show as unknown as Record<string, unknown>,
+    cuelists: cuelists as unknown as Record<string, unknown>,
     routing,
     operators,
     doc_yjs_base64: Buffer.from(docUpdate).toString('base64'),
@@ -152,15 +152,16 @@ async function collectMediaBase64(
   const result: Array<{ name: string; content_base64: string }> = [];
   let entries: Awaited<ReturnType<typeof fs.readdir>>;
   try {
-    entries = await fs.readdir(mediaDir, { withFileTypes: true });
+    entries = (await fs.readdir(mediaDir, { withFileTypes: true })) as unknown as any[];
   } catch {
     return result;
   }
   for (const entry of entries) {
     if (entry.isFile()) {
       try {
-        const buf = await fs.readFile(path.join(mediaDir, entry.name));
-        result.push({ name: entry.name, content_base64: buf.toString('base64') });
+        const entryName = String(entry.name);
+        const buf = await fs.readFile(path.join(mediaDir, entryName));
+        result.push({ name: entryName, content_base64: buf.toString('base64') });
       } catch {
         // skip unreadable files
       }
