@@ -12,7 +12,9 @@ export async function createMainWindow(opts: MainWindowOpts): Promise<BrowserWin
     minWidth: 1024,
     minHeight: 700,
     backgroundColor: '#0a0a0a',
-    titleBarStyle: 'hiddenInset',
+    title: 'ShowX',
+    // titleBarStyle: 'hiddenInset' was suppressing drag region — use default title bar
+    titleBarStyle: 'default',
     webPreferences: {
       preload: opts.preloadPath,
       contextIsolation: true,
