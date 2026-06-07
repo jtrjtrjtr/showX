@@ -1043,3 +1043,30 @@ Note on B003-102 round number: Critic verdict says "round 1" (state.json never w
 
 **Monitoring loop ENDS.**
 
+
+## Tick 26 — 17:59 CEST — ShowX-3.2 cycle 1 + B003-201 cycle 1 timeout
+
+**State at tick:** 40 accepted (13 ShowX-1 + 24 ShowX-3 + 3 ShowX-3.1), 17 queued, 1 in_progress (B003-201 cycle 2).
+
+**Forge timeline (ShowX-3.2 cycle 1):**
+
+- 15:33Z Forge tick spawn → B003-201 claimed (lowest-ID, Shell PWA wiring)
+- 15:53Z cycle 1 TIMEOUT (1200s) — Pattern 8 #1 of ShowX-3.2
+- 15:57Z cycle 2 spawn, PID 69335 active at tick check (~2 min in)
+
+**B003-201 cycle 1 wrote 4/9 target files on disk:**
+- `pwa/src/components/ShellRouter.tsx`
+- `pwa/src/lib/uiPanelBridge.ts`
+- `src/main/src/ipc/uiPanelBridge.ts`
+- `tests/unit/pwa/ShellRouter.test.tsx`
+
+Plus `src/main/src/Shell.ts` modified to import `registerUiPanelBridge` (visible in editor reminder).
+
+Remaining target files (cycle 2 expected to complete): `pwa/src/App.tsx`, `pwa/src/components/AppShell.tsx`, `src/modules/cuelist-core/src/ui/index.ts`, `tests/unit/pwa/lib/uiPanelBridge.test.ts` + done report.
+
+**Typecheck baseline: 7 errors** (down 7 from 14 at end of ShowX-3.1 — my packed-app debugging cleared half the drift while patching DevicesTable + singleFileExport + csvHeuristics + others).
+
+**Pattern 8 prediction holds:** wiring tasks remain heavier than isolated component work. Cycle 2 should finish in ~10-15 min per the recovery pattern.
+
+**No Architect action this tick.** Standard polling resumes.
+
