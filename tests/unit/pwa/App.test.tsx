@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import 'fake-indexeddb/auto';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, waitFor, cleanup } from '@testing-library/react';
+import { render, screen, waitFor, cleanup, act } from '@testing-library/react';
 
 // Mock y-websocket + y-indexeddb so syncClient / connectToShow don't try real connections
 const mockAwareness = {
@@ -129,12 +129,14 @@ describe('App mode router', () => {
       expect(screen.getByText(/Pair with 10\.0\.0\.5/i)).toBeInTheDocument();
     });
 
-    // Fill pairing form and submit
-    fireEvent.change(screen.getByPlaceholderText(/e\.g\. LX Op/i), { target: { value: 'Test Op' } });
-    fireEvent.change(screen.getByPlaceholderText(/6-digit PIN/i), { target: { value: '123456' } });
-    fireEvent.click(screen.getByRole('button', { name: /Pair/i }));
+    // Fill pairing form and submit — wrap in act so async handleSubmit state updates flush
+    await act(async () => {
+      fireEvent.change(screen.getByPlaceholderText(/e\.g\. LX Op/i), { target: { value: 'Test Op' } });
+      fireEvent.change(screen.getByPlaceholderText(/6-digit PIN/i), { target: { value: '123456' } });
+      fireEvent.submit(screen.getByRole('button', { name: /Pair/i }).closest('form')!);
+    });
 
-    // After two-phase pairing resolves, StationRouter is active
+    // After pairing resolves, StationRouter is active
     await waitFor(() => {
       const loading = screen.queryByTestId('station-loading');
       const connecting = screen.queryByText(/Connecting/i);

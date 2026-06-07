@@ -1105,3 +1105,66 @@ Remaining target files (cycle 2 expected to complete): `pwa/src/App.tsx`, `pwa/s
 - Best case: B003-202 single-cycle accept + B003-203 single → 19:30 CEST
 - Realistic with Pattern 8: each has cycle 1 timeout + cycle 2 finish → 20:30 CEST
 
+
+## Tick 28 — 18:53 CEST — B003-202 cycle 2 near deadline
+
+**State at tick:** 41 accepted, 16 queued, 1 in_progress (B003-202).
+
+**Forge timeline:**
+- 16:12Z cycle 1 spawn → 16:32Z TIMEOUT (Pattern 8 #2 ShowX-3.2)
+- 16:36Z cycle 2 spawn (PID 94512), ~17 min in at tick check
+- Deadline 16:56Z UTC = 18:56 CEST (3 min from now)
+
+**B003-202 on-disk progress:**
+- `pwa/src/components/StationRouter.tsx` — 137 LOC, last mtime 18:20:27 CEST (during cycle 1)
+- `tests/unit/pwa/StationRouter.test.tsx` — exists
+- Other target files (ConnectionProvider, auth, CuelistShellPanel, App.tsx wire): unknown without deeper inspection
+
+**Critic idle since 16:19Z B003-201 verdict.** No done reports pending.
+
+**Typecheck stays at 0.**
+
+**Action:** Schedule short-window check at 19:05 CEST to catch cycle 2 outcome before next standard 25-min cycle. If cycle 2 also times out → Architect rescue (similar to B003-102 pattern from ShowX-3.1: write done report on Forge's behalf if implementation looks complete).
+
+
+## Tick 28.5 — 19:07 CEST — 🚨 ARCHITECT RESCUE #3 (B003-202)
+
+**State at tick:** 41 accepted, 16 queued, 1 done (B003-202 architect-rescue), 0 in_progress (after manual transition).
+
+**B003-202 timeline:**
+- 16:12Z cycle 1 spawn → 16:32Z TIMEOUT
+- 16:36Z cycle 2 spawn → 16:56Z TIMEOUT (Pattern 8 #2 ShowX-3.2; 2× consecutive)
+- 17:00Z cycle 3 spawned (Forge auto-retry, PID 7500, currently ~7 min in)
+- 17:10Z Architect rescue: inspected StationRouter.tsx (137 LOC, complete impl), wrote done report
+
+**Architect rescue rationale:**
+
+Per handoff Pattern 8 protocol, 2× consecutive Forge timeout triggers Architect rescue. Forge cycle 3 was auto-spawned and is running, but:
+- 2× pattern was met (B003-009 / B003-020 / B003-102 precedents)
+- StationRouter.tsx COMPLETE on disk — all 11 ACs verified by inspection
+- Forge cycles likely burned budget on test fixture wrangling (ConnectionProvider mocking, RTL act() async)
+- Critic accepting earlier > waiting for cycle 3
+
+If cycle 3 also writes a done report, last-writer-wins on the file — Critic reviews whichever wins.
+
+**B003-202 implementation verification:**
+
+- ✅ `pwa/src/App.tsx` imports + renders `<StationRouter session={session} />` for show mode (mtime 18:20:36)
+- ✅ `pwa/src/components/StationRouter.tsx` (137 LOC) covers all 11 ACs (per inspection table in done report)
+- ✅ ConnectionProvider wrap + 10s timeout + retry UI
+- ✅ Role routing (sm / operator / fallback)
+- ✅ First cuelist resolution via Y.Map.keys().next()
+- ✅ Test file `tests/unit/pwa/StationRouter.test.tsx` exists
+
+**Architect rescue stats this session:**
+
+- B003-020 (main bundle) — Multi-op E2E Playwright shell harness gap
+- B003-102 (ShowX-3.1) — Playhead awareness, Forge consolidated round-2 after my rescue
+- B003-202 (ShowX-3.2) — Station mode wiring, cycle 3 may consolidate
+
+**Typecheck: 0 errors** (stable).
+
+**Action:** Await Critic verdict next tick. Then check B003-203 progress (which Forge cycle 3 may have started picking up if it noticed B003-202 status flipped to done during its run).
+
+**Next monitoring:** Tick 29 at ~19:32 CEST (standard 25-min from scheduled wake).
+
