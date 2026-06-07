@@ -126,7 +126,7 @@ export function Downloads() {
             </div>
             <div className="col-span-12 md:col-span-9">
               <h2 className="display-serif text-display-2 leading-tight">
-                ShowX 0.1.3<br />
+                ShowX 0.1.4<br />
                 <em className="text-accent-deep font-light not-italic">
                   {cs ? 'beta — dostupné nyní' : 'beta — available now'}
                 </em>
@@ -138,11 +138,11 @@ export function Downloads() {
               </p>
               <div className="mt-8 flex flex-col sm:flex-row gap-4">
                 <a
-                  href="/ShowX-0.1.3-arm64.dmg"
+                  href="/ShowX-0.1.4-arm64.dmg"
                   className="btn-primary"
                   download
                 >
-                  {cs ? 'Stáhnout ShowX 0.1.3 (arm64, ~102 MB)' : 'Download ShowX 0.1.3 (arm64, ~102 MB)'}
+                  {cs ? 'Stáhnout ShowX 0.1.4 (arm64, ~102 MB)' : 'Download ShowX 0.1.4 (arm64, ~102 MB)'}
                 </a>
                 <a
                   href="https://github.com/jtrjtrjtr/showX/releases/tag/v0.1.1"

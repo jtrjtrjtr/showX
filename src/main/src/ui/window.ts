@@ -19,7 +19,9 @@ export async function createMainWindow(opts: MainWindowOpts): Promise<BrowserWin
       preload: opts.preloadPath,
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: true,
+      // sandbox: true requires CommonJS preload; our preload is ESM (type:module)
+      // and uses ipcRenderer.invoke + contextBridge from 'electron'. Run unsandboxed.
+      sandbox: false,
     },
   });
   await win.loadURL(opts.pwaUrl);
