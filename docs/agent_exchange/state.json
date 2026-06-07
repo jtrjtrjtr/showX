@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "project": "showX",
-  "phase": "bundle_ShowX-3.2_wiring",
-  "updated_at": "2026-06-07T17:20:00Z",
+  "phase": "bundle_ShowX-3.2_complete",
+  "updated_at": "2026-06-07T18:05:00Z",
   "active_bundle": "ShowX-3.2",
   "tasks": [
     {
@@ -1058,14 +1058,15 @@
       "id": "B003-203",
       "slug": "routing_dispatcher_integration",
       "title": "Routing UI dispatcher integration \u2014 wire RoutingRule shape into resolveRouting",
-      "status": "in_progress",
+      "status": "accepted",
       "owner": "forge",
-      "task_path": "docs/agent_exchange/in_progress/B003-203_routing_dispatcher_integration.md",
+      "task_path": "docs/agent_exchange/done/B003-203_routing_dispatcher_integration_done.md",
+      "review_path": "docs/agent_exchange/reviews/B003-203_routing_dispatcher_integration_review.md",
       "created_at": "2026-06-07T15:50:00Z",
       "started_at": "2026-06-07T17:30:00Z",
-      "ended_at": null,
-      "reviewed_at": null,
-      "review_round": 0,
+      "ended_at": "2026-06-07T18:15:00Z",
+      "reviewed_at": "2026-06-07T17:45:00Z",
+      "review_round": 1,
       "spawned_from": "ShowX-3.2 wiring bundle architect-filed",
       "depends_on": []
     }

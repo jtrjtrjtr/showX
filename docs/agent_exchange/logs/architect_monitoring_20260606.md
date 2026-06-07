@@ -1199,3 +1199,40 @@ If cycle 3 also writes a done report, last-writer-wins on the file — Critic re
 - If cycle 1 timeout → cycle 2 success ~20:25 CEST → bundle close
 - If 2× timeout → Architect rescue similar to B003-202 → bundle close ~20:30 CEST
 
+
+## Tick 30 — 20:02 CEST — 🎉🎉🎉 ShowX-3.2 BUNDLE COMPLETE 3/3 + v0.1.3 LIVE
+
+**FINAL STATE:** 43 accepted (13 ShowX-1 + 24 ShowX-3 + 3 ShowX-3.1 + 3 ShowX-3.2), 15 queued (B002 parked), 0 in_progress.
+
+**B003-203 verdict:** Critic 17:45Z accepted round 1. resolveRouting.test.ts 19/19, document/routing.test.ts 25/25, full cuelist-core suite 687/687.
+
+**🎉 Bundle complete 3/3 single-round all tasks. Architect rescue counted as round 1.**
+
+**Bundle close actions executed:**
+- `docs/agent_exchange/decisions/2026-06-07_showx_3_2_wiring_complete.md` — 200-line decision note
+- `docs/agent_exchange/claude_runner_scope.json` — `enabled: false`, scope disabled
+- state.json phase → `bundle_ShowX-3.2_complete`
+
+**v0.1.3 DMG build + deploy:**
+- Bumped version → 0.1.3 in package.json + electron-builder-unsigned.yml
+- Built main (TS), PWA (Vite 320KB), cuelist-core (with 0 typecheck errors)
+- electron-builder produced `ShowX-0.1.3-arm64.dmg` (112 MB — slightly bigger due to PWA's new ShellRouter + StationRouter + cuelist-core UI exports)
+- Copied to `apps/marketing/public/ShowX-0.1.3-arm64.dmg`
+- Updated `Downloads.tsx` link → v0.1.3
+- Marketing site rebuilt + deployed
+- Verified `curl -sI https://showx.xlabproject.net/ShowX-0.1.3-arm64.dmg` returns HTTP 200
+
+**Cumulative session stats (ShowX-3 + ShowX-3.1 + ShowX-3.2):**
+
+| Metric | Value |
+|---|---|
+| Bundles completed | 3 |
+| Tasks accepted total | 30 (24 + 3 + 3) |
+| Pattern 8 cycle 1 timeouts | 10 (33%) |
+| Architect rescues | 3 (10%) |
+| Round-3+ cycles | 0 |
+| Total wall time | ~17h Architect + Forge subprocess |
+| Final typecheck baseline | 0 errors ✨ |
+
+**Monitoring loop ENDS.**
+
