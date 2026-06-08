@@ -6,7 +6,7 @@
   "main": "dist/index.js",
   "scripts": {
     "typecheck": "pnpm --filter showx-shared build && tsc --noEmit",
-    "build": "tsc",
+    "build": "tsc && cp dist/ui/preload.js dist/ui/preload.mjs",
     "dev": "SHOWX_DEV=1 electron .",
     "start": "electron ."
   },

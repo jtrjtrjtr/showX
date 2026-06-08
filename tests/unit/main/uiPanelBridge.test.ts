@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type { ActiveShowDoc } from '../../../src/main/src/runtime/ActiveShowDoc.js';
 
 const { mockGetAllWindows, mockSend } = vi.hoisted(() => ({
   mockGetAllWindows: vi.fn(() => []),
@@ -8,12 +9,6 @@ const { mockGetAllWindows, mockSend } = vi.hoisted(() => ({
 vi.mock('electron', () => ({
   ipcMain: { handle: vi.fn() },
   BrowserWindow: { getAllWindows: mockGetAllWindows },
-}));
-
-vi.mock('node:fs', () => ({
-  promises: {
-    readFile: vi.fn().mockResolvedValue('{"meta":{"title":"Test Show"}}'),
-  },
 }));
 
 import { registerUiPanelBridge } from '../../../src/main/src/ipc/uiPanelBridge.js';
@@ -28,6 +23,21 @@ function makeConfig(kv: Record<string, unknown> = {}): ShellConfigStore {
     get: vi.fn((key: string) => kv[key]),
     set: vi.fn().mockResolvedValue(undefined),
   };
+}
+
+function makeActiveShow(opts: { title?: string; mode?: 'rehearsal' | 'show' } = {}): ActiveShowDoc {
+  let current: { pkgPath: string; title: string; mode: 'rehearsal' | 'show' } | null = null;
+  const show = {
+    open: vi.fn(async (showPath: string) => {
+      current = { pkgPath: showPath, title: opts.title ?? 'Test Show', mode: opts.mode ?? 'rehearsal' };
+    }),
+    close: vi.fn().mockResolvedValue(undefined),
+    getDoc: vi.fn().mockReturnValue(null),
+    getPkgPath: vi.fn(() => current?.pkgPath ?? null),
+    getActiveShow: vi.fn(() => current),
+    onChange: vi.fn(() => () => {}),
+  } as unknown as ActiveShowDoc;
+  return show;
 }
 
 function captureHandlers(): {
@@ -50,7 +60,7 @@ describe('registerUiPanelBridge', () => {
 
   it('registers cuelist-core/shell.getState handler', () => {
     const { ipc, handleMock } = captureHandlers();
-    registerUiPanelBridge(makeConfig(), ipc);
+    registerUiPanelBridge(makeConfig(), makeActiveShow(), ipc);
     expect(handleMock).toHaveBeenCalledWith(
       'cuelist-core/shell.getState',
       expect.any(Function),
@@ -59,7 +69,7 @@ describe('registerUiPanelBridge', () => {
 
   it('shell.getState returns no-show when no active show and no recents', async () => {
     const { ipc, handlers } = captureHandlers();
-    registerUiPanelBridge(makeConfig(), ipc);
+    registerUiPanelBridge(makeConfig(), makeActiveShow(), ipc);
 
     const result = await handlers['cuelist-core/shell.getState']?.();
     expect(result).toEqual({ kind: 'no-show', recentShows: [] });
@@ -69,7 +79,7 @@ describe('registerUiPanelBridge', () => {
     const recents = [{ path: '/shows/a.showx', last_opened_at: '2026-06-07T10:00:00Z', cue_count: 5 }];
     const config = makeConfig({ 'cuelist-core:recent-shows': recents });
     const { ipc, handlers } = captureHandlers();
-    registerUiPanelBridge(config, ipc);
+    registerUiPanelBridge(config, makeActiveShow(), ipc);
 
     const result = await handlers['cuelist-core/shell.getState']?.();
     expect(result).toEqual({ kind: 'no-show', recentShows: recents });
@@ -80,7 +90,7 @@ describe('registerUiPanelBridge', () => {
     mockGetAllWindows.mockReturnValue([fakeWin]);
 
     const { ipc, handlers } = captureHandlers();
-    registerUiPanelBridge(makeConfig(), ipc);
+    registerUiPanelBridge(makeConfig(), makeActiveShow(), ipc);
 
     await handlers['cuelist-core/open-show']?.({} as unknown, '/shows/demo.showx');
 
@@ -93,7 +103,7 @@ describe('registerUiPanelBridge', () => {
     mockGetAllWindows.mockReturnValue([fakeWin]);
 
     const { ipc, handlers } = captureHandlers();
-    registerUiPanelBridge(makeConfig(), ipc);
+    registerUiPanelBridge(makeConfig(), makeActiveShow(), ipc);
 
     await handlers['cuelist-core/open-show']?.({} as unknown, '/shows/demo.showx');
 
@@ -102,7 +112,7 @@ describe('registerUiPanelBridge', () => {
 
   it('cuelist-core/open-show throws on non-string path', async () => {
     const { ipc, handlers } = captureHandlers();
-    registerUiPanelBridge(makeConfig(), ipc);
+    registerUiPanelBridge(makeConfig(), makeActiveShow(), ipc);
 
     await expect(handlers['cuelist-core/open-show']?.({} as unknown, 42)).rejects.toThrow(
       'showPath must be a string',

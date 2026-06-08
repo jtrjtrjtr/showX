@@ -1,28 +1,9 @@
 import { ipcMain, BrowserWindow } from 'electron';
-import { promises as fs } from 'node:fs';
-import path from 'node:path';
-import { z } from 'zod';
 import type { ShellConfigStore } from '../Shell.js';
 import type { IpcMainBridge } from './index.js';
+import type { ActiveShowDoc } from '../runtime/ActiveShowDoc.js';
 
 const RECENT_KEY = 'cuelist-core:recent-shows';
-
-const ShowMetaZ = z.object({
-  meta: z
-    .object({
-      title: z.string().optional(),
-      mode: z.enum(['rehearsal', 'show']).optional(),
-    })
-    .optional(),
-});
-
-interface ActiveShow {
-  pkgPath: string;
-  title: string;
-  mode: 'rehearsal' | 'show';
-}
-
-let _activeShow: ActiveShow | null = null;
 
 function broadcastToAll(channel: string, ...args: unknown[]): void {
   BrowserWindow.getAllWindows().forEach((w) => {
@@ -30,30 +11,10 @@ function broadcastToAll(channel: string, ...args: unknown[]): void {
   });
 }
 
-export async function openShow(showPath: string): Promise<void> {
-  let title = path.basename(showPath, '.showx') || 'Untitled';
-  let mode: 'rehearsal' | 'show' = 'rehearsal';
-
-  try {
-    const raw = await fs.readFile(path.join(showPath, 'show.json'), 'utf-8');
-    const parsed = ShowMetaZ.safeParse(JSON.parse(raw));
-    if (parsed.success) {
-      title = parsed.data.meta?.title ?? title;
-      mode = parsed.data.meta?.mode ?? mode;
-    }
-  } catch {
-    // Use fallback title from path
-  }
-
-  _activeShow = { pkgPath: showPath, title, mode };
-
-  broadcastToAll('cuelist-core/show-state', {
-    open: true,
-    pkgPath: showPath,
-    title,
-    mode,
-    isSm: true,
-  });
+export async function openShow(showPath: string, activeShow: ActiveShowDoc): Promise<void> {
+  await activeShow.open(showPath);
+  // cuelist-core/show-state broadcast is owned by registerShowStateBridge (observe-driven).
+  // Only signal shell to refresh Recent Shows list here.
   broadcastToAll('cuelist-core:show-changed');
 }
 
@@ -73,40 +34,31 @@ function getRecents(
 
 export function registerUiPanelBridge(
   config: ShellConfigStore,
+  activeShow: ActiveShowDoc,
   ipc: IpcMainBridge = ipcMain,
 ): void {
   ipc.handle('cuelist-core/shell.getState', async () => {
     const recentShows = getRecents(config);
-    if (!_activeShow) {
+    const meta = activeShow.getActiveShow();
+    if (!meta) {
       return { kind: 'no-show', recentShows };
     }
     return {
       kind: 'show-loaded',
-      showName: _activeShow.title,
+      showName: meta.title,
       recentShows,
-    };
-  });
-
-  ipc.handle('cuelist-core/get-state', async () => {
-    if (!_activeShow) return { open: false };
-    return {
-      open: true,
-      pkgPath: _activeShow.pkgPath,
-      title: _activeShow.title,
-      mode: _activeShow.mode,
-      isSm: true,
     };
   });
 
   ipc.handle('cuelist-core/open-show', async (_e, showPath: unknown) => {
     if (typeof showPath !== 'string') throw new Error('showPath must be a string');
-    await openShow(showPath);
+    await openShow(showPath, activeShow);
     return { ok: true };
   });
 
   ipc.handle('cuelist-core:open-recent', async (_e, showPath: unknown) => {
     if (typeof showPath !== 'string') throw new Error('showPath must be a string');
-    await openShow(showPath);
+    await openShow(showPath, activeShow);
     return { ok: true };
   });
 

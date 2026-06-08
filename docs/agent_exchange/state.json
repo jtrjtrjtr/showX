@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "project": "showX",
-  "phase": "bundle_ShowX-3.2_complete",
-  "updated_at": "2026-06-07T18:05:00Z",
-  "active_bundle": "ShowX-3.2",
+  "phase": "bundle_ShowX-3.3_open",
+  "updated_at": "2026-06-08T01:08:00Z",
+  "active_bundle": "ShowX-3.3",
   "tasks": [
     {
       "id": "B001-001",
@@ -1069,6 +1069,70 @@
       "review_round": 1,
       "spawned_from": "ShowX-3.2 wiring bundle architect-filed",
       "depends_on": []
+    },
+    {
+      "id": "B003-301",
+      "slug": "active_show_doc_service",
+      "title": "ActiveShowDoc service — Y.Doc lifecycle in main process + debounced save",
+      "status": "accepted",
+      "owner": "forge",
+      "task_path": "docs/agent_exchange/done/B003-301_active_show_doc_service_done.md",
+      "review_path": "docs/agent_exchange/reviews/B003-301_active_show_doc_service_review.md",
+      "created_at": "2026-06-07T22:30:00Z",
+      "started_at": "2026-06-07T22:35:00Z",
+      "ended_at": "2026-06-07T23:05:00Z",
+      "reviewed_at": "2026-06-07T23:30:00Z",
+      "review_round": 1,
+      "spawned_from": "ShowX-3.3 backend wiring bundle architect-filed",
+      "depends_on": []
+    },
+    {
+      "id": "B003-302",
+      "slug": "device_ipc_bridge",
+      "title": "Device IPC bridge — 5 invoke handlers + devices-changed broadcast",
+      "status": "accepted",
+      "owner": "forge",
+      "task_path": "docs/agent_exchange/done/B003-302_device_ipc_bridge_done.md",
+      "review_path": "docs/agent_exchange/reviews/B003-302_device_ipc_bridge_review.md",
+      "created_at": "2026-06-07T22:30:00Z",
+      "started_at": "2026-06-07T23:45:00Z",
+      "ended_at": "2026-06-08T00:05:00Z",
+      "reviewed_at": "2026-06-07T23:50:00Z",
+      "review_round": 1,
+      "spawned_from": "ShowX-3.3 backend wiring bundle architect-filed",
+      "depends_on": ["B003-301"]
+    },
+    {
+      "id": "B003-303",
+      "slug": "routing_ipc_bridge",
+      "title": "Routing IPC bridge — 4 invoke handlers + routing-changed broadcast",
+      "status": "accepted",
+      "owner": "forge",
+      "task_path": "docs/agent_exchange/done/B003-303_routing_ipc_bridge_done.md",
+      "review_path": "docs/agent_exchange/reviews/B003-303_routing_ipc_bridge_review.md",
+      "created_at": "2026-06-07T22:30:00Z",
+      "started_at": "2026-06-08T00:10:00Z",
+      "ended_at": "2026-06-08T00:30:00Z",
+      "reviewed_at": "2026-06-08T00:50:00Z",
+      "review_round": 1,
+      "spawned_from": "ShowX-3.3 backend wiring bundle architect-filed",
+      "depends_on": ["B003-301"]
+    },
+    {
+      "id": "B003-304",
+      "slug": "show_state_ipc",
+      "title": "Show-state IPC — get-state ShowState shape + observe broadcast (fixes Demo Show 0-cues)",
+      "status": "accepted",
+      "owner": "forge",
+      "task_path": "docs/agent_exchange/done/B003-304_show_state_ipc_done.md",
+      "review_path": "docs/agent_exchange/reviews/B003-304_show_state_ipc_review.md",
+      "created_at": "2026-06-07T22:30:00Z",
+      "started_at": "2026-06-08T00:35:00Z",
+      "ended_at": "2026-06-08T00:55:00Z",
+      "reviewed_at": "2026-06-08T01:08:00Z",
+      "review_round": 1,
+      "spawned_from": "ShowX-3.3 backend wiring bundle architect-filed",
+      "depends_on": ["B003-301"]
     }
   ]
 }

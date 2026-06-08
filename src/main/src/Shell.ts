@@ -33,6 +33,10 @@ import { shellVersion } from './shared/version.js';
 import { createMainWindow } from './ui/window.js';
 import { registerIpcHandlers, type IpcMainBridge } from './ipc/index.js';
 import { registerUiPanelBridge } from './ipc/uiPanelBridge.js';
+import { registerDeviceBridge } from './ipc/cuelistCoreDeviceBridge.js';
+import { registerRoutingBridge } from './ipc/cuelistCoreRoutingBridge.js';
+import { registerShowStateBridge } from './ipc/cuelistCoreShowStateBridge.js';
+import { ActiveShowDoc, setActiveShowDoc } from './runtime/index.js';
 
 // ── Shell config store ──────────────────────────────────────────────────────
 
@@ -169,7 +173,9 @@ function modulesRootPath(): string {
 
 function preloadFilePath(): string {
   const __dirname = dirname(fileURLToPath(import.meta.url));
-  return resolve(__dirname, 'ui/preload.js');
+  // Electron 29 loads preload via require(), which rejects ESM .js files.
+  // We post-build rename preload.js → preload.mjs so Electron treats it as ESM.
+  return resolve(__dirname, 'ui/preload.mjs');
 }
 
 // ── safeCall ─────────────────────────────────────────────────────────────────
@@ -229,6 +235,7 @@ export class Shell {
   private output!: OutputDispatcher;
   private input: InputRegistrarImpl | null = null;
   private modules: ModuleLoader | null = null;
+  private activeShow: ActiveShowDoc | null = null;
 
   constructor(private readonly deps: ShellDeps = {}) {}
 
@@ -356,7 +363,11 @@ export class Shell {
     await this.modules.initAll();
     await this.modules.startAll();
 
-    // 13. Browser window + IPC
+    // 13. ActiveShowDoc singleton — owns the active show Y.Doc lifecycle
+    this.activeShow = new ActiveShowDoc(this.logger);
+    setActiveShowDoc(this.activeShow);
+
+    // 14. Browser window + IPC
     if (!this.deps.skipWindow) {
       const pwaUrl =
         process.env['SHOWX_DEV'] === '1'
@@ -374,7 +385,10 @@ export class Shell {
         shellConfig: this.shellConfig,
         logger: this.logger,
       }, this.deps.ipcBridge);
-      registerUiPanelBridge(this.shellConfig, this.deps.ipcBridge);
+      registerUiPanelBridge(this.shellConfig, this.activeShow, this.deps.ipcBridge);
+      registerDeviceBridge(this.activeShow, this.deps.ipcBridge, this.logger);
+      registerRoutingBridge(this.activeShow, this.deps.ipcBridge, this.logger);
+      registerShowStateBridge(this.activeShow, this.deps.ipcBridge, this.logger);
     }
   }
 
@@ -383,6 +397,7 @@ export class Shell {
     this.state = 'shutting_down';
 
     // Reverse boot order, best-effort
+    await safeCall(() => this.activeShow?.close());
     await safeCall(() => this.modules?.stopAll());
     await safeCall(() => this.modules?.teardownAll());
     await safeCall(() => this.input?.shutdown());

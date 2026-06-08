@@ -1,8 +1,8 @@
 {
-  "enabled": false,
-  "bundle_id": "ShowX-3.2-CLOSED",
-  "allowed_task_ids": [],
-  "rationale": "ShowX-3.2 wiring bundle complete 2026-06-07T18:05Z — all 3 task specs accepted (B003-201 round 1, B003-202 round 1 via Architect rescue, B003-203 round 1). Scope DISABLED. Decision note: docs/agent_exchange/decisions/2026-06-07_showx_3_2_wiring_complete.md",
-  "updated_at": "2026-06-07T18:05:00Z",
+  "enabled": true,
+  "bundle_id": "ShowX-3.3",
+  "allowed_task_ids": ["B003-301", "B003-302", "B003-303", "B003-304"],
+  "rationale": "ShowX-3.3 backend wiring bundle opened 2026-06-07T22:30Z — Architect-filed after v0.1.6 Loading-hang fix revealed pre-existing IPC gap. 4 task specs cover ActiveShowDoc service + device/routing/show-state IPC bridges. Sequential dependency: B003-301 (foundational) → B003-302/303/304 (parallel-eligible but share ActiveShowDoc API). Decision note: docs/agent_exchange/decisions/2026-06-07_showx_3_3_bundle_open.md",
+  "updated_at": "2026-06-07T22:30:00Z",
   "updated_by": "architect"
 }
