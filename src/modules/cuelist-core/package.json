@@ -7,7 +7,11 @@
   "types": "dist/index.d.ts",
   "exports": {
     ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" },
-    "./ui": { "types": "./dist/ui/index.d.ts", "default": "./dist/ui/index.js" }
+    "./ui": { "types": "./dist/ui/index.d.ts", "default": "./dist/ui/index.js" },
+    "./document/devices.js": { "types": "./dist/document/devices.d.ts", "default": "./dist/document/devices.js" },
+    "./document/routing.js": { "types": "./dist/document/routing.d.ts", "default": "./dist/document/routing.js" },
+    "./document/cuelist.js": { "types": "./dist/document/cuelist.d.ts", "default": "./dist/document/cuelist.js" },
+    "./persistence/showxPackage.js": { "types": "./dist/persistence/showxPackage.d.ts", "default": "./dist/persistence/showxPackage.js" }
   },
   "scripts": {
     "typecheck": "pnpm --filter showx-shared build && tsc --noEmit",

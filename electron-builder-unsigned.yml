@@ -6,7 +6,7 @@ copyright: "Copyright © 2026 XLAB s.r.o."
 extraMetadata:
   main: index.js
   name: showx
-  version: 0.1.6
+  version: 0.1.13
   type: module
 
 # Extra resources bundled into the app (read-only inside .app/Contents/Resources)
@@ -37,6 +37,13 @@ files:
       - "package.json"
       - "manifest.json"
       - "index.js"
+  # Also mount cuelist-core under node_modules/@showx so main process imports
+  # like `@showx/module-cuelist-core/document/devices.js` resolve in packed app
+  - from: src/modules/cuelist-core
+    to: node_modules/@showx/module-cuelist-core
+    filter:
+      - "package.json"
+      - "dist/**/*"
   - package.json
 
 directories:

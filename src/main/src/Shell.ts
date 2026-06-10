@@ -301,19 +301,22 @@ export class Shell {
     this.sync = this.deps.sync ?? new SyncBroker({ log: this.logger });
     this.sync.attach(this.assets.httpServer());
 
-    // 9. Pairing stack
+    // 9. ActiveShowDoc singleton — init here so pairing claim can return show_id
+    this.activeShow = new ActiveShowDoc(this.logger, this.sync);
+    setActiveShowDoc(this.activeShow);
+
+    // 10. Pairing stack
     this.tokenManager =
       this.deps.tokenManager ?? new TokenManagerImpl(this.shellSecrets);
     await this.tokenManager.init();
 
     this.pinManager = this.deps.pinManager ?? new PinManagerImpl();
 
-    // Test-mode: pre-register a known PIN so tests can pair without UI
-    const testPin = process.env['SHOWX_PAIRING_TEST_PIN'];
-    if (testPin) {
-      this.pinManager.registerTestPin(testPin);
-      this.logger.info('test-mode: registered test pairing PIN', { pin: testPin });
-    }
+    // Unsigned dev builds: always register 000000 as permanent test PIN.
+    // TODO: gate by build flag for signed/notarized production builds.
+    const testPin = process.env['SHOWX_PAIRING_TEST_PIN'] ?? '000000';
+    this.pinManager.registerTestPin(testPin);
+    this.logger.info('test-mode: registered test pairing PIN', { pin: testPin });
 
     const pairingPersisted =
       this.deps.pairingPersisted ?? new PersistedStore('pairing', this.layout, this.logger);
@@ -327,6 +330,7 @@ export class Shell {
       tokens: this.tokenManager,
       hostInfo: { host: os.hostname(), port: this.assets.port() },
       logger: this.logger,
+      activeShow: this.activeShow ?? undefined,
     });
 
     // 10. OutputDispatcher
@@ -363,11 +367,7 @@ export class Shell {
     await this.modules.initAll();
     await this.modules.startAll();
 
-    // 13. ActiveShowDoc singleton — owns the active show Y.Doc lifecycle
-    this.activeShow = new ActiveShowDoc(this.logger);
-    setActiveShowDoc(this.activeShow);
-
-    // 14. Browser window + IPC
+    // 13. Browser window + IPC
     if (!this.deps.skipWindow) {
       const pwaUrl =
         process.env['SHOWX_DEV'] === '1'

@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "project": "showX",
-  "phase": "bundle_ShowX-3.3_open",
-  "updated_at": "2026-06-08T01:08:00Z",
-  "active_bundle": "ShowX-3.3",
+  "phase": "bundle_ShowX-3.4_complete_v0.1.13_station_live",
+  "updated_at": "2026-06-08T21:30:00Z",
+  "active_bundle": "ShowX-3.4-CLOSED",
   "tasks": [
     {
       "id": "B001-001",
@@ -1073,7 +1073,7 @@
     {
       "id": "B003-301",
       "slug": "active_show_doc_service",
-      "title": "ActiveShowDoc service — Y.Doc lifecycle in main process + debounced save",
+      "title": "ActiveShowDoc service \u2014 Y.Doc lifecycle in main process + debounced save",
       "status": "accepted",
       "owner": "forge",
       "task_path": "docs/agent_exchange/done/B003-301_active_show_doc_service_done.md",
@@ -1089,7 +1089,7 @@
     {
       "id": "B003-302",
       "slug": "device_ipc_bridge",
-      "title": "Device IPC bridge — 5 invoke handlers + devices-changed broadcast",
+      "title": "Device IPC bridge \u2014 5 invoke handlers + devices-changed broadcast",
       "status": "accepted",
       "owner": "forge",
       "task_path": "docs/agent_exchange/done/B003-302_device_ipc_bridge_done.md",
@@ -1100,12 +1100,14 @@
       "reviewed_at": "2026-06-07T23:50:00Z",
       "review_round": 1,
       "spawned_from": "ShowX-3.3 backend wiring bundle architect-filed",
-      "depends_on": ["B003-301"]
+      "depends_on": [
+        "B003-301"
+      ]
     },
     {
       "id": "B003-303",
       "slug": "routing_ipc_bridge",
-      "title": "Routing IPC bridge — 4 invoke handlers + routing-changed broadcast",
+      "title": "Routing IPC bridge \u2014 4 invoke handlers + routing-changed broadcast",
       "status": "accepted",
       "owner": "forge",
       "task_path": "docs/agent_exchange/done/B003-303_routing_ipc_bridge_done.md",
@@ -1116,12 +1118,14 @@
       "reviewed_at": "2026-06-08T00:50:00Z",
       "review_round": 1,
       "spawned_from": "ShowX-3.3 backend wiring bundle architect-filed",
-      "depends_on": ["B003-301"]
+      "depends_on": [
+        "B003-301"
+      ]
     },
     {
       "id": "B003-304",
       "slug": "show_state_ipc",
-      "title": "Show-state IPC — get-state ShowState shape + observe broadcast (fixes Demo Show 0-cues)",
+      "title": "Show-state IPC \u2014 get-state ShowState shape + observe broadcast (fixes Demo Show 0-cues)",
       "status": "accepted",
       "owner": "forge",
       "task_path": "docs/agent_exchange/done/B003-304_show_state_ipc_done.md",
@@ -1132,7 +1136,63 @@
       "reviewed_at": "2026-06-08T01:08:00Z",
       "review_round": 1,
       "spawned_from": "ShowX-3.3 backend wiring bundle architect-filed",
-      "depends_on": ["B003-301"]
+      "depends_on": [
+        "B003-301"
+      ]
+    },
+    {
+      "id": "B003-401",
+      "slug": "syncbroker_attach_doc",
+      "title": "SyncBroker.attachDoc + ActiveShowDoc integration \u2014 broker serves shell's Y.Doc",
+      "status": "accepted",
+      "owner": "forge",
+      "task_path": "docs/agent_exchange/done/B003-401_syncbroker_attach_doc_done.md",
+      "review_path": "docs/agent_exchange/reviews/B003-401_syncbroker_attach_doc_review.md",
+      "created_at": "2026-06-08T15:00:00Z",
+      "started_at": "2026-06-08T15:30:00Z",
+      "ended_at": "2026-06-08T16:00:00Z",
+      "reviewed_at": "2026-06-08T19:05:00Z",
+      "review_round": 1,
+      "spawned_from": "ShowX-3.4 station data plane bundle architect-filed",
+      "depends_on": [
+        "B003-301"
+      ]
+    },
+    {
+      "id": "B003-402",
+      "slug": "pairing_returns_show_id",
+      "title": "Pairing claim returns active show_id; PairingView + StationRouter consume it",
+      "status": "accepted",
+      "owner": "forge",
+      "task_path": "docs/agent_exchange/done/B003-402_pairing_returns_show_id_done.md",
+      "review_path": "docs/agent_exchange/reviews/B003-402_pairing_returns_show_id_review.md",
+      "created_at": "2026-06-08T15:00:00Z",
+      "started_at": "2026-06-08T19:30:00Z",
+      "ended_at": "2026-06-08T19:25:00Z",
+      "reviewed_at": "2026-06-08T17:26:47Z",
+      "review_round": 2,
+      "spawned_from": "ShowX-3.4 station data plane bundle architect-filed",
+      "depends_on": [
+        "B003-401"
+      ]
+    },
+    {
+      "id": "B003-403",
+      "slug": "pwa_reactive_show_change",
+      "title": "PWA reactive show-change \u2014 refetch session.show_id when shell opens/closes show",
+      "status": "accepted",
+      "owner": "forge",
+      "task_path": "docs/agent_exchange/done/B003-403_pwa_reactive_show_change_done.md",
+      "review_path": "docs/agent_exchange/reviews/B003-403_pwa_reactive_show_change_review.md",
+      "created_at": "2026-06-08T15:00:00Z",
+      "started_at": "2026-06-08T20:30:00Z",
+      "ended_at": "2026-06-08T20:45:00Z",
+      "reviewed_at": "2026-06-08T17:42:00Z",
+      "review_round": 1,
+      "spawned_from": "ShowX-3.4 station data plane bundle architect-filed",
+      "depends_on": [
+        "B003-402"
+      ]
     }
   ]
 }

@@ -181,6 +181,133 @@ describe('Pairing HTTP API', () => {
     expect(res.status).toBe(401);
   });
 
+  it('POST /pairing/claim with activeShow returning show_id → response.show_id === show_id', async () => {
+    const { app: appBase, pairingStore, tokens, pins } = await makeApp();
+
+    const mockActiveShow = { getShowId: () => 'demo-show-uuid-x' };
+
+    const app2 = express();
+    app2.use(express.json());
+    const router2 = express.Router();
+    mountPairingRoutes(router2, {
+      pairing: pairingStore,
+      pins,
+      tokens,
+      hostInfo: { host: 'localhost', port: 5300 },
+      logger: makeNullLogger(),
+      activeShow: mockActiveShow as unknown as Parameters<typeof mountPairingRoutes>[1]['activeShow'],
+    });
+    app2.use(router2);
+    void appBase; // unused
+
+    const initRes = await request(app2).post('/pairing/initiate').send({});
+    const claimRes = await request(app2)
+      .post('/pairing/claim')
+      .send({ pin: initRes.body.pin, display_name: 'Test Station' });
+
+    expect(claimRes.status).toBe(200);
+    expect(claimRes.body.show_id).toBe('demo-show-uuid-x');
+  });
+
+  it('POST /pairing/claim with activeShow returning null → response.show_id === null', async () => {
+    const { pairingStore, tokens, pins } = await makeApp();
+
+    const mockActiveShow = { getShowId: () => null };
+
+    const app2 = express();
+    app2.use(express.json());
+    const router2 = express.Router();
+    mountPairingRoutes(router2, {
+      pairing: pairingStore,
+      pins,
+      tokens,
+      hostInfo: { host: 'localhost', port: 5300 },
+      logger: makeNullLogger(),
+      activeShow: mockActiveShow as unknown as Parameters<typeof mountPairingRoutes>[1]['activeShow'],
+    });
+    app2.use(router2);
+
+    const initRes = await request(app2).post('/pairing/initiate').send({});
+    const claimRes = await request(app2)
+      .post('/pairing/claim')
+      .send({ pin: initRes.body.pin, display_name: 'Test Station' });
+
+    expect(claimRes.status).toBe(200);
+    expect(claimRes.body.show_id).toBeNull();
+  });
+
+  it('POST /pairing/claim without activeShow dep → no show_id field in response', async () => {
+    const { app } = await makeApp(); // no activeShow injected
+    const initRes = await request(app).post('/pairing/initiate').send({});
+    const claimRes = await request(app)
+      .post('/pairing/claim')
+      .send({ pin: initRes.body.pin, display_name: 'Test Station' });
+
+    expect(claimRes.status).toBe(200);
+    expect(Object.prototype.hasOwnProperty.call(claimRes.body, 'show_id')).toBe(false);
+  });
+
+  // ── /active-show endpoint ─────────────────────────────────────────────────
+
+  it('GET /active-show with no activeShow dep → open:false, all fields null', async () => {
+    const { app } = await makeApp(); // no activeShow injected
+    const res = await request(app).get('/active-show');
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ open: false, show_id: null, title: null, mode: null });
+  });
+
+  it('GET /active-show when no show is open → open:false', async () => {
+    const { pairingStore, tokens, pins } = await makeApp();
+    const mockActiveShow = { getActiveShow: () => null, getShowId: () => null };
+
+    const app2 = express();
+    app2.use(express.json());
+    const router2 = express.Router();
+    mountPairingRoutes(router2, {
+      pairing: pairingStore,
+      pins,
+      tokens,
+      hostInfo: { host: 'localhost', port: 5300 },
+      logger: makeNullLogger(),
+      activeShow: mockActiveShow as unknown as Parameters<typeof mountPairingRoutes>[1]['activeShow'],
+    });
+    app2.use(router2);
+
+    const res = await request(app2).get('/active-show');
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ open: false, show_id: null, title: null, mode: null });
+  });
+
+  it('GET /active-show when show is open → all fields populated', async () => {
+    const { pairingStore, tokens, pins } = await makeApp();
+    const mockActiveShow = {
+      getActiveShow: () => ({ pkgPath: '/test/Demo Show.showx', title: 'Demo Show', mode: 'rehearsal' as const }),
+      getShowId: () => 'demo-show-uuid-active',
+    };
+
+    const app2 = express();
+    app2.use(express.json());
+    const router2 = express.Router();
+    mountPairingRoutes(router2, {
+      pairing: pairingStore,
+      pins,
+      tokens,
+      hostInfo: { host: 'localhost', port: 5300 },
+      logger: makeNullLogger(),
+      activeShow: mockActiveShow as unknown as Parameters<typeof mountPairingRoutes>[1]['activeShow'],
+    });
+    app2.use(router2);
+
+    const res = await request(app2).get('/active-show');
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({
+      open: true,
+      show_id: 'demo-show-uuid-active',
+      title: 'Demo Show',
+      mode: 'rehearsal',
+    });
+  });
+
   it('GET /pairing/devices with local-secret header → 200 (admin bypass)', async () => {
     const { app: appBase, pairingStore, tokens, pins } = await makeApp();
 

@@ -31,8 +31,11 @@ function makeLogger() {
   };
 }
 
+let _docSeq = 0;
 function freshDoc(): Y.Doc {
-  return new Y.Doc();
+  const doc = new Y.Doc();
+  doc.getMap('meta').set('show_id', `00000000-0000-0000-0000-${String(++_docSeq).padStart(12, '0')}`);
+  return doc;
 }
 
 function makeOpenResult(doc?: Y.Doc) {
@@ -369,5 +372,139 @@ describe('ActiveShowDoc', () => {
       expect(cb1).toHaveBeenCalledWith('opened');
       expect(cb2).toHaveBeenCalledWith('opened');
     });
+  });
+});
+
+describe('ActiveShowDoc — SyncBroker integration', () => {
+  let logger: ReturnType<typeof makeLogger>;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    logger = makeLogger();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  function makeMockBroker() {
+    return { attachDoc: vi.fn(), detachDoc: vi.fn() };
+  }
+
+  it('getShowId() returns null when no show is open', () => {
+    const ad = new ActiveShowDoc(logger);
+    expect(ad.getShowId()).toBeNull();
+  });
+
+  it('open() reads show_id from Y.Doc meta map', async () => {
+    const showId = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee';
+    const doc = new Y.Doc();
+    doc.getMap('meta').set('show_id', showId);
+    mockOpenShowxPackage.mockResolvedValue(makeOpenResult(doc));
+
+    const ad = new ActiveShowDoc(logger);
+    await ad.open('/shows/test.showx');
+
+    expect(ad.getShowId()).toBe(showId);
+  });
+
+  it('open() falls back to show.json show_id when not in meta', async () => {
+    const doc = new Y.Doc();
+    const showId = 'fallback-from-json-id';
+    mockOpenShowxPackage.mockResolvedValue(makeOpenResult(doc));
+    mockReadFile.mockResolvedValue(JSON.stringify({
+      show_id: showId,
+      meta: { title: 'Test', mode: 'rehearsal' },
+    }));
+
+    const ad = new ActiveShowDoc(logger);
+    await ad.open('/shows/test.showx');
+
+    expect(ad.getShowId()).toBe(showId);
+  });
+
+  it('open() throws if no show_id in doc meta or show.json', async () => {
+    const doc = new Y.Doc();
+    mockOpenShowxPackage.mockResolvedValue(makeOpenResult(doc));
+    mockReadFile.mockResolvedValue('{"meta":{"title":"No ID","mode":"rehearsal"}}');
+
+    const ad = new ActiveShowDoc(logger);
+    await expect(ad.open('/shows/noid.showx')).rejects.toThrow('No show_id');
+  });
+
+  it('open() calls syncBroker.attachDoc with show_id and the doc', async () => {
+    const showId = '12345678-1234-1234-1234-123456789012';
+    const doc = new Y.Doc();
+    doc.getMap('meta').set('show_id', showId);
+    mockOpenShowxPackage.mockResolvedValue(makeOpenResult(doc));
+
+    const broker = makeMockBroker();
+    const ad = new ActiveShowDoc(logger, broker as never);
+    await ad.open('/shows/test.showx');
+
+    expect(broker.attachDoc).toHaveBeenCalledWith(showId, doc);
+    expect(broker.attachDoc).toHaveBeenCalledTimes(1);
+  });
+
+  it('close() calls syncBroker.detachDoc with the active show_id', async () => {
+    const showId = '12345678-1234-1234-1234-123456789012';
+    const doc = new Y.Doc();
+    doc.getMap('meta').set('show_id', showId);
+    mockOpenShowxPackage.mockResolvedValue(makeOpenResult(doc));
+
+    const broker = makeMockBroker();
+    const ad = new ActiveShowDoc(logger, broker as never);
+    await ad.open('/shows/test.showx');
+    await ad.close();
+
+    expect(broker.detachDoc).toHaveBeenCalledWith(showId);
+    expect(broker.detachDoc).toHaveBeenCalledTimes(1);
+  });
+
+  it('close() sets getShowId() to null', async () => {
+    const doc = freshDoc();
+    mockOpenShowxPackage.mockResolvedValue(makeOpenResult(doc));
+
+    const broker = makeMockBroker();
+    const ad = new ActiveShowDoc(logger, broker as never);
+    await ad.open('/shows/test.showx');
+    expect(ad.getShowId()).toBeTruthy();
+
+    await ad.close();
+    expect(ad.getShowId()).toBeNull();
+  });
+
+  it('double-open calls attachDoc for second show, detachDoc for first', async () => {
+    const id1 = '11111111-0000-0000-0000-000000000001';
+    const id2 = '22222222-0000-0000-0000-000000000002';
+    const doc1 = new Y.Doc();
+    doc1.getMap('meta').set('show_id', id1);
+    const doc2 = new Y.Doc();
+    doc2.getMap('meta').set('show_id', id2);
+
+    mockOpenShowxPackage
+      .mockResolvedValueOnce(makeOpenResult(doc1))
+      .mockResolvedValueOnce(makeOpenResult(doc2));
+
+    const broker = makeMockBroker();
+    const ad = new ActiveShowDoc(logger, broker as never);
+
+    await ad.open('/shows/first.showx');
+    expect(broker.attachDoc).toHaveBeenCalledWith(id1, doc1);
+
+    await ad.open('/shows/second.showx');
+    expect(broker.detachDoc).toHaveBeenCalledWith(id1);
+    expect(broker.attachDoc).toHaveBeenCalledWith(id2, doc2);
+
+    expect(ad.getShowId()).toBe(id2);
+  });
+
+  it('works without syncBroker (backward compat — no call errors)', async () => {
+    const doc = freshDoc();
+    mockOpenShowxPackage.mockResolvedValue(makeOpenResult(doc));
+
+    const ad = new ActiveShowDoc(logger);
+    await expect(ad.open('/shows/test.showx')).resolves.not.toThrow();
+    await expect(ad.close()).resolves.not.toThrow();
   });
 });

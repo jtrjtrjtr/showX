@@ -5,8 +5,9 @@ import { z } from 'zod';
 import {
   openShowxPackage,
   saveShowxPackage,
-} from '../../../modules/cuelist-core/dist/persistence/showxPackage.js';
+} from '@showx/module-cuelist-core/persistence/showxPackage.js';
 import type { Logger } from 'showx-shared';
+import type { SyncBroker } from '../shared/SyncBroker.js';
 
 interface ActiveShowMeta {
   pkgPath: string;
@@ -33,12 +34,16 @@ const ShowMetaZ = z.object({
 export class ActiveShowDoc {
   private doc: Y.Doc | null = null;
   private meta: ActiveShowMeta | null = null;
+  private showId: string | null = null;
   private dirty = false;
   private saveTimer: NodeJS.Timeout | null = null;
   private listeners = new Set<ChangeListener>();
   private updateHandler: YUpdateHandler | null = null;
 
-  constructor(private readonly logger: Logger) {}
+  constructor(
+    private readonly logger: Logger,
+    private readonly syncBroker?: SyncBroker,
+  ) {}
 
   getDoc(): Y.Doc | null {
     return this.doc;
@@ -59,21 +64,31 @@ export class ActiveShowDoc {
 
     let title = path.basename(pkgPath, '.showx') || 'Untitled';
     let mode: 'rehearsal' | 'show' = 'rehearsal';
+    let showId = doc.getMap('meta').get('show_id') as string | undefined;
 
     try {
       const raw = await fs.readFile(path.join(pkgPath, 'show.json'), 'utf-8');
-      const parsed = ShowMetaZ.safeParse(JSON.parse(raw));
+      const rawParsed = JSON.parse(raw) as Record<string, unknown>;
+      const parsed = ShowMetaZ.safeParse(rawParsed);
       if (parsed.success) {
         title = parsed.data.meta?.title ?? title;
         mode = parsed.data.meta?.mode ?? mode;
+      }
+      if (!showId) {
+        showId = rawParsed['show_id'] as string | undefined;
       }
     } catch {
       // Use fallback title from path
     }
 
+    if (!showId) throw new Error(`No show_id in ${pkgPath}`);
+
     this.doc = doc;
+    this.showId = showId;
     this.meta = { pkgPath, title, mode };
     this.dirty = false;
+
+    this.syncBroker?.attachDoc(showId, doc);
 
     this.updateHandler = (_update: Uint8Array, _origin: unknown, _doc: Y.Doc) =>
       this.scheduleSave();
@@ -97,6 +112,11 @@ export class ActiveShowDoc {
       await saveShowxPackage(this.doc, this.meta.pkgPath, { reason: 'autosave' });
     }
 
+    if (this.showId) {
+      this.syncBroker?.detachDoc(this.showId);
+      this.showId = null;
+    }
+
     if (this.doc && this.updateHandler) {
       this.doc.off('update', this.updateHandler);
     }
@@ -107,6 +127,10 @@ export class ActiveShowDoc {
 
     this.logger.info('active_show.closed', { pkgPath, savedDirty });
     this.listeners.forEach((cb) => cb('closed'));
+  }
+
+  getShowId(): string | null {
+    return this.showId;
   }
 
   onChange(cb: ChangeListener): () => void {

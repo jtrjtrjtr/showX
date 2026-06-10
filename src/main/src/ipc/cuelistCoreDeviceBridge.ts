@@ -9,8 +9,8 @@ import {
   updateDevice,
   removeDevice,
   type Device,
-} from '../../../modules/cuelist-core/dist/document/devices.js';
-import { getRoutingRules } from '../../../modules/cuelist-core/dist/document/routing.js';
+} from '@showx/module-cuelist-core/document/devices.js';
+import { getRoutingRules } from '@showx/module-cuelist-core/document/routing.js';
 
 const ACTOR = { actorId: 'shell' };
 

@@ -55,22 +55,30 @@ export function PairingView({ host, onPaired }: Props) {
         return;
       }
 
-      const { token, device } = (await claimR.json()) as { token: string; device: { device_id: string } };
+      const claimResp = (await claimR.json()) as {
+        token: string;
+        device: { device_id: string };
+        show_id?: string | null;
+      };
 
       const session: PairedSession = {
         host: host.host,
         port: host.port,
-        token,
+        token: claimResp.token,
         display_name: displayName,
-        device_id: device.device_id,
+        device_id: claimResp.device.device_id,
         paired_at: Date.now(),
+        show_id: claimResp.show_id ?? undefined,
+        role,
+        owned_departments,
+        watched_departments: watchedDepts,
       };
 
       // Expose token for test helpers to read from localStorage
-      localStorage.setItem('showx_pair_token', token);
+      localStorage.setItem('showx_pair_token', claimResp.token);
 
       await saveSession(session);
-      setPairedDevice({ device_id: device.device_id, token });
+      setPairedDevice({ device_id: claimResp.device.device_id, token: claimResp.token });
       onPaired(session);
     } catch {
       setError('Network error');

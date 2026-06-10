@@ -186,6 +186,7 @@ describe('registerShowStateBridge', () => {
       const testDoc = new Y.Doc();
       testDoc.transact(() => {
         testDoc.getMap('meta').set('mode', 'rehearsal');
+        testDoc.getMap('meta').set('show_id', 'test-show-id-mutation');
       });
       // Add a cuelist with 2 cues using the cuelist API
       const cuelistId = addCuelist(testDoc, 'Test Cuelist');
@@ -268,6 +269,7 @@ describe('registerShowStateBridge', () => {
       const testDoc = new Y.Doc();
       testDoc.transact(() => {
         testDoc.getMap('meta').set('mode', 'rehearsal');
+        testDoc.getMap('meta').set('show_id', 'test-show-id-close');
       });
       addCuelist(testDoc, 'Orphan');
       const clArr = getCuelists(testDoc);

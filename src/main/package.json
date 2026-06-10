@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "showx-shared": "workspace:*",
+    "@showx/module-cuelist-core": "workspace:*",
     "electron": "^29.0.0",
     "zod": "^3.22.0",
     "keytar": "^7.9.0",

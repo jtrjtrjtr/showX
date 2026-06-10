@@ -6,6 +6,7 @@ import type { PairingStore } from '../PairingStore.js';
 import type { PinManager } from './pinManager.js';
 import type { TokenManager } from './tokenManager.js';
 import { ClaimRequest, PinInvalidError, TokenInvalidError } from './types.js';
+import type { ActiveShowDoc } from '../../runtime/ActiveShowDoc.js';
 
 export interface PairingApiDeps {
   pairing: PairingStore;
@@ -18,6 +19,9 @@ export interface PairingApiDeps {
   // Populated by the Electron shell for its own internal HTTP calls.
   // TODO(B001-011): wire up a real random-per-boot local secret.
   localSecret?: string;
+  // When set, /pairing/claim response includes show_id (string | null).
+  // Omit to preserve old response shape for backward compat.
+  activeShow?: ActiveShowDoc;
 }
 
 function authAdmin(deps: PairingApiDeps) {
@@ -107,7 +111,9 @@ export function mountPairingRoutes(
       });
 
       deps.logger.info('pairing.claim.ok', { device_id, display_name });
-      res.json({ token, device });
+      const showIdField =
+        deps.activeShow !== undefined ? { show_id: deps.activeShow.getShowId() } : {};
+      res.json({ token, device, ...showIdField });
     } catch (e) {
       if (e instanceof PinInvalidError) {
         res.status(401).json({ error: e.reason });
@@ -135,4 +141,15 @@ export function mountPairingRoutes(
       }
     },
   );
+
+  router.get('/active-show', (_req: express.Request, res: express.Response) => {
+    const meta = deps.activeShow?.getActiveShow();
+    const showId = deps.activeShow?.getShowId() ?? null;
+    res.json({
+      open: !!meta,
+      show_id: showId,
+      title: meta?.title ?? null,
+      mode: meta?.mode ?? null,
+    });
+  });
 }

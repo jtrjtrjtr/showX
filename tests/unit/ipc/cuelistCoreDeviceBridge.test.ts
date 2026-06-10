@@ -75,6 +75,7 @@ describe('registerDeviceBridge', () => {
     // Set rehearsal mode explicitly so assertEditAllowed passes
     testDoc.transact(() => {
       testDoc.getMap('meta').set('mode', 'rehearsal');
+      testDoc.getMap('meta').set('show_id', 'test-show-id-device-bridge');
       testDoc.getMap('devices');
       testDoc.getMap('routing');
     });

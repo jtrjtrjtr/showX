@@ -224,6 +224,9 @@ importers:
       '@julusian/midi':
         specifier: ^3.5.0
         version: 3.6.1
+      '@showx/module-cuelist-core':
+        specifier: workspace:*
+        version: link:../modules/cuelist-core
       bonjour-service:
         specifier: ^1.2.1
         version: 1.4.0

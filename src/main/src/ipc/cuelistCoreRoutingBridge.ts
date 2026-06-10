@@ -9,7 +9,7 @@ import {
   removeRoutingRule,
   reorderRoutingRules,
   type RoutingRule,
-} from '../../../modules/cuelist-core/dist/document/routing.js';
+} from '@showx/module-cuelist-core/document/routing.js';
 
 const ACTOR = { actorId: 'shell' };
 

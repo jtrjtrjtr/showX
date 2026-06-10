@@ -5,7 +5,7 @@ import type { IpcMainBridge } from './index.js';
 import {
   getCuelists,
   getCues,
-} from '../../../modules/cuelist-core/dist/document/cuelist.js';
+} from '@showx/module-cuelist-core/document/cuelist.js';
 
 interface CuelistSummary {
   id: string;
@@ -19,6 +19,10 @@ interface ShowState {
   title?: string;
   mode?: 'rehearsal' | 'show';
   isSm?: boolean;
+  // Flat first-cuelist projection consumed by CuelistCorePanel.tsx today
+  cuelistName?: string;
+  cueCount?: number;
+  // Full array for future multi-cuelist UIs
   cuelist?: CuelistSummary[];
 }
 
@@ -27,17 +31,21 @@ function computeShowState(activeShow: ActiveShowDoc): ShowState {
   const meta = activeShow.getActiveShow();
   if (!doc || !meta) return { open: false };
   const cuelists = getCuelists(doc).toArray();
+  const summaries: CuelistSummary[] = cuelists.map((cl) => ({
+    id: cl.get('id') as string,
+    name: cl.get('name') as string,
+    cueCount: getCues(cl).length,
+  }));
+  const first = summaries[0];
   return {
     open: true,
     pkgPath: meta.pkgPath,
     title: meta.title,
     mode: meta.mode,
     isSm: true,
-    cuelist: cuelists.map((cl) => ({
-      id: cl.get('id') as string,
-      name: cl.get('name') as string,
-      cueCount: getCues(cl).length,
-    })),
+    cuelistName: first?.name,
+    cueCount: first?.cueCount,
+    cuelist: summaries,
   };
 }
 

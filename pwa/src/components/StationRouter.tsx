@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import type * as Y from 'yjs';
 import type { PairedSession } from '../lib/types.js';
 import { ConnectionProvider, useConnection } from '../lib/ConnectionProvider.js';
 import type { ConnectOpts } from '../lib/cuelistData.js';
@@ -7,6 +8,26 @@ import { SMMasterView } from './cuelist/SMMasterView.js';
 import { OperatorView } from './cuelist/OperatorView.js';
 import { GenericOperatorView } from './cuelist/variants/GenericOperatorView.js';
 import { DiscoveryView } from './DiscoveryView.js';
+
+interface ActiveShowResponse {
+  open: boolean;
+  show_id: string | null;
+  title: string | null;
+  mode: 'rehearsal' | 'show' | null;
+}
+
+function ShowClosedView({ onRetry }: { onRetry: () => void }) {
+  return (
+    <div
+      data-testid="show-closed"
+      style={{ padding: 32, textAlign: 'center', fontFamily: 'system-ui' }}
+    >
+      <h2>Show closed by stage manager</h2>
+      <p>Waiting for a show to be opened in the FOH shell.</p>
+      <button onClick={onRetry}>Reconnect</button>
+    </div>
+  );
+}
 
 function buildConnectOpts(session: PairedSession): ConnectOpts {
   const show_id = session.show_id ?? 'default';
@@ -60,14 +81,20 @@ function StationContent({ session }: StationContentProps) {
     };
   }, [conn.provider]);
 
-  // Resolve first cuelist from doc
+  // Resolve first cuelist from doc.
+  // cuelist-core stores cuelists as Y.Array<Y.Map> (per document/cuelist.ts).
+  // Using getMap here throws "Type with the name cuelists has already been
+  // defined with a different constructor" and silently hangs Loading.
   useEffect(() => {
-    const cuelists = conn.doc.getMap<unknown>('cuelists');
+    const cuelists = conn.doc.getArray<Y.Map<unknown>>('cuelists');
 
     const update = () => {
       if (!cuelistId) {
-        const first = cuelists.keys().next().value as string | undefined;
-        if (first) setCuelistId(first);
+        const first = cuelists.get(0);
+        if (first) {
+          const id = first.get('id') as string | undefined;
+          if (id) setCuelistId(id);
+        }
       }
     };
 
@@ -123,15 +150,67 @@ interface StationRouterProps {
 }
 
 export function StationRouter({ session }: StationRouterProps) {
+  const [currentShowId, setCurrentShowId] = useState<string | undefined>(session?.show_id);
+  const [closedByShell, setClosedByShell] = useState(false);
+  const [switchingTitle, setSwitchingTitle] = useState<string | null>(null);
+
+  // Clear the switching overlay after 2 seconds max
+  useEffect(() => {
+    if (!switchingTitle) return;
+    const t = setTimeout(() => setSwitchingTitle(null), 2000);
+    return () => clearTimeout(t);
+  }, [switchingTitle]);
+
+  // Poll /api/active-show every 2s to detect show open/close/switch
+  useEffect(() => {
+    if (!session) return;
+    const poll = setInterval(async () => {
+      try {
+        const r = await fetch(`http://${session.host}:${session.port}/api/active-show`);
+        const data = (await r.json()) as ActiveShowResponse;
+        if (!data.open) {
+          setClosedByShell(true);
+          return;
+        }
+        setClosedByShell(false);
+        if (data.show_id && data.show_id !== currentShowId) {
+          setSwitchingTitle(data.title);
+          setCurrentShowId(data.show_id);
+        }
+      } catch {
+        // network blip — retry on next tick
+      }
+    }, 2000);
+    return () => clearInterval(poll);
+  }, [session, currentShowId]);
+
   if (!session) {
     return <DiscoveryView onPick={() => { window.location.reload(); }} />;
   }
 
-  const opts = buildConnectOpts(session);
+  if (closedByShell) {
+    return (
+      <ShowClosedView onRetry={() => { window.location.reload(); }} />
+    );
+  }
+
+  if (switchingTitle) {
+    return (
+      <div
+        data-testid="station-switching"
+        style={{ padding: 32, textAlign: 'center', fontFamily: 'system-ui', color: '#6b7280' }}
+      >
+        Switching to {switchingTitle}…
+      </div>
+    );
+  }
+
+  const effectiveShowId = currentShowId ?? session.show_id ?? 'default';
+  const opts = buildConnectOpts({ ...session, show_id: effectiveShowId });
 
   return (
-    <ConnectionProvider opts={opts}>
-      <StationContent session={session} />
+    <ConnectionProvider key={effectiveShowId} opts={opts}>
+      <StationContent session={{ ...session, show_id: effectiveShowId }} />
     </ConnectionProvider>
   );
 }

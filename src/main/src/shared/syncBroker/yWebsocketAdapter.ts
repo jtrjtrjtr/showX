@@ -48,6 +48,30 @@ export class YWebsocketAdapter {
     entry.persistence = hook;
   }
 
+  attachDoc(name: string, doc: Y.Doc): void {
+    const existing = this.docs.get(name);
+    if (existing) {
+      if (existing.doc === doc) return;
+      for (const ws of existing.conns) {
+        try { ws.close(1000, 'doc_replaced'); } catch { /* ignore */ }
+      }
+    }
+    const awareness = new awarenessProtocol.Awareness(doc);
+    const entry: YDocEntry = { name, doc, awareness, conns: new Set() };
+    this.docs.set(name, entry);
+    this.log?.info('y-doc.attached', { name });
+  }
+
+  detachDoc(name: string): void {
+    const entry = this.docs.get(name);
+    if (!entry) return;
+    for (const ws of entry.conns) {
+      try { ws.close(1000, 'doc_detached'); } catch { /* ignore */ }
+    }
+    this.docs.delete(name);
+    this.log?.info('y-doc.detached', { name });
+  }
+
   openDocument(name: string): YDocEntry {
     return this.getOrCreateDoc(name);
   }

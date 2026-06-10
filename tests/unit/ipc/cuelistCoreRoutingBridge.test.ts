@@ -82,6 +82,7 @@ describe('registerRoutingBridge', () => {
     testDoc = new Y.Doc();
     testDoc.transact(() => {
       testDoc.getMap('meta').set('mode', 'rehearsal');
+      testDoc.getMap('meta').set('show_id', 'test-show-id-routing-bridge');
       testDoc.getMap('devices');
       testDoc.getMap('routing');
     });

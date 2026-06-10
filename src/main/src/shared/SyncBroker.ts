@@ -1,3 +1,4 @@
+import * as Y from 'yjs';
 import type { Server as HttpServer, IncomingMessage } from 'node:http';
 import type { Duplex } from 'node:stream';
 import type {
@@ -41,6 +42,14 @@ export class SyncBroker implements SyncBrokerIface {
 
   setValidator(v: PairingValidator): void {
     this.validator = v;
+  }
+
+  attachDoc(name: string, doc: Y.Doc): void {
+    this.yjs.attachDoc(name, doc);
+  }
+
+  detachDoc(name: string): void {
+    this.yjs.detachDoc(name);
   }
 
   openDocument(name: string): YDocHandle {
