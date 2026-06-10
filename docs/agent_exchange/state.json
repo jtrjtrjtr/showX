@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "project": "showX",
-  "phase": "bundle_ShowX-3.4_complete_v0.1.13_station_live",
-  "updated_at": "2026-06-08T21:30:00Z",
-  "active_bundle": "ShowX-3.4-CLOSED",
+  "phase": "bundle_ShowX-3.5_in_progress",
+  "updated_at": "2026-06-11T00:30:00Z",
+  "active_bundle": "ShowX-3.5",
   "tasks": [
     {
       "id": "B001-001",
@@ -300,7 +300,7 @@
     {
       "id": "B002-004",
       "slug": "adapter_migration_outputdispatcher",
-      "title": "Adapter migration \u2192 OutputDispatcher",
+      "title": "Adapter migration → OutputDispatcher",
       "status": "queued",
       "owner": null,
       "task_path": "docs/agent_exchange/queued/B002-004_adapter_migration_outputdispatcher.md",
@@ -370,7 +370,7 @@
     {
       "id": "B002-008",
       "slug": "ui_panel_migration",
-      "title": "UI panel migration (BridgeX config \u2192 ShowX module panel)",
+      "title": "UI panel migration (BridgeX config → ShowX module panel)",
       "status": "queued",
       "owner": null,
       "task_path": "docs/agent_exchange/queued/B002-008_ui_panel_migration.md",
@@ -388,7 +388,7 @@
     {
       "id": "B002-009",
       "slug": "config_migration_script",
-      "title": "Config migration BridgeX 0.3.x \u2192 ShowX persistedConfig",
+      "title": "Config migration BridgeX 0.3.x → ShowX persistedConfig",
       "status": "queued",
       "owner": null,
       "task_path": "docs/agent_exchange/queued/B002-009_config_migration_script.md",
@@ -528,7 +528,7 @@
     {
       "id": "B003-002",
       "slug": "yjs_document_model",
-      "title": "Yjs document model \u2014 Show / Cuelist / Cue / Payload factories + accessors",
+      "title": "Yjs document model — Show / Cuelist / Cue / Payload factories + accessors",
       "status": "accepted",
       "owner": "forge",
       "task_path": "docs/agent_exchange/done/B003-002_yjs_document_model_done.md",
@@ -546,7 +546,7 @@
     {
       "id": "B003-003",
       "slug": "showx_package_read_write",
-      "title": ".showx package read/write \u2014 atomic save + recovery fallback",
+      "title": ".showx package read/write — atomic save + recovery fallback",
       "status": "accepted",
       "owner": "forge",
       "task_path": "docs/agent_exchange/done/B003-003_showx_package_read_write_done.md",
@@ -601,7 +601,7 @@
     {
       "id": "B003-006",
       "slug": "compound_cue_payloads",
-      "title": "Compound cue model \u2014 multi-department payload helpers + invariants",
+      "title": "Compound cue model — multi-department payload helpers + invariants",
       "status": "accepted",
       "owner": "forge",
       "task_path": "docs/agent_exchange/done/B003-006_compound_cue_payloads.md",
@@ -620,7 +620,7 @@
     {
       "id": "B003-007",
       "slug": "trigger_taxonomy",
-      "title": "Trigger taxonomy \u2014 manual / auto_follow / auto_continue scheduler",
+      "title": "Trigger taxonomy — manual / auto_follow / auto_continue scheduler",
       "status": "accepted",
       "owner": "forge",
       "task_path": "docs/agent_exchange/done/B003-007_trigger_taxonomy_done.md",
@@ -638,7 +638,7 @@
     {
       "id": "B003-008",
       "slug": "go_event_side_channel",
-      "title": "GO event side-channel publish \u2014 pub/sub on /events/<show_id> with idempotency + replay window",
+      "title": "GO event side-channel publish — pub/sub on /events/<show_id> with idempotency + replay window",
       "status": "accepted",
       "owner": "forge",
       "task_path": "docs/agent_exchange/done/B003-008_go_event_side_channel_done.md",
@@ -657,7 +657,7 @@
     {
       "id": "B003-009",
       "slug": "cue_payload_dispatch",
-      "title": "Cue payload dispatch \u2014 resolve routing + call OutputDispatcher per payload type",
+      "title": "Cue payload dispatch — resolve routing + call OutputDispatcher per payload type",
       "status": "accepted",
       "owner": "forge",
       "task_path": "docs/agent_exchange/done/B003-009_cue_payload_dispatch_done.md",
@@ -676,7 +676,7 @@
     {
       "id": "B003-010",
       "slug": "cue_catalog_publishing",
-      "title": "Cue catalog publishing \u2014 emit cue-catalog-updated events + cache write",
+      "title": "Cue catalog publishing — emit cue-catalog-updated events + cache write",
       "status": "accepted",
       "owner": "forge",
       "task_path": "docs/agent_exchange/done/B003-010_cue_catalog_publishing_done.md",
@@ -713,7 +713,7 @@
     {
       "id": "B003-012",
       "slug": "pwa_cuelist_data_layer",
-      "title": "PWA cuelist data layer \u2014 Yjs hooks, awareness, reconnect",
+      "title": "PWA cuelist data layer — Yjs hooks, awareness, reconnect",
       "status": "accepted",
       "owner": "forge",
       "task_path": "docs/agent_exchange/done/B003-012_pwa_cuelist_data_layer_done.md",
@@ -731,7 +731,7 @@
     {
       "id": "B003-013",
       "slug": "pwa_sm_master_view",
-      "title": "PWA SM master view \u2014 full cuelist + standby panel + calling text",
+      "title": "PWA SM master view — full cuelist + standby panel + calling text",
       "status": "accepted",
       "owner": "forge",
       "task_path": "docs/agent_exchange/done/B003-013_pwa_sm_master_view_done.md",
@@ -769,7 +769,7 @@
     {
       "id": "B003-015",
       "slug": "pwa_go_button_standby",
-      "title": "PWA GO button + standby panel \u2014 SM authoritative dispatch UI",
+      "title": "PWA GO button + standby panel — SM authoritative dispatch UI",
       "status": "accepted",
       "owner": "forge",
       "task_path": "docs/agent_exchange/done/B003-015_pwa_go_button_standby.md",
@@ -788,7 +788,7 @@
     {
       "id": "B003-016",
       "slug": "pwa_cue_editor_rehearsal",
-      "title": "PWA cue editor \u2014 REHEARSAL mode + per-payload-type editors",
+      "title": "PWA cue editor — REHEARSAL mode + per-payload-type editors",
       "status": "accepted",
       "owner": "forge",
       "task_path": "docs/agent_exchange/done/B003-016_pwa_cue_editor_rehearsal.md",
@@ -807,7 +807,7 @@
     {
       "id": "B003-017",
       "slug": "csv_import",
-      "title": "CSV import \u2014 QLab / Eos / generic cue list ingestion",
+      "title": "CSV import — QLab / Eos / generic cue list ingestion",
       "status": "accepted",
       "owner": "forge",
       "task_path": "docs/agent_exchange/done/B003-017_csv_import_done.md",
@@ -843,7 +843,7 @@
     {
       "id": "B003-019",
       "slug": "pdf_cue_sheet_export",
-      "title": "PDF cue-sheet export \u2014 per-department + SM master, A4 printable",
+      "title": "PDF cue-sheet export — per-department + SM master, A4 printable",
       "status": "accepted",
       "owner": "forge",
       "task_path": "docs/agent_exchange/done/B003-019_pdf_cue_sheet_export_done.md",
@@ -862,7 +862,7 @@
     {
       "id": "B003-020",
       "slug": "multi_operator_integration_tests",
-      "title": "Multi-operator collab integration tests \u2014 shell + 2 PWA sessions",
+      "title": "Multi-operator collab integration tests — shell + 2 PWA sessions",
       "status": "accepted",
       "owner": "architect-rescue",
       "task_path": "docs/agent_exchange/done/B003-020_multi_operator_integration_tests_done.md",
@@ -883,7 +883,7 @@
     {
       "id": "B003-021",
       "slug": "streamdeck_companion_module",
-      "title": "Stream Deck \u2014 Bitfocus Companion community module",
+      "title": "Stream Deck — Bitfocus Companion community module",
       "status": "accepted",
       "owner": "forge",
       "task_path": "docs/agent_exchange/done/B003-021_streamdeck_companion_module.md",
@@ -902,7 +902,7 @@
     {
       "id": "B003-022",
       "slug": "first_paid_pilot_deployment",
-      "title": "First paid pilot deployment \u2014 playbook + customer comms drafts",
+      "title": "First paid pilot deployment — playbook + customer comms drafts",
       "status": "accepted",
       "owner": "forge",
       "task_path": "docs/agent_exchange/done/B003-022_first_paid_pilot_deployment_done.md",
@@ -920,7 +920,7 @@
     {
       "id": "B003-023",
       "slug": "showx_0_1_public_release",
-      "title": "ShowX 0.1 public release \u2014 DMG signed + notarized + release notes",
+      "title": "ShowX 0.1 public release — DMG signed + notarized + release notes",
       "status": "accepted",
       "owner": "forge",
       "task_path": "docs/agent_exchange/done/B003-023_showx_0_1_public_release_done.md",
@@ -1025,7 +1025,7 @@
     {
       "id": "B003-201",
       "slug": "shell_pwa_wiring",
-      "title": "Shell PWA wiring \u2014 mount FirstLaunchPicker / RecentShowsList / CuelistCorePanel in shell mode",
+      "title": "Shell PWA wiring — mount FirstLaunchPicker / RecentShowsList / CuelistCorePanel in shell mode",
       "status": "accepted",
       "owner": "forge",
       "task_path": "docs/agent_exchange/done/B003-201_shell_pwa_wiring_done.md",
@@ -1041,7 +1041,7 @@
     {
       "id": "B003-202",
       "slug": "station_mode_wiring",
-      "title": "Station mode wiring \u2014 mount SMMasterView / OperatorView per role + Yjs connection",
+      "title": "Station mode wiring — mount SMMasterView / OperatorView per role + Yjs connection",
       "status": "accepted",
       "owner": "architect-rescue",
       "task_path": "docs/agent_exchange/done/B003-202_station_mode_wiring_done.md",
@@ -1057,7 +1057,7 @@
     {
       "id": "B003-203",
       "slug": "routing_dispatcher_integration",
-      "title": "Routing UI dispatcher integration \u2014 wire RoutingRule shape into resolveRouting",
+      "title": "Routing UI dispatcher integration — wire RoutingRule shape into resolveRouting",
       "status": "accepted",
       "owner": "forge",
       "task_path": "docs/agent_exchange/done/B003-203_routing_dispatcher_integration_done.md",
@@ -1073,7 +1073,7 @@
     {
       "id": "B003-301",
       "slug": "active_show_doc_service",
-      "title": "ActiveShowDoc service \u2014 Y.Doc lifecycle in main process + debounced save",
+      "title": "ActiveShowDoc service — Y.Doc lifecycle in main process + debounced save",
       "status": "accepted",
       "owner": "forge",
       "task_path": "docs/agent_exchange/done/B003-301_active_show_doc_service_done.md",
@@ -1089,7 +1089,7 @@
     {
       "id": "B003-302",
       "slug": "device_ipc_bridge",
-      "title": "Device IPC bridge \u2014 5 invoke handlers + devices-changed broadcast",
+      "title": "Device IPC bridge — 5 invoke handlers + devices-changed broadcast",
       "status": "accepted",
       "owner": "forge",
       "task_path": "docs/agent_exchange/done/B003-302_device_ipc_bridge_done.md",
@@ -1107,7 +1107,7 @@
     {
       "id": "B003-303",
       "slug": "routing_ipc_bridge",
-      "title": "Routing IPC bridge \u2014 4 invoke handlers + routing-changed broadcast",
+      "title": "Routing IPC bridge — 4 invoke handlers + routing-changed broadcast",
       "status": "accepted",
       "owner": "forge",
       "task_path": "docs/agent_exchange/done/B003-303_routing_ipc_bridge_done.md",
@@ -1125,7 +1125,7 @@
     {
       "id": "B003-304",
       "slug": "show_state_ipc",
-      "title": "Show-state IPC \u2014 get-state ShowState shape + observe broadcast (fixes Demo Show 0-cues)",
+      "title": "Show-state IPC — get-state ShowState shape + observe broadcast (fixes Demo Show 0-cues)",
       "status": "accepted",
       "owner": "forge",
       "task_path": "docs/agent_exchange/done/B003-304_show_state_ipc_done.md",
@@ -1143,7 +1143,7 @@
     {
       "id": "B003-401",
       "slug": "syncbroker_attach_doc",
-      "title": "SyncBroker.attachDoc + ActiveShowDoc integration \u2014 broker serves shell's Y.Doc",
+      "title": "SyncBroker.attachDoc + ActiveShowDoc integration — broker serves shell's Y.Doc",
       "status": "accepted",
       "owner": "forge",
       "task_path": "docs/agent_exchange/done/B003-401_syncbroker_attach_doc_done.md",
@@ -1179,7 +1179,7 @@
     {
       "id": "B003-403",
       "slug": "pwa_reactive_show_change",
-      "title": "PWA reactive show-change \u2014 refetch session.show_id when shell opens/closes show",
+      "title": "PWA reactive show-change — refetch session.show_id when shell opens/closes show",
       "status": "accepted",
       "owner": "forge",
       "task_path": "docs/agent_exchange/done/B003-403_pwa_reactive_show_change_done.md",
@@ -1192,6 +1192,112 @@
       "spawned_from": "ShowX-3.4 station data plane bundle architect-filed",
       "depends_on": [
         "B003-402"
+      ]
+    },
+    {
+      "id": "B003-501",
+      "slug": "dark_foh_redesign",
+      "title": "Dark FOH redesign — cuelist + pairing + station views, contrast-safe theme",
+      "status": "queued",
+      "owner": null,
+      "task_path": "docs/agent_exchange/queued/B003-501_dark_foh_redesign.md",
+      "review_path": null,
+      "created_at": "2026-06-11T00:30:00Z",
+      "started_at": null,
+      "ended_at": null,
+      "reviewed_at": null,
+      "review_round": 0,
+      "spawned_from": "ShowX-3.5 testable station loop bundle architect-filed",
+      "depends_on": []
+    },
+    {
+      "id": "B003-502",
+      "slug": "sm_presence_awareness",
+      "title": "SM presence from awareness + deterministic playhead authority",
+      "status": "queued",
+      "owner": null,
+      "task_path": "docs/agent_exchange/queued/B003-502_sm_presence_awareness.md",
+      "review_path": null,
+      "created_at": "2026-06-11T00:30:00Z",
+      "started_at": null,
+      "ended_at": null,
+      "reviewed_at": null,
+      "review_round": 0,
+      "spawned_from": "ShowX-3.5 testable station loop bundle architect-filed",
+      "depends_on": [
+        "B003-501"
+      ]
+    },
+    {
+      "id": "B003-503",
+      "slug": "onboarding_session_qr",
+      "title": "Station onboarding UX — persistent session, PIN prefill, QR + open-browser in shell",
+      "status": "queued",
+      "owner": null,
+      "task_path": "docs/agent_exchange/queued/B003-503_onboarding_session_qr.md",
+      "review_path": null,
+      "created_at": "2026-06-11T00:30:00Z",
+      "started_at": null,
+      "ended_at": null,
+      "reviewed_at": null,
+      "review_round": 0,
+      "spawned_from": "ShowX-3.5 testable station loop bundle architect-filed",
+      "depends_on": [
+        "B003-501"
+      ]
+    },
+    {
+      "id": "B003-504",
+      "slug": "shell_dispatch_wiring",
+      "title": "Shell GO executor — wire GoEventChannel + dispatchCue + OutputDispatcher",
+      "status": "queued",
+      "owner": null,
+      "task_path": "docs/agent_exchange/queued/B003-504_shell_dispatch_wiring.md",
+      "review_path": null,
+      "created_at": "2026-06-11T00:30:00Z",
+      "started_at": null,
+      "ended_at": null,
+      "reviewed_at": null,
+      "review_round": 0,
+      "spawned_from": "ShowX-3.5 testable station loop bundle architect-filed",
+      "depends_on": []
+    },
+    {
+      "id": "B003-505",
+      "slug": "dispatch_log_osc_verify",
+      "title": "Dispatch visibility — live Dispatch Log panel in shell + OSC verification path",
+      "status": "queued",
+      "owner": null,
+      "task_path": "docs/agent_exchange/queued/B003-505_dispatch_log_osc_verify.md",
+      "review_path": null,
+      "created_at": "2026-06-11T00:30:00Z",
+      "started_at": null,
+      "ended_at": null,
+      "reviewed_at": null,
+      "review_round": 0,
+      "spawned_from": "ShowX-3.5 testable station loop bundle architect-filed",
+      "depends_on": [
+        "B003-504",
+        "B003-501"
+      ]
+    },
+    {
+      "id": "B003-506",
+      "slug": "pwa_cue_editing",
+      "title": "Cue editing in PWA — double-click edit dialog, CRDT write-through, persists to .showx",
+      "status": "queued",
+      "owner": null,
+      "task_path": "docs/agent_exchange/queued/B003-506_pwa_cue_editing.md",
+      "review_path": null,
+      "created_at": "2026-06-11T00:30:00Z",
+      "started_at": null,
+      "ended_at": null,
+      "reviewed_at": null,
+      "review_round": 0,
+      "spawned_from": "ShowX-3.5 testable station loop bundle architect-filed",
+      "depends_on": [
+        "B003-501",
+        "B003-502"
       ]
     }
   ]

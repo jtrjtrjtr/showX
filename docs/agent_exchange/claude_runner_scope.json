@@ -1,8 +1,15 @@
 {
-  "enabled": false,
-  "bundle_id": "ShowX-3.4-CLOSED",
-  "allowed_task_ids": [],
-  "rationale": "ShowX-3.4 Station Data Plane bundle complete 2026-06-08T21:30Z. Forge 3/3 accepted (avg round 1.3). 3 Architect rescues post-build during E2E live test: PWA Y.Array vs Y.Map type collision, PWA session missing role/departments, hardcoded test PIN re-applied (Forge overwrote). v0.1.13 ships station mode end-to-end. Jindřich confirmed live: paired browser → SMMasterView shows 25 cues. Cumulative ShowX: 37/37 specs accepted across 5 bundles. Decision: docs/agent_exchange/decisions/2026-06-08_showx_3_4_bundle_complete.md",
-  "updated_at": "2026-06-08T21:30:00Z",
+  "enabled": true,
+  "bundle_id": "ShowX-3.5",
+  "allowed_task_ids": [
+    "B003-501",
+    "B003-502",
+    "B003-503",
+    "B003-504",
+    "B003-505",
+    "B003-506"
+  ],
+  "rationale": "ShowX-3.5 Testable Station Loop + FOH Redesign opened 2026-06-11 per Jindřich GO. 6 tasks: dark theme, SM presence fix, onboarding UX, GO dispatch wiring, dispatch log, cue editing. Suggested order: 501 -> 504 -> 502 -> 503 -> 505 -> 506. Decision: docs/agent_exchange/decisions/2026-06-11_showx_3_5_bundle_open.md",
+  "updated_at": "2026-06-11T00:30:00Z",
   "updated_by": "architect"
 }
