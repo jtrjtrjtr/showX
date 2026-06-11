@@ -42,7 +42,7 @@ export function GoButton({
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const disabled = !armedCueId || !isAuthoritative;
-  const bg = mode === 'show' ? tokens.color.red : tokens.color.teal;
+  const activeBg = mode === 'show' ? tokens.color.red : tokens.color.teal;
 
   useEffect(() => {
     if (!rejectedReason) return;
@@ -69,6 +69,21 @@ export function GoButton({
     longPressTimer.current = setTimeout(() => onOverride(), 1500);
   };
 
+  const disabledReason = !armedCueId ? 'No cue armed' : 'Operators cannot fire';
+
+  let bg: string;
+  let color: string;
+  if (disabled) {
+    bg = tokens.color.raised;
+    color = tokens.color.ink_disabled;
+  } else if (flash) {
+    bg = tokens.color.green;
+    color = tokens.color.bg;
+  } else {
+    bg = activeBg;
+    color = tokens.color.white;
+  }
+
   return (
     <button
       type="button"
@@ -85,17 +100,32 @@ export function GoButton({
         minHeight: 80,
         fontSize: 36,
         fontWeight: 800,
-        background: flash ? tokens.color.cream : bg,
-        color: flash ? tokens.color.ink : tokens.color.cream,
+        background: bg,
+        color,
         border: 'none',
         borderRadius: tokens.radius.l,
         cursor: disabled ? 'not-allowed' : 'pointer',
         transition: 'background 80ms',
         animation: shaking ? 'goShake 0.5s' : 'none',
-        opacity: disabled ? 0.5 : 1,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 4,
       }}
     >
-      GO{armedCueId && cueLabel ? ` · ${cueLabel}` : ''}
+      <span>
+        {mode === 'show' && !disabled && '🔒 '}
+        GO{armedCueId && cueLabel ? ` · ${cueLabel}` : ''}
+      </span>
+      {disabled && (
+        <span
+          data-testid="go-disabled-reason"
+          style={{ fontSize: 12, fontWeight: 400, color: tokens.color.ink_disabled }}
+        >
+          {disabledReason}
+        </span>
+      )}
     </button>
   );
 }

@@ -60,6 +60,30 @@ function sendOpenShow(showPath: string): void {
   win?.webContents.send('cuelist-core/open-show', showPath);
 }
 
+// ── Integration OSC device seeding ───────────────────────────────────────────
+
+/**
+ * When SHOWX_OSC_OUT=host:port is set, returns a legacy-shape routing entry so a
+ * fresh show dispatches OSC out of the box to the integration osc-ws-bridge.
+ * GoExecutor.attach() also injects this device at show-open time for existing shows.
+ */
+function buildIntegrationOscEntry(): Record<string, unknown> | null {
+  const oscOut = process.env['SHOWX_OSC_OUT'];
+  if (!oscOut) return null;
+  const colonIdx = oscOut.lastIndexOf(':');
+  if (colonIdx === -1) return null;
+  const host = oscOut.slice(0, colonIdx);
+  const port = parseInt(oscOut.slice(colonIdx + 1), 10);
+  if (!host || isNaN(port) || port < 1 || port > 65535) return null;
+  return {
+    id: 'integration_osc_fallback',
+    match: {},
+    transport: { kind: 'osc', host, port },
+    enabled: true,
+    notes: `Integration OSC fallback — SHOWX_OSC_OUT=${oscOut}`,
+  };
+}
+
 // ── Empty show factory ────────────────────────────────────────────────────────
 
 function makeEmptyShow(showName: string) {
@@ -100,7 +124,12 @@ function makeEmptyShow(showName: string) {
     cues: [],
   };
 
-  const routing = { entries: [] };
+  // Seed a default integration routing entry when SHOWX_OSC_OUT is set.
+  // This uses the legacy embedded-transport shape (compatible with buildDispatchRoutingTable)
+  // so a fresh show can dispatch without manual device configuration.
+  // For production shows, add proper devices via the Routing UI.
+  const integrationOscEntry = buildIntegrationOscEntry();
+  const routing = { entries: integrationOscEntry ? [integrationOscEntry] : [] };
   const operators = { operators: [], stations: [] };
   const historyLines = [
     JSON.stringify({ ts: now, kind: 'show_created', show_id: showId, by: 'user' }),

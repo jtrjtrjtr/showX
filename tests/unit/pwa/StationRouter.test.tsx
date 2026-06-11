@@ -7,8 +7,15 @@ import type { PairedSession } from '../../../pwa/src/lib/types.js';
 // ── Shared mock state ─────────────────────────────────────────────────────────
 
 const mockDoc = new Y.Doc();
-// Pre-populate with one cuelist so StationContent resolves cuelistId immediately
-mockDoc.getMap('cuelists').set('cuelist-1', new Y.Map());
+// Pre-populate with one cuelist so StationContent resolves cuelistId immediately.
+// Doc shape per cuelist-core document/cuelist.ts: Y.Array<Y.Map> under 'cuelists',
+// each cuelist Y.Map carries scalar 'id'. (getMap here = 3.4 type-collision trap.)
+function seedCuelist(id: string) {
+  const list = new Y.Map();
+  mockDoc.getArray<Y.Map<unknown>>('cuelists').insert(0, [list]);
+  list.set('id', id);
+}
+seedCuelist('cuelist-1');
 
 const mockAwareness = {
   setLocalState: vi.fn(),
@@ -92,8 +99,8 @@ describe('StationRouter', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // Re-populate doc in case a test cleared it
-    if (!mockDoc.getMap('cuelists').has('cuelist-1')) {
-      mockDoc.getMap('cuelists').set('cuelist-1', new Y.Map());
+    if (mockDoc.getArray<Y.Map<unknown>>('cuelists').length === 0) {
+      seedCuelist('cuelist-1');
     }
     vi.stubGlobal('WebSocket', vi.fn(() => ({ onopen: null, onclose: null, onerror: null, close: vi.fn() })));
   });
@@ -168,12 +175,13 @@ describe('StationRouter', () => {
       };
     });
     // Re-import after doMock is too complex in vi; instead remove the cuelist and restore
-    mockDoc.getMap('cuelists').delete('cuelist-1');
+    const arr = mockDoc.getArray<Y.Map<unknown>>('cuelists');
+    arr.delete(0, arr.length);
 
     render(<StationRouter session={{ ...baseSession, role: 'sm' }} />);
     expect(screen.getByTestId('station-loading')).toBeInTheDocument();
 
     // Restore
-    mockDoc.getMap('cuelists').set('cuelist-1', new Y.Map());
+    seedCuelist('cuelist-1');
   });
 });

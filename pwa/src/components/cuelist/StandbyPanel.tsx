@@ -32,7 +32,7 @@ export function StandbyPanel({ nextCues, armedCueId, cues, onStandby }: StandbyP
       aria-live="polite"
       style={{
         padding: tokens.space.l,
-        background: tokens.color.gray_50,
+        background: tokens.color.panel,
         borderTop: `2px solid ${tokens.color.ink}`,
       }}
     >
@@ -42,6 +42,7 @@ export function StandbyPanel({ nextCues, armedCueId, cues, onStandby }: StandbyP
           fontSize: 13,
           textTransform: 'uppercase',
           letterSpacing: 1,
+          color: tokens.color.ink_secondary,
         }}
       >
         Standby
@@ -69,9 +70,10 @@ export function StandbyPanel({ nextCues, armedCueId, cues, onStandby }: StandbyP
               aria-label={`Arm cue ${c.label}`}
               style={{
                 padding: `${tokens.space.s}px ${tokens.space.m}px`,
-                border: `1px solid ${tokens.color.gray_300}`,
+                border: `1px solid ${tokens.color.border}`,
                 borderRadius: tokens.radius.m,
-                background: tokens.color.cream,
+                background: tokens.color.raised,
+                color: tokens.color.ink,
                 minWidth: 80,
                 cursor: 'pointer',
                 textAlign: 'left',
@@ -79,7 +81,7 @@ export function StandbyPanel({ nextCues, armedCueId, cues, onStandby }: StandbyP
             >
               <div style={{ fontWeight: 700, fontSize: 14 }}>{c.label}</div>
               {c.standby_note && (
-                <div style={{ fontSize: 12, color: tokens.color.gray_700 }}>{c.standby_note}</div>
+                <div style={{ fontSize: 12, color: tokens.color.ink_secondary }}>{c.standby_note}</div>
               )}
             </button>
           ) : (
@@ -87,15 +89,15 @@ export function StandbyPanel({ nextCues, armedCueId, cues, onStandby }: StandbyP
               key={c.id}
               style={{
                 padding: `${tokens.space.s}px ${tokens.space.m}px`,
-                border: `1px solid ${tokens.color.gray_300}`,
+                border: `1px solid ${tokens.color.border}`,
                 borderRadius: tokens.radius.m,
-                background: tokens.color.cream,
+                background: tokens.color.raised,
                 minWidth: 80,
               }}
             >
-              <div style={{ fontWeight: 700, fontSize: 14 }}>{c.label}</div>
+              <div style={{ fontWeight: 700, fontSize: 14, color: tokens.color.ink }}>{c.label}</div>
               {c.standby_note && (
-                <div style={{ fontSize: 12, color: tokens.color.gray_700 }}>{c.standby_note}</div>
+                <div style={{ fontSize: 12, color: tokens.color.ink_secondary }}>{c.standby_note}</div>
               )}
             </div>
           ),

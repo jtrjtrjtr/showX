@@ -53,7 +53,7 @@ describe('StandbyPanel', () => {
     );
     const callout = screen.getByText(/Standby Overture/);
     expect(callout).toBeInTheDocument();
-    expect(callout).toHaveStyle({ color: '#D14D3B' });
+    expect(callout).toHaveStyle({ color: tokens.color.red });
   });
 
   it('shows no red callout when no cue is armed', () => {
@@ -118,6 +118,21 @@ describe('StandbyPanel', () => {
     fireEvent.click(screen.getByRole('button', { name: /Arm cue Act 1/i }));
     expect(onStandby).toHaveBeenCalledWith('q2');
   });
+
+  it('next cue buttons have dark theme colors', () => {
+    const onStandby = vi.fn();
+    render(
+      <StandbyPanel
+        nextCues={[cues[0]]}
+        armedCueId={null}
+        cues={cues}
+        onStandby={onStandby}
+      />,
+    );
+    const btn = screen.getByRole('button', { name: /Arm cue Overture/i }) as HTMLElement;
+    expect(btn).toHaveStyle({ background: tokens.color.raised });
+    expect(btn).toHaveStyle({ color: tokens.color.ink });
+  });
 });
 
 describe('CallingText', () => {
@@ -171,5 +186,11 @@ describe('CallingText', () => {
     };
     render(<CallingText armedCue={null} lastFired={dispatched} />);
     expect(screen.getByText('Ready')).toBeInTheDocument();
+  });
+
+  it('calling text background is dark (tokens.color.bg) when not firing', () => {
+    render(<CallingText armedCue={null} lastFired={null} />);
+    const el = document.querySelector('[data-testid="calling-text"]') as HTMLElement;
+    expect(el).toHaveStyle({ background: tokens.color.bg });
   });
 });

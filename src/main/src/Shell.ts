@@ -37,6 +37,7 @@ import { registerDeviceBridge } from './ipc/cuelistCoreDeviceBridge.js';
 import { registerRoutingBridge } from './ipc/cuelistCoreRoutingBridge.js';
 import { registerShowStateBridge } from './ipc/cuelistCoreShowStateBridge.js';
 import { ActiveShowDoc, setActiveShowDoc } from './runtime/index.js';
+import { GoExecutor } from './runtime/GoExecutor.js';
 
 // ── Shell config store ──────────────────────────────────────────────────────
 
@@ -236,6 +237,7 @@ export class Shell {
   private input: InputRegistrarImpl | null = null;
   private modules: ModuleLoader | null = null;
   private activeShow: ActiveShowDoc | null = null;
+  private goExecutor: GoExecutor | null = null;
 
   constructor(private readonly deps: ShellDeps = {}) {}
 
@@ -336,6 +338,23 @@ export class Shell {
     // 10. OutputDispatcher
     this.output = this.deps.output ?? new OutputDispatcher('shell');
 
+    // 10b. GoExecutor — wires GoEventChannel + dispatchCue + OutputDispatcher per active show
+    this.goExecutor = new GoExecutor({
+      syncBroker: this.sync,
+      events: this.events,
+      output: this.output,
+      log: this.logger,
+    });
+    this.activeShow!.onChange((kind) => {
+      if (kind === 'opened') {
+        const doc = this.activeShow!.getDoc()!;
+        const showId = this.activeShow!.getShowId()!;
+        this.goExecutor!.attach(showId, doc);
+      } else if (kind === 'closed') {
+        this.goExecutor!.detach();
+      }
+    });
+
     // 11. InputRegistrar
     this.input = this.deps.input ?? new InputRegistrarImpl(this.logger);
     await this.input.init();
@@ -397,6 +416,7 @@ export class Shell {
     this.state = 'shutting_down';
 
     // Reverse boot order, best-effort
+    await safeCall(() => this.goExecutor?.detach());
     await safeCall(() => this.activeShow?.close());
     await safeCall(() => this.modules?.stopAll());
     await safeCall(() => this.modules?.teardownAll());

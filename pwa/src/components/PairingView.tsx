@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { saveSession, getOrCreateClientPubkey } from '../lib/auth.js';
 import type { DiscoveredHost, PairedSession } from '../lib/types.js';
+import { tokens } from './cuelist/tokens.js';
 
 interface Props {
   host: DiscoveredHost;
@@ -10,6 +11,27 @@ interface Props {
 const DEPARTMENTS = ['LX', 'SND', 'VID', 'SM'];
 
 type Phase = 'idle' | 'claiming';
+
+const inputStyle = {
+  display: 'block',
+  width: '100%',
+  padding: `${tokens.space.s}px ${tokens.space.m}px`,
+  background: tokens.color.raised,
+  color: tokens.color.ink,
+  border: `1px solid ${tokens.color.border}`,
+  borderRadius: tokens.radius.m,
+  fontSize: 14,
+  fontFamily: tokens.font.ui,
+  boxSizing: 'border-box' as const,
+};
+
+const labelStyle = {
+  display: 'block',
+  fontSize: 12,
+  fontWeight: 600,
+  color: tokens.color.ink_secondary,
+  marginBottom: tokens.space.xs,
+};
 
 export function PairingView({ host, onPaired }: Props) {
   const [pin, setPin] = useState('');
@@ -88,8 +110,18 @@ export function PairingView({ host, onPaired }: Props) {
 
   if (pairedDevice) {
     return (
-      <div data-testid="paired-success" className="pairing-view">
-        <p>Paired successfully!</p>
+      <div
+        data-testid="paired-success"
+        className="pairing-view"
+        style={{
+          background: tokens.color.bg,
+          color: tokens.color.ink,
+          padding: tokens.space.xxl,
+          fontFamily: tokens.font.ui,
+          minHeight: '100vh',
+        }}
+      >
+        <p style={{ color: tokens.color.green, fontWeight: 700 }}>Paired successfully!</p>
         <span
           data-testid="station-id"
           data-id={pairedDevice.device_id}
@@ -100,22 +132,36 @@ export function PairingView({ host, onPaired }: Props) {
   }
 
   return (
-    <div className="pairing-view">
-      <h2>Pair with {host.host}:{host.port}</h2>
+    <div
+      className="pairing-view"
+      style={{
+        background: tokens.color.bg,
+        color: tokens.color.ink,
+        fontFamily: tokens.font.ui,
+        minHeight: '100vh',
+        padding: tokens.space.xxl,
+        maxWidth: 480,
+        margin: '0 auto',
+      }}
+    >
+      <h2 style={{ color: tokens.color.ink, marginTop: 0 }}>
+        Pair with {host.host}:{host.port}
+      </h2>
 
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: tokens.space.l }}>
         <div>
-          <label>Display name</label>
+          <label style={labelStyle}>Display name</label>
           <input
             data-testid="device-name-input"
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
             placeholder="e.g. LX Op"
             required
+            style={inputStyle}
           />
         </div>
         <div>
-          <label>PIN</label>
+          <label style={labelStyle}>PIN</label>
           <input
             data-testid="pin-input"
             value={pin}
@@ -123,56 +169,95 @@ export function PairingView({ host, onPaired }: Props) {
             placeholder="6-digit PIN"
             maxLength={6}
             required
+            style={inputStyle}
           />
         </div>
         <div>
-          <label>Role</label>
+          <label style={labelStyle}>Role</label>
           <select
             data-testid="role-select"
             value={role}
             onChange={(e) => setRole(e.target.value as 'sm' | 'operator')}
+            style={inputStyle}
           >
             <option value="sm">Stage Manager</option>
             <option value="operator">Operator</option>
           </select>
         </div>
         <div>
-          <span>Owned departments</span>
-          {DEPARTMENTS.map((d) => (
-            <label key={`own-${d}`}>
-              <input
-                data-testid={`dept-chip-${d}`}
-                type="checkbox"
-                checked={ownedDepts.includes(d)}
-                onChange={() => toggleDept(ownedDepts, setOwnedDepts, d)}
-              />
-              {d}
-            </label>
-          ))}
+          <span style={labelStyle}>Owned departments</span>
+          <div style={{ display: 'flex', gap: tokens.space.s, flexWrap: 'wrap' }}>
+            {DEPARTMENTS.map((d) => (
+              <label
+                key={`own-${d}`}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: tokens.space.xs,
+                  color: tokens.color.ink,
+                  cursor: 'pointer',
+                }}
+              >
+                <input
+                  data-testid={`dept-chip-${d}`}
+                  type="checkbox"
+                  checked={ownedDepts.includes(d)}
+                  onChange={() => toggleDept(ownedDepts, setOwnedDepts, d)}
+                  style={{ accentColor: tokens.color.teal }}
+                />
+                {d}
+              </label>
+            ))}
+          </div>
         </div>
         <div>
-          <span>Watched departments</span>
-          {DEPARTMENTS.map((d) => (
-            <label key={`watch-${d}`}>
-              <input
-                type="checkbox"
-                checked={watchedDepts.includes(d)}
-                onChange={() => toggleDept(watchedDepts, setWatchedDepts, d)}
-              />
-              {d}
-            </label>
-          ))}
+          <span style={labelStyle}>Watched departments</span>
+          <div style={{ display: 'flex', gap: tokens.space.s, flexWrap: 'wrap' }}>
+            {DEPARTMENTS.map((d) => (
+              <label
+                key={`watch-${d}`}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: tokens.space.xs,
+                  color: tokens.color.ink,
+                  cursor: 'pointer',
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={watchedDepts.includes(d)}
+                  onChange={() => toggleDept(watchedDepts, setWatchedDepts, d)}
+                  style={{ accentColor: tokens.color.teal }}
+                />
+                {d}
+              </label>
+            ))}
+          </div>
         </div>
         <button
           data-testid="submit-pairing"
           type="submit"
           disabled={phase === 'claiming'}
+          style={{
+            padding: `${tokens.space.m}px ${tokens.space.xl}px`,
+            background: phase === 'claiming' ? tokens.color.raised : tokens.color.teal,
+            color: phase === 'claiming' ? tokens.color.ink_disabled : tokens.color.bg,
+            border: 'none',
+            borderRadius: tokens.radius.m,
+            fontSize: 16,
+            fontWeight: 700,
+            cursor: phase === 'claiming' ? 'not-allowed' : 'pointer',
+            fontFamily: tokens.font.ui,
+          }}
         >
           {phase === 'claiming' ? 'Pairing…' : 'Pair'}
         </button>
       </form>
 
-      {error && <p style={{ color: '#f66' }}>{error}</p>}
+      {error && (
+        <p style={{ color: tokens.color.red, marginTop: tokens.space.m }}>{error}</p>
+      )}
     </div>
   );
 }

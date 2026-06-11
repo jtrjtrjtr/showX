@@ -35,17 +35,17 @@ function EmptyState() {
         alignItems: 'center',
         justifyContent: 'center',
         padding: tokens.space.xxl,
-        color: tokens.color.gray_700,
+        color: tokens.color.ink_secondary,
         gap: tokens.space.l,
       }}
     >
-      <div style={{ fontSize: 18 }}>No cues yet — click + to add</div>
+      <div style={{ fontSize: 18, color: tokens.color.ink_secondary }}>No cues yet — click + to add</div>
       <button
         aria-label="Add first cue"
         style={{
           padding: `${tokens.space.m}px ${tokens.space.xl}px`,
           background: tokens.color.teal,
-          color: '#fff',
+          color: tokens.color.bg,
           border: 'none',
           borderRadius: tokens.radius.m,
           fontSize: 16,
@@ -150,22 +150,24 @@ export function SMMasterView({ cuelistId }: SMMasterViewProps) {
         display: 'flex',
         flexDirection: 'column',
         height: '100vh',
-        background: tokens.color.cream,
+        background: tokens.color.bg,
         fontFamily: tokens.font.ui,
         overflow: 'hidden',
+        color: tokens.color.ink,
       }}
     >
       <header
         style={{
           padding: `${tokens.space.m}px ${tokens.space.l}px`,
-          borderBottom: `1px solid ${tokens.color.gray_300}`,
+          borderBottom: `1px solid ${tokens.color.border}`,
+          background: tokens.color.panel,
           display: 'flex',
           alignItems: 'center',
           gap: tokens.space.l,
           flexShrink: 0,
         }}
       >
-        <h1 style={{ margin: 0, fontSize: 20, fontWeight: 700 }}>
+        <h1 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: tokens.color.ink }}>
           {cuelist?.name ?? 'Cuelist'}
         </h1>
         <input
@@ -176,10 +178,11 @@ export function SMMasterView({ cuelistId }: SMMasterViewProps) {
           aria-label="Search cues"
           style={{
             padding: `${tokens.space.s}px ${tokens.space.m}px`,
-            border: `1px solid ${tokens.color.gray_300}`,
+            border: `1px solid ${tokens.color.border}`,
             borderRadius: tokens.radius.m,
             fontSize: 14,
-            background: '#fff',
+            background: tokens.color.raised,
+            color: tokens.color.ink,
             flex: 1,
             maxWidth: 320,
           }}
@@ -193,7 +196,7 @@ export function SMMasterView({ cuelistId }: SMMasterViewProps) {
             borderRadius: tokens.radius.s,
             border: `1px solid ${mode === 'show' ? tokens.color.red : tokens.color.teal}`,
             background: mode === 'show' ? tokens.color.red : tokens.color.teal,
-            color: '#fff',
+            color: tokens.color.white,
             fontSize: 11,
             fontWeight: 700,
             cursor: 'pointer',
@@ -208,11 +211,12 @@ export function SMMasterView({ cuelistId }: SMMasterViewProps) {
           onClick={() => setShowHelp(true)}
           style={{
             background: 'none',
-            border: `1px solid ${tokens.color.gray_300}`,
+            border: `1px solid ${tokens.color.border}`,
             borderRadius: tokens.radius.s,
             padding: `${tokens.space.xs}px ${tokens.space.s}px`,
             cursor: 'pointer',
             fontSize: 13,
+            color: tokens.color.ink,
           }}
         >
           ?
@@ -261,10 +265,10 @@ export function SMMasterView({ cuelistId }: SMMasterViewProps) {
           aria-live="polite"
           style={{
             padding: `${tokens.space.xs}px ${tokens.space.m}px`,
-            background: tokens.color.gray_50,
-            borderTop: `1px solid ${tokens.color.gray_300}`,
+            background: tokens.color.panel,
+            borderTop: `1px solid ${tokens.color.border}`,
             fontSize: 11,
-            color: tokens.color.gray_700,
+            color: tokens.color.ink_secondary,
             textAlign: 'center',
             fontFamily: tokens.font.ui,
           }}
@@ -282,7 +286,7 @@ export function SMMasterView({ cuelistId }: SMMasterViewProps) {
               padding: `${tokens.space.s}px ${tokens.space.m}px`,
               marginBottom: tokens.space.s,
               background: tokens.color.red,
-              color: '#fff',
+              color: tokens.color.white,
               borderRadius: tokens.radius.m,
               fontSize: 13,
               textAlign: 'center',
@@ -299,11 +303,11 @@ export function SMMasterView({ cuelistId }: SMMasterViewProps) {
             style={{
               padding: `${tokens.space.s}px ${tokens.space.m}px`,
               marginBottom: tokens.space.s,
-              background: tokens.color.gray_50,
-              border: `1px solid ${tokens.color.gray_300}`,
+              background: tokens.color.panel,
+              border: `1px solid ${tokens.color.border}`,
               borderRadius: tokens.radius.m,
               fontSize: 12,
-              color: tokens.color.gray_700,
+              color: tokens.color.ink_secondary,
             }}
           >
             Missed: {lastHistoric.cue_id}

@@ -53,6 +53,11 @@ describe('App mode router', () => {
     vi.clearAllMocks();
     // Stub WebSocket globally — prevents sideChannel from throwing in jsdom
     vi.stubGlobal('WebSocket', vi.fn(() => makeMockWs()));
+    // jsdom in this setup exposes no functional localStorage — PairingView
+    // writes the pair token there on successful claim
+    vi.stubGlobal('localStorage', {
+      setItem: vi.fn(), getItem: vi.fn(() => null), removeItem: vi.fn(), clear: vi.fn(),
+    });
     // Reset URL to no params
     Object.defineProperty(window, 'location', {
       configurable: true,
@@ -106,11 +111,22 @@ describe('App mode router', () => {
 
   it('switches to show mode after successful pairing', async () => {
     vi.mocked(authMod.listSessions).mockResolvedValue([]);
-    // PairingView sends POST /claim and expects { token, device } back
-    vi.stubGlobal('fetch', vi.fn().mockImplementation(async () => ({
-      ok: true,
-      json: async () => ({ token: 'new-tok', device: { device_id: 'dev-new' } }),
-    })));
+    // URL-aware fetch mock: /claim returns pairing response; /api/active-show
+    // (StationRouter 2s poll since B003-403) must return an open show or the
+    // router renders ShowClosedView instead of loading/connecting.
+    vi.stubGlobal('fetch', vi.fn().mockImplementation(async (url: RequestInfo | URL) => {
+      const u = String(url);
+      if (u.includes('/api/active-show')) {
+        return {
+          ok: true,
+          json: async () => ({ open: true, show_id: 'show-1', title: 'Test Show', mode: 'rehearsal' }),
+        };
+      }
+      return {
+        ok: true,
+        json: async () => ({ token: 'new-tok', device: { device_id: 'dev-new' }, show_id: 'show-1' }),
+      };
+    }));
 
     render(<App />);
 

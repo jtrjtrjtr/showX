@@ -33,10 +33,10 @@ function PlayheadBanner({ cuelistId }: { cuelistId: string }) {
       data-testid="operator-playhead-banner"
       style={{
         padding: `${tokens.space.xs}px ${tokens.space.m}px`,
-        background: smOnline ? tokens.color.teal_dim : tokens.color.gray_50,
-        borderBottom: `1px solid ${smOnline ? tokens.color.teal : tokens.color.gray_300}`,
+        background: smOnline ? tokens.color.teal_dim : tokens.color.panel,
+        borderBottom: `1px solid ${smOnline ? tokens.color.teal : tokens.color.border}`,
         fontSize: 11,
-        color: smOnline ? tokens.color.ink : tokens.color.gray_700,
+        color: smOnline ? tokens.color.ink : tokens.color.ink_secondary,
         fontFamily: tokens.font.ui,
         display: 'flex',
         alignItems: 'center',
@@ -46,8 +46,8 @@ function PlayheadBanner({ cuelistId }: { cuelistId: string }) {
       <span
         style={{
           display: 'inline-block',
-          background: smOnline ? tokens.color.teal : tokens.color.gray_300,
-          color: '#fff',
+          background: smOnline ? tokens.color.teal : tokens.color.border,
+          color: tokens.color.white,
           fontSize: 9,
           fontWeight: 700,
           padding: '1px 4px',

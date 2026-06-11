@@ -18,7 +18,7 @@ export function DepartmentChips({ departments }: DepartmentChipsProps) {
               background: bg,
               fontSize: 11,
               fontWeight: 600,
-              color: tokens.color.ink,
+              color: tokens.color.bg,
             }}
           >
             {d}
@@ -43,7 +43,7 @@ export function DepartmentSideBar({ departments }: DepartmentChipsProps) {
       }}
     >
       {departments.length === 0 ? (
-        <div style={{ flex: 1, background: tokens.color.gray_300 }} />
+        <div style={{ flex: 1, background: tokens.color.border }} />
       ) : (
         departments.map((d) => (
           <div

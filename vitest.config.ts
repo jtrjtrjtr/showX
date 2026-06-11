@@ -14,6 +14,7 @@ export default defineConfig({
   test: {
     include: ['tests/unit/**/*.test.ts', 'tests/unit/**/*.test.tsx', 'tests/parity/**/*.test.ts', 'src/**/*.test.ts', 'pwa/src/**/*.test.tsx'],
     environment: 'node',
+    globalSetup: ['./tests/global-setup.ts'],
     setupFiles: ['./tests/setup.ts'],
     passWithNoTests: true,
     coverage: {

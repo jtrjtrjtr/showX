@@ -15,8 +15,8 @@ export function PlayheadIndicator({ visible, smOnline = true }: PlayheadIndicato
         left: 0,
         top: 0,
         bottom: 0,
-        width: 3,
-        background: smOnline ? tokens.color.teal : tokens.color.gray_300,
+        width: 4,
+        background: smOnline ? tokens.color.teal : tokens.color.border,
         borderRadius: `${tokens.radius.s}px 0 0 ${tokens.radius.s}px`,
       }}
     >
@@ -26,8 +26,8 @@ export function PlayheadIndicator({ visible, smOnline = true }: PlayheadIndicato
           top: '50%',
           transform: 'translateY(-50%)',
           left: 6,
-          background: smOnline ? tokens.color.teal : tokens.color.gray_300,
-          color: '#fff',
+          background: smOnline ? tokens.color.teal : tokens.color.border,
+          color: tokens.color.white,
           fontSize: 10,
           fontWeight: 700,
           padding: '2px 4px',

@@ -8,6 +8,7 @@ import { SMMasterView } from './cuelist/SMMasterView.js';
 import { OperatorView } from './cuelist/OperatorView.js';
 import { GenericOperatorView } from './cuelist/variants/GenericOperatorView.js';
 import { DiscoveryView } from './DiscoveryView.js';
+import { tokens } from './cuelist/tokens.js';
 
 interface ActiveShowResponse {
   open: boolean;
@@ -20,11 +21,34 @@ function ShowClosedView({ onRetry }: { onRetry: () => void }) {
   return (
     <div
       data-testid="show-closed"
-      style={{ padding: 32, textAlign: 'center', fontFamily: 'system-ui' }}
+      style={{
+        padding: 32,
+        textAlign: 'center',
+        fontFamily: tokens.font.ui,
+        background: tokens.color.bg,
+        color: tokens.color.ink,
+        minHeight: '100vh',
+      }}
     >
-      <h2>Show closed by stage manager</h2>
-      <p>Waiting for a show to be opened in the FOH shell.</p>
-      <button onClick={onRetry}>Reconnect</button>
+      <h2 style={{ color: tokens.color.ink }}>Show closed by stage manager</h2>
+      <p style={{ color: tokens.color.ink_secondary }}>
+        Waiting for a show to be opened in the FOH shell.
+      </p>
+      <button
+        onClick={onRetry}
+        style={{
+          padding: `${tokens.space.m}px ${tokens.space.xl}px`,
+          background: tokens.color.raised,
+          color: tokens.color.ink,
+          border: `1px solid ${tokens.color.border}`,
+          borderRadius: tokens.radius.m,
+          fontSize: 14,
+          cursor: 'pointer',
+          fontFamily: tokens.font.ui,
+        }}
+      >
+        Reconnect
+      </button>
     </div>
   );
 }
@@ -108,16 +132,52 @@ function StationContent({ session }: StationContentProps) {
 
   if (timedOut) {
     return (
-      <div data-testid="connection-error" style={{ padding: 32, textAlign: 'center', fontFamily: 'system-ui' }}>
-        <p>Could not connect to {session.host}.</p>
-        <button onClick={() => window.location.reload()}>Retry</button>
+      <div
+        data-testid="connection-error"
+        style={{
+          padding: 32,
+          textAlign: 'center',
+          fontFamily: tokens.font.ui,
+          background: tokens.color.bg,
+          color: tokens.color.ink,
+          minHeight: '100vh',
+        }}
+      >
+        <p style={{ color: tokens.color.ink_secondary }}>
+          Could not connect to {session.host}.
+        </p>
+        <button
+          onClick={() => window.location.reload()}
+          style={{
+            padding: `${tokens.space.m}px ${tokens.space.xl}px`,
+            background: tokens.color.raised,
+            color: tokens.color.ink,
+            border: `1px solid ${tokens.color.border}`,
+            borderRadius: tokens.radius.m,
+            fontSize: 14,
+            cursor: 'pointer',
+            fontFamily: tokens.font.ui,
+          }}
+        >
+          Retry
+        </button>
       </div>
     );
   }
 
   if (!cuelistId) {
     return (
-      <div data-testid="station-loading" style={{ padding: 32, textAlign: 'center', fontFamily: 'system-ui', color: '#6b7280' }}>
+      <div
+        data-testid="station-loading"
+        style={{
+          padding: 32,
+          textAlign: 'center',
+          fontFamily: tokens.font.ui,
+          background: tokens.color.bg,
+          color: tokens.color.ink_secondary,
+          minHeight: '100vh',
+        }}
+      >
         Loading show…
       </div>
     );
@@ -198,7 +258,14 @@ export function StationRouter({ session }: StationRouterProps) {
     return (
       <div
         data-testid="station-switching"
-        style={{ padding: 32, textAlign: 'center', fontFamily: 'system-ui', color: '#6b7280' }}
+        style={{
+          padding: 32,
+          textAlign: 'center',
+          fontFamily: tokens.font.ui,
+          background: tokens.color.bg,
+          color: tokens.color.ink_secondary,
+          minHeight: '100vh',
+        }}
       >
         Switching to {switchingTitle}…
       </div>

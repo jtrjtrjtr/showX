@@ -18,9 +18,9 @@ export interface CueRowProps {
 }
 
 export function CueRow({ cue, isPlayhead, isArmed, isFiring, onSelect, stations, mode }: CueRowProps) {
-  let bg: string = tokens.color.cream;
+  let bg: string = tokens.color.bg;
   if (isFiring) bg = tokens.color.green;
-  else if (isPlayhead) bg = tokens.color.teal_dim;
+  else if (isPlayhead) bg = tokens.color.playhead_bg;
 
   const isCompound = cue.department.length > 1;
   const deptTag = cue.department.length === 1 ? cue.department[0] : undefined;
@@ -40,7 +40,8 @@ export function CueRow({ cue, isPlayhead, isArmed, isFiring, onSelect, stations,
         alignItems: 'center',
         padding: `${tokens.space.m}px ${tokens.space.l}px`,
         paddingLeft: tokens.space.xl,
-        borderBottom: `1px solid ${tokens.color.gray_300}`,
+        borderBottom: `1px solid ${tokens.color.border}`,
+        borderLeft: isArmed ? `4px solid ${tokens.color.red}` : undefined,
         background: bg,
         cursor: 'pointer',
         transition: 'background 0.15s',
@@ -50,14 +51,19 @@ export function CueRow({ cue, isPlayhead, isArmed, isFiring, onSelect, stations,
       <DepartmentSideBar departments={cue.department} />
       <div
         data-testid="cue-label"
-        style={{ fontSize: 24, fontWeight: 700, fontFamily: tokens.font.ui }}
+        style={{
+          fontSize: 24,
+          fontWeight: 700,
+          fontFamily: tokens.font.ui,
+          color: isFiring ? tokens.color.bg : tokens.color.ink,
+        }}
       >
         {cue.label}
         {isFiring && (
           <span
             data-testid="cue-fire-animation"
             aria-label="Firing"
-            style={{ marginLeft: 8, fontSize: 14, color: tokens.color.cream }}
+            style={{ marginLeft: 8, fontSize: 14, color: tokens.color.bg }}
           >
             ●
           </span>
@@ -66,13 +72,13 @@ export function CueRow({ cue, isPlayhead, isArmed, isFiring, onSelect, stations,
       <div>
         <div style={{ fontSize: 16, color: tokens.color.ink }}>{cue.description}</div>
         {cue.standby_note && (
-          <div style={{ fontStyle: 'italic', color: tokens.color.gray_700, fontSize: 14 }}>
+          <div style={{ fontStyle: 'italic', color: tokens.color.ink_secondary, fontSize: 14 }}>
             {cue.standby_note}
           </div>
         )}
         <div
           data-testid="payload-summary"
-          style={{ fontSize: 12, color: tokens.color.gray_700, marginTop: 2 }}
+          style={{ fontSize: 12, color: tokens.color.ink_secondary, marginTop: 2 }}
         >
           {cue.payloads.length > 0
             ? `${cue.payloads.length} payload${cue.payloads.length > 1 ? 's' : ''} — ${cue.payloads.map((p) => ('cue_number' in p ? `cue ${(p as { cue_number: number }).cue_number}` : '')).filter(Boolean).join(', ')}`

@@ -4,6 +4,7 @@ import { render, screen, cleanup, within } from '@testing-library/react';
 import React from 'react';
 import type { Cue } from 'showx-shared';
 import { CueRow } from '../../../../../pwa/src/components/cuelist/CueRow.js';
+import { tokens } from '../../../../../pwa/src/components/cuelist/tokens.js';
 import type { StationAwareness } from '../../../../../pwa/src/lib/awareness.js';
 
 afterEach(() => cleanup());
@@ -57,9 +58,26 @@ describe('CueRow', () => {
         mode="rehearsal"
       />,
     );
-    const label = screen.getByText('ACT 1 OPEN');
+    const label = screen.getByTestId('cue-label');
     expect(label.style.fontSize).toBe('24px');
     expect(label.style.fontWeight).toBe('700');
+  });
+
+  it('cue label has explicit ink color', () => {
+    const cue = makeCue({ label: 'ACT 1 OPEN' });
+    render(
+      <CueRow
+        cue={cue}
+        isPlayhead={false}
+        isArmed={false}
+        isFiring={false}
+        onSelect={() => {}}
+        stations={[]}
+        mode="rehearsal"
+      />,
+    );
+    const label = screen.getByTestId('cue-label');
+    expect(label.style.color).toBeTruthy();
   });
 
   it('renders department chips for each department', () => {
@@ -119,7 +137,7 @@ describe('CueRow', () => {
     expect(badge).toHaveAttribute('aria-label', 'Manual');
   });
 
-  it('playhead row renders with teal_dim background', () => {
+  it('playhead row renders with playhead_bg background', () => {
     const cue = makeCue();
     const { container } = render(
       <CueRow
@@ -133,7 +151,7 @@ describe('CueRow', () => {
       />,
     );
     const row = container.querySelector('[role="row"]') as HTMLElement;
-    expect(row).toHaveStyle({ background: '#7FCFC9' });
+    expect(row).toHaveStyle({ background: tokens.color.playhead_bg });
   });
 
   it('firing row renders with green background', () => {
@@ -150,7 +168,24 @@ describe('CueRow', () => {
       />,
     );
     const row = container.querySelector('[role="row"]') as HTMLElement;
-    expect(row).toHaveStyle({ background: '#2DA44E' });
+    expect(row).toHaveStyle({ background: tokens.color.green });
+  });
+
+  it('armed row renders with red left border edge', () => {
+    const cue = makeCue();
+    const { container } = render(
+      <CueRow
+        cue={cue}
+        isPlayhead={false}
+        isArmed={true}
+        isFiring={false}
+        onSelect={() => {}}
+        stations={[]}
+        mode="rehearsal"
+      />,
+    );
+    const row = container.querySelector('[role="row"]') as HTMLElement;
+    expect(row).toHaveStyle({ borderLeftColor: tokens.color.red });
   });
 
   it('renders presence dots for stations at this cue', () => {

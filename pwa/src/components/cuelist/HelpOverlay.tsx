@@ -13,7 +13,7 @@ export function HelpOverlay({ onClose }: HelpOverlayProps) {
       style={{
         position: 'fixed',
         inset: 0,
-        background: 'rgba(27,26,24,0.7)',
+        background: 'rgba(0,0,0,0.75)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -23,14 +23,16 @@ export function HelpOverlay({ onClose }: HelpOverlayProps) {
     >
       <div
         style={{
-          background: tokens.color.cream,
+          background: tokens.color.panel,
+          color: tokens.color.ink,
           padding: tokens.space.xxl,
           borderRadius: tokens.radius.l,
           minWidth: 340,
+          border: `1px solid ${tokens.color.border}`,
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 style={{ marginTop: 0 }}>Keyboard shortcuts</h2>
+        <h2 style={{ marginTop: 0, color: tokens.color.ink }}>Keyboard shortcuts</h2>
         <table style={{ borderCollapse: 'collapse', width: '100%' }}>
           <tbody>
             {([
@@ -48,16 +50,17 @@ export function HelpOverlay({ onClose }: HelpOverlayProps) {
                     fontFamily: tokens.font.mono,
                     fontWeight: 600,
                     whiteSpace: 'nowrap',
+                    color: tokens.color.teal,
                   }}
                 >
                   {key}
                 </td>
-                <td style={{ padding: '4px 0', color: tokens.color.gray_700 }}>{desc}</td>
+                <td style={{ padding: '4px 0', color: tokens.color.ink_secondary }}>{desc}</td>
               </tr>
             ))}
           </tbody>
         </table>
-        <p style={{ fontSize: 12, color: tokens.color.gray_700, marginTop: tokens.space.l }}>
+        <p style={{ fontSize: 12, color: tokens.color.ink_secondary, marginTop: tokens.space.l }}>
           GO authority: only the Stage Manager station can fire. Operators see the button but cannot
           dispatch.
         </p>
@@ -67,10 +70,11 @@ export function HelpOverlay({ onClose }: HelpOverlayProps) {
             marginTop: tokens.space.l,
             padding: `${tokens.space.s}px ${tokens.space.l}px`,
             background: tokens.color.teal,
-            color: '#fff',
+            color: tokens.color.bg,
             border: 'none',
             borderRadius: tokens.radius.s,
             cursor: 'pointer',
+            fontWeight: 700,
           }}
         >
           Close
