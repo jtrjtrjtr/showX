@@ -98,7 +98,7 @@ export function PayloadList({ cue, cuelistId, locked }: PayloadListProps) {
               alignItems: 'center',
               gap: tokens.space.s,
               padding: `${tokens.space.s}px ${tokens.space.m}px`,
-              background: tokens.color.gray_50,
+              background: tokens.color.raised,
               cursor: locked ? 'default' : 'grab',
             }}
           >
@@ -110,7 +110,7 @@ export function PayloadList({ cue, cuelistId, locked }: PayloadListProps) {
                 fontSize: 10,
                 fontWeight: 700,
                 background: TYPE_BADGE_COLORS[p.type] ?? tokens.color.gray_300,
-                color: '#fff',
+                color: tokens.color.bg,
                 padding: `1px 6px`,
                 borderRadius: 3,
                 textTransform: 'uppercase',

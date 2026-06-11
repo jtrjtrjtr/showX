@@ -236,6 +236,38 @@ export function SMMasterView({ cuelistId }: SMMasterViewProps) {
         aria-label="Cue list"
         style={{ flex: 1, overflowY: 'auto', padding: 0 }}
       >
+        {filtered.length > 0 && (
+          <div
+            aria-hidden="true"
+            style={{
+              position: 'sticky',
+              top: 0,
+              zIndex: 10,
+              display: 'grid',
+              gridTemplateColumns: '8px 80px 1fr auto auto auto auto auto',
+              gap: tokens.space.m,
+              padding: `${tokens.space.xs}px ${tokens.space.l}px`,
+              paddingLeft: tokens.space.xl,
+              background: tokens.color.panel,
+              borderBottom: `1px solid ${tokens.color.border}`,
+              fontSize: 10,
+              fontWeight: 700,
+              color: tokens.color.ink_disabled,
+              fontFamily: tokens.font.ui,
+              textTransform: 'uppercase',
+              letterSpacing: '0.06em',
+            }}
+          >
+            <span />
+            <span />
+            <span>Cue</span>
+            <span />
+            <span>Trigger</span>
+            <span style={{ textAlign: 'right' }}>Dur</span>
+            <span />
+            <span />
+          </div>
+        )}
         {filtered.length === 0 ? (
           <EmptyState />
         ) : (
@@ -243,6 +275,7 @@ export function SMMasterView({ cuelistId }: SMMasterViewProps) {
             <CueRow
               key={cue.id}
               cue={cue}
+              cues={cues}
               isPlayhead={cue.id === playheadCueId}
               isArmed={cue.id === armedCueId}
               isFiring={
@@ -251,6 +284,9 @@ export function SMMasterView({ cuelistId }: SMMasterViewProps) {
               }
               onSelect={() => setPlayhead(cue.id)}
               onEdit={() => setEditingCue(cue)}
+              onTriggerUpdate={(trigger) => {
+                updateFields(cue.id, { trigger }, String(conn.doc.clientID));
+              }}
               stations={stations.filter((s) => s.cursor.cue_id === cue.id)}
               mode={mode}
             />

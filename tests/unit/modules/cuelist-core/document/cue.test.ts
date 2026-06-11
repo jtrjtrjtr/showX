@@ -194,4 +194,79 @@ describe('updateCueFields', () => {
     updateCueFields(doc, cuelistId, id, { label: 'Q1 new' }, 'op1');
     expect(cue.get('payloads')).toBe(payloadsBefore);
   });
+
+  it('updates trigger via patch (manual)', () => {
+    const { doc, cuelistId } = makeDocWithCuelist();
+    const id = addCue(doc, cuelistId, { label: 'Q1', department: ['LX'], created_by: 'op1',
+      trigger: { kind: 'auto_continue', delay_ms: 500 } });
+    updateCueFields(doc, cuelistId, id, { trigger: { kind: 'manual' } }, 'op1');
+    const cue = getCues(getCuelist(doc, cuelistId)!).toArray().find((c) => c.get('id') === id)!;
+    expect(cue.get('trigger')).toEqual({ kind: 'manual' });
+  });
+
+  it('updates trigger to auto_continue with delay_ms', () => {
+    const { doc, cuelistId } = makeDocWithCuelist();
+    const id = addCue(doc, cuelistId, { label: 'Q1', department: ['LX'], created_by: 'op1' });
+    updateCueFields(doc, cuelistId, id, { trigger: { kind: 'auto_continue', delay_ms: 1500 } }, 'op1');
+    const cue = getCues(getCuelist(doc, cuelistId)!).toArray().find((c) => c.get('id') === id)!;
+    expect(cue.get('trigger')).toEqual({ kind: 'auto_continue', delay_ms: 1500 });
+  });
+
+  it('throws ValidationError when auto_continue.delay_ms is negative', () => {
+    const { doc, cuelistId } = makeDocWithCuelist();
+    const id = addCue(doc, cuelistId, { label: 'Q1', department: ['LX'], created_by: 'op1' });
+    expect(() =>
+      updateCueFields(doc, cuelistId, id, { trigger: { kind: 'auto_continue', delay_ms: -1 } }, 'op1'),
+    ).toThrow(ValidationError);
+  });
+
+  it('throws ValidationError when timecode.time_ms is negative', () => {
+    const { doc, cuelistId } = makeDocWithCuelist();
+    const id = addCue(doc, cuelistId, { label: 'Q1', department: ['LX'], created_by: 'op1' });
+    expect(() =>
+      updateCueFields(doc, cuelistId, id, { trigger: { kind: 'timecode', time_ms: -100, source: 'internal' } }, 'op1'),
+    ).toThrow(ValidationError);
+  });
+
+  it('updates trigger to auto_follow when prev_cue_id exists in cuelist', () => {
+    const { doc, cuelistId } = makeDocWithCuelist();
+    const id1 = addCue(doc, cuelistId, { label: 'Q1', department: ['LX'], created_by: 'op1' });
+    const id2 = addCue(doc, cuelistId, { label: 'Q2', department: ['LX'], created_by: 'op1' });
+    updateCueFields(doc, cuelistId, id2, { trigger: { kind: 'auto_follow', prev_cue_id: id1 } }, 'op1');
+    const cue = getCues(getCuelist(doc, cuelistId)!).toArray().find((c) => c.get('id') === id2)!;
+    expect(cue.get('trigger')).toEqual({ kind: 'auto_follow', prev_cue_id: id1 });
+  });
+
+  it('throws ValidationError when auto_follow.prev_cue_id does not exist in cuelist', () => {
+    const { doc, cuelistId } = makeDocWithCuelist();
+    const id = addCue(doc, cuelistId, { label: 'Q1', department: ['LX'], created_by: 'op1' });
+    expect(() =>
+      updateCueFields(doc, cuelistId, id, { trigger: { kind: 'auto_follow', prev_cue_id: 'ghost-id' } }, 'op1'),
+    ).toThrow(ValidationError);
+  });
+
+  it('updates duration_hint_ms to a positive value', () => {
+    const { doc, cuelistId } = makeDocWithCuelist();
+    const id = addCue(doc, cuelistId, { label: 'Q1', department: ['LX'], created_by: 'op1' });
+    updateCueFields(doc, cuelistId, id, { duration_hint_ms: 5000 }, 'op1');
+    const cue = getCues(getCuelist(doc, cuelistId)!).toArray().find((c) => c.get('id') === id)!;
+    expect(cue.get('duration_hint_ms')).toBe(5000);
+  });
+
+  it('updates duration_hint_ms to null (clears it)', () => {
+    const { doc, cuelistId } = makeDocWithCuelist();
+    const id = addCue(doc, cuelistId, { label: 'Q1', department: ['LX'], created_by: 'op1' });
+    updateCueFields(doc, cuelistId, id, { duration_hint_ms: 3000 }, 'op1');
+    updateCueFields(doc, cuelistId, id, { duration_hint_ms: null }, 'op1');
+    const cue = getCues(getCuelist(doc, cuelistId)!).toArray().find((c) => c.get('id') === id)!;
+    expect(cue.get('duration_hint_ms')).toBeNull();
+  });
+
+  it('throws ValidationError when duration_hint_ms is negative', () => {
+    const { doc, cuelistId } = makeDocWithCuelist();
+    const id = addCue(doc, cuelistId, { label: 'Q1', department: ['LX'], created_by: 'op1' });
+    expect(() =>
+      updateCueFields(doc, cuelistId, id, { duration_hint_ms: -1 }, 'op1'),
+    ).toThrow(ValidationError);
+  });
 });

@@ -70,7 +70,7 @@ export function SxOperatorView({ cuelistId, watched }: SxOperatorViewProps) {
           padding: `${tokens.space.m}px ${tokens.space.l}px`,
           borderBottom: `1px solid ${tokens.color.gray_300}`,
           background: tokens.color.dept['SX'],
-          color: '#fff',
+          color: tokens.color.bg,
         }}
       >
         <h2 style={{ margin: 0, fontSize: 18 }}>SX</h2>

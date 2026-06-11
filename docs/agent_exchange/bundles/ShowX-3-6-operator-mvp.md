@@ -30,3 +30,7 @@ Forge pořadí: 604 (nezávislé, viditelné hned) → 601 → 602 → 603 → 6
 ## Close criteria
 
 6/6 accepted + B003-606 gate evidence v close decision. Verze v0.2.0.
+
+## Follow-up kandidáti (z Critic reviews, mimo scope 3.6)
+
+- **Contrast tier — yellow-bg buttons**: OperatorCueRow Standby btn + PyroOperatorView Arm btn mají `ink` na `yellow` (~1.55:1, pre-existing). Mini-spec nebo přibalit do dalšího bundle.

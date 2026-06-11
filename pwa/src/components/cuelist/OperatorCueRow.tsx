@@ -45,9 +45,9 @@ export function OperatorCueRow({
         gap: tokens.space.m,
         opacity,
         padding: tokens.space.m,
-        borderBottom: `1px solid ${tokens.color.gray_300}`,
+        borderBottom: `1px solid ${tokens.color.border}`,
         alignItems: 'start',
-        background: isSelected ? tokens.color.teal_dim : tokens.color.cream,
+        background: isSelected ? tokens.color.teal_dim : tokens.color.bg,
         cursor: onSelect ? 'pointer' : 'default',
       }}
     >
@@ -115,7 +115,7 @@ export function OperatorCueRow({
         style={{
           padding: `${tokens.space.s}px ${tokens.space.m}px`,
           background: isActionable ? tokens.color.teal : tokens.color.gray_300,
-          color: isActionable ? '#fff' : tokens.color.gray_700,
+          color: isActionable ? tokens.color.bg : tokens.color.ink_disabled,
           border: 'none',
           borderRadius: tokens.radius.s,
           cursor: isActionable ? 'pointer' : 'default',

@@ -31,18 +31,18 @@ function DeleteConfirmDialog({ cueLabel, onConfirm, onCancel }: DeleteConfirmDia
     >
       <div
         style={{
-          background: '#fff',
+          background: tokens.color.raised,
           borderRadius: tokens.radius.l,
           padding: tokens.space.xl,
           maxWidth: 360,
           width: '90vw',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
         }}
       >
-        <h3 style={{ margin: `0 0 ${tokens.space.m}px`, fontSize: 16, fontWeight: 700 }}>
+        <h3 style={{ margin: `0 0 ${tokens.space.m}px`, fontSize: 16, fontWeight: 700, color: tokens.color.ink }}>
           Delete cue?
         </h3>
-        <p style={{ margin: `0 0 ${tokens.space.l}px`, fontSize: 14, color: tokens.color.gray_700 }}>
+        <p style={{ margin: `0 0 ${tokens.space.l}px`, fontSize: 14, color: tokens.color.ink_secondary }}>
           &quot;{cueLabel}&quot; will be permanently removed. This cannot be undone.
         </p>
         <div style={{ display: 'flex', gap: tokens.space.m, justifyContent: 'flex-end' }}>
@@ -51,11 +51,12 @@ function DeleteConfirmDialog({ cueLabel, onConfirm, onCancel }: DeleteConfirmDia
             onClick={onCancel}
             style={{
               padding: `${tokens.space.s}px ${tokens.space.l}px`,
-              background: tokens.color.gray_50,
-              border: `1px solid ${tokens.color.gray_300}`,
+              background: tokens.color.raised,
+              border: `1px solid ${tokens.color.border}`,
               borderRadius: tokens.radius.s,
               fontSize: 14,
               cursor: 'pointer',
+              color: tokens.color.ink,
             }}
           >
             Cancel
@@ -66,7 +67,7 @@ function DeleteConfirmDialog({ cueLabel, onConfirm, onCancel }: DeleteConfirmDia
             style={{
               padding: `${tokens.space.s}px ${tokens.space.l}px`,
               background: tokens.color.red,
-              color: '#fff',
+              color: tokens.color.ink,
               border: 'none',
               borderRadius: tokens.radius.s,
               fontSize: 14,
@@ -103,8 +104,8 @@ export function CueEditor({ cuelistId, cueId, onClose }: CueEditorProps) {
     right: 0,
     bottom: 0,
     width: 'min(100vw, 520px)',
-    background: tokens.color.cream,
-    boxShadow: '-4px 0 24px rgba(0,0,0,0.15)',
+    background: tokens.color.panel,
+    boxShadow: '-4px 0 32px rgba(0,0,0,0.6)',
     display: 'flex',
     flexDirection: 'column' as const,
     zIndex: 150,
@@ -125,7 +126,7 @@ export function CueEditor({ cuelistId, cueId, onClose }: CueEditorProps) {
             alignItems: 'center',
             gap: tokens.space.m,
             padding: `${tokens.space.m}px ${tokens.space.l}px`,
-            borderBottom: `1px solid ${tokens.color.gray_300}`,
+            borderBottom: `1px solid ${tokens.color.border}`,
             flexShrink: 0,
           }}
         >
@@ -138,14 +139,14 @@ export function CueEditor({ cuelistId, cueId, onClose }: CueEditorProps) {
               border: 'none',
               fontSize: 20,
               cursor: 'pointer',
-              color: tokens.color.gray_700,
+              color: tokens.color.ink_secondary,
               lineHeight: 1,
               padding: 0,
             }}
           >
             ×
           </button>
-          <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: tokens.color.ink }}>
             {cue.label || 'Untitled cue'}
           </h2>
         </header>
@@ -157,7 +158,7 @@ export function CueEditor({ cuelistId, cueId, onClose }: CueEditorProps) {
             aria-label="SHOW mode lock banner"
             style={{
               background: tokens.color.red,
-              color: '#fff',
+              color: tokens.color.ink,
               padding: `${tokens.space.s}px ${tokens.space.l}px`,
               fontSize: 13,
               display: 'flex',
@@ -171,9 +172,9 @@ export function CueEditor({ cuelistId, cueId, onClose }: CueEditorProps) {
               type="button"
               onClick={() => alert('Proposal queue coming in ShowX 0.2')}
               style={{
-                background: 'rgba(255,255,255,0.2)',
-                border: '1px solid rgba(255,255,255,0.4)',
-                color: '#fff',
+                background: 'rgba(0,0,0,0.25)',
+                border: '1px solid rgba(0,0,0,0.35)',
+                color: tokens.color.ink,
                 borderRadius: tokens.radius.s,
                 padding: `${tokens.space.xs}px ${tokens.space.s}px`,
                 fontSize: 12,
@@ -189,7 +190,7 @@ export function CueEditor({ cuelistId, cueId, onClose }: CueEditorProps) {
           {/* Meta fields: editable in both modes per Q7 (meta allowed in SHOW) */}
           <CueMetaFields cue={cue} cuelistId={cuelistId} disabled={false} />
 
-          <div style={{ borderTop: `1px solid ${tokens.color.gray_300}`, margin: `0 ${tokens.space.m}px` }} />
+          <div style={{ borderTop: `1px solid ${tokens.color.border}`, margin: `0 ${tokens.space.m}px` }} />
 
           <div style={{ paddingTop: tokens.space.m }}>
             <PayloadList cue={cue} cuelistId={cuelistId} locked={isLocked} />
@@ -199,7 +200,7 @@ export function CueEditor({ cuelistId, cueId, onClose }: CueEditorProps) {
         <footer
           style={{
             padding: tokens.space.m,
-            borderTop: `1px solid ${tokens.color.gray_300}`,
+            borderTop: `1px solid ${tokens.color.border}`,
             flexShrink: 0,
           }}
         >
@@ -208,8 +209,8 @@ export function CueEditor({ cuelistId, cueId, onClose }: CueEditorProps) {
             onClick={() => setConfirmDelete(true)}
             disabled={isLocked}
             style={{
-              background: isLocked ? tokens.color.gray_50 : tokens.color.red,
-              color: isLocked ? tokens.color.gray_300 : '#fff',
+              background: isLocked ? tokens.color.raised : tokens.color.red,
+              color: isLocked ? tokens.color.ink_disabled : tokens.color.ink,
               border: 'none',
               borderRadius: tokens.radius.s,
               padding: `${tokens.space.s}px ${tokens.space.l}px`,

@@ -230,7 +230,7 @@ export function DevicesTable({ ipc, mode }: DevicesTableProps) {
       )}
 
       {devices.length === 0 ? (
-        <p style={{ color: tokens.color.gray_300, fontFamily: tokens.font.ui, fontSize: 13 }}>
+        <p style={{ color: tokens.color.ink_secondary, fontFamily: tokens.font.ui, fontSize: 13 }}>
           No devices configured. Add a device to enable cue dispatch.
         </p>
       ) : (

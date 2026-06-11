@@ -10,10 +10,16 @@ export interface CueEditDialogProps {
   onCancel: () => void;
 }
 
+function durationMsToSecs(ms: number | null): string {
+  if (ms === null) return '';
+  return (ms / 1000).toFixed(1);
+}
+
 export function CueEditDialog({ cue, onSave, onCancel }: CueEditDialogProps) {
   const [label, setLabel] = useState(cue.label);
   const [description, setDescription] = useState(cue.description);
   const [standbyNote, setStandbyNote] = useState(cue.standby_note);
+  const [durationSecs, setDurationSecs] = useState(() => durationMsToSecs(cue.duration_hint_ms));
   const [labelError, setLabelError] = useState(false);
   const labelRef = useRef<HTMLInputElement>(null);
 
@@ -28,8 +34,11 @@ export function CueEditDialog({ cue, onSave, onCancel }: CueEditDialogProps) {
       labelRef.current?.focus();
       return;
     }
-    onSave({ label: label.trim(), description, standby_note: standbyNote });
-  }, [label, description, standbyNote, onSave]);
+    const rawDur = durationSecs.trim();
+    const duration_hint_ms =
+      rawDur === '' ? null : Math.max(0, Math.round(parseFloat(rawDur) * 1000));
+    onSave({ label: label.trim(), description, standby_note: standbyNote, duration_hint_ms });
+  }, [label, description, standbyNote, durationSecs, onSave]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -117,6 +126,18 @@ export function CueEditDialog({ cue, onSave, onCancel }: CueEditDialogProps) {
             value={standbyNote}
             onChange={(e) => setStandbyNote(e.target.value)}
             placeholder="Standby note (optional)"
+            style={inputStyle(false)}
+          />
+        </Field>
+
+        <Field label="Duration (seconds)">
+          <input
+            data-testid="cue-edit-duration"
+            type="text"
+            inputMode="decimal"
+            value={durationSecs}
+            onChange={(e) => setDurationSecs(e.target.value)}
+            placeholder="e.g. 5.0 (leave empty for none)"
             style={inputStyle(false)}
           />
         </Field>

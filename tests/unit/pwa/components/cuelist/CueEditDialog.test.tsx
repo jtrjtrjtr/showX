@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { render, screen, cleanup, fireEvent, act } from '@testing-library/react';
+import { render, screen, cleanup, fireEvent } from '@testing-library/react';
 import React from 'react';
 import type { Cue } from 'showx-shared';
 import { CueEditDialog } from '../../../../../pwa/src/components/cuelist/CueEditDialog.js';
@@ -51,6 +51,7 @@ describe('CueEditDialog', () => {
       label: 'Q1 edited',
       description: 'New desc',
       standby_note: '',
+      duration_hint_ms: null,
     });
   });
 
@@ -103,5 +104,35 @@ describe('CueEditDialog', () => {
     render(<CueEditDialog cue={cue} onSave={onSave} onCancel={vi.fn()} />);
     fireEvent.keyDown(screen.getByTestId('cue-edit-dialog'), { key: 'Enter', ctrlKey: true });
     expect(onSave).toHaveBeenCalledOnce();
+  });
+
+  it('duration field pre-fills from cue.duration_hint_ms', () => {
+    const cue = makeCue({ duration_hint_ms: 5000 });
+    render(<CueEditDialog cue={cue} onSave={vi.fn()} onCancel={vi.fn()} />);
+    expect((screen.getByTestId('cue-edit-duration') as HTMLInputElement).value).toBe('5.0');
+  });
+
+  it('duration field empty when duration_hint_ms is null', () => {
+    const cue = makeCue({ duration_hint_ms: null });
+    render(<CueEditDialog cue={cue} onSave={vi.fn()} onCancel={vi.fn()} />);
+    expect((screen.getByTestId('cue-edit-duration') as HTMLInputElement).value).toBe('');
+  });
+
+  it('saving with duration value includes duration_hint_ms in ms', () => {
+    const onSave = vi.fn();
+    const cue = makeCue({ label: 'Q1' });
+    render(<CueEditDialog cue={cue} onSave={onSave} onCancel={vi.fn()} />);
+    fireEvent.change(screen.getByTestId('cue-edit-duration'), { target: { value: '5.5' } });
+    fireEvent.click(screen.getByTestId('cue-edit-save'));
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ duration_hint_ms: 5500 }));
+  });
+
+  it('saving with empty duration includes duration_hint_ms: null', () => {
+    const onSave = vi.fn();
+    const cue = makeCue({ label: 'Q1', duration_hint_ms: 3000 });
+    render(<CueEditDialog cue={cue} onSave={onSave} onCancel={vi.fn()} />);
+    fireEvent.change(screen.getByTestId('cue-edit-duration'), { target: { value: '' } });
+    fireEvent.click(screen.getByTestId('cue-edit-save'));
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ duration_hint_ms: null }));
   });
 });

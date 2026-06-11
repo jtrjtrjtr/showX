@@ -27,9 +27,9 @@ export function AddPayloadMenu({ onAdd, disabled }: AddPayloadMenuProps) {
         disabled
         style={{
           padding: `${tokens.space.s}px ${tokens.space.m}px`,
-          background: tokens.color.gray_50,
-          color: tokens.color.gray_300,
-          border: `1px solid ${tokens.color.gray_300}`,
+          background: tokens.color.raised,
+          color: tokens.color.ink_disabled,
+          border: `1px solid ${tokens.color.border}`,
           borderRadius: tokens.radius.s,
           fontSize: 13,
           cursor: 'default',
@@ -51,7 +51,7 @@ export function AddPayloadMenu({ onAdd, disabled }: AddPayloadMenuProps) {
         style={{
           padding: `${tokens.space.s}px ${tokens.space.m}px`,
           background: tokens.color.teal,
-          color: '#fff',
+          color: tokens.color.bg,
           border: 'none',
           borderRadius: tokens.radius.s,
           fontSize: 13,
@@ -69,10 +69,10 @@ export function AddPayloadMenu({ onAdd, disabled }: AddPayloadMenuProps) {
             position: 'absolute',
             bottom: '100%',
             left: 0,
-            background: '#fff',
-            border: `1px solid ${tokens.color.gray_300}`,
+            background: tokens.color.raised,
+            border: `1px solid ${tokens.color.border}`,
             borderRadius: tokens.radius.m,
-            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+            boxShadow: '0 4px 16px rgba(0,0,0,0.5)',
             zIndex: 100,
             overflow: 'hidden',
             minWidth: 160,
@@ -96,7 +96,7 @@ export function AddPayloadMenu({ onAdd, disabled }: AddPayloadMenuProps) {
                 textAlign: 'left',
                 fontSize: 13,
                 cursor: 'pointer',
-                color: tokens.color.ink,
+                color: tokens.color.ink_secondary,
               }}
             >
               {label}

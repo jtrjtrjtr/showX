@@ -1,5 +1,5 @@
 import { useRef, useCallback } from 'react';
-import type { Cue } from 'showx-shared';
+import type { Cue, Trigger } from 'showx-shared';
 import type { ShowMode } from 'showx-shared';
 import type { StationAwareness } from '../../lib/awareness.js';
 import { tokens } from './tokens.js';
@@ -7,6 +7,15 @@ import { CueTypeBadge } from './CueTypeBadge.js';
 import { DepartmentChips, DepartmentSideBar } from './DepartmentChips.js';
 import { OperatorPresenceIndicators } from './OperatorPresenceIndicators.js';
 import { PlayheadIndicator } from './PlayheadIndicator.js';
+import { TriggerCell } from './TriggerCell.js';
+
+function formatDuration(ms: number | null): string {
+  if (ms === null) return '—';
+  const totalSecs = ms / 1000;
+  const minutes = Math.floor(totalSecs / 60);
+  const secs = (totalSecs % 60).toFixed(1).padStart(4, '0');
+  return `${minutes}:${secs}`;
+}
 
 const LONG_PRESS_MS = 500;
 const LONG_PRESS_MOVE_THRESHOLD = 10;
@@ -20,9 +29,11 @@ export interface CueRowProps {
   onEdit?: () => void;
   stations: StationAwareness[];
   mode: ShowMode;
+  cues?: Cue[];
+  onTriggerUpdate?: (trigger: Trigger) => void;
 }
 
-export function CueRow({ cue, isPlayhead, isArmed, isFiring, onSelect, onEdit, stations, mode }: CueRowProps) {
+export function CueRow({ cue, isPlayhead, isArmed, isFiring, onSelect, onEdit, stations, mode, cues = [], onTriggerUpdate }: CueRowProps) {
   const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const longPressFiredRef = useRef(false);
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
@@ -90,7 +101,7 @@ export function CueRow({ cue, isPlayhead, isArmed, isFiring, onSelect, onEdit, s
       style={{
         position: 'relative',
         display: 'grid',
-        gridTemplateColumns: '8px 80px 1fr auto auto auto',
+        gridTemplateColumns: '8px 80px 1fr auto auto auto auto auto',
         gap: tokens.space.m,
         alignItems: 'center',
         padding: `${tokens.space.m}px ${tokens.space.l}px`,
@@ -103,6 +114,23 @@ export function CueRow({ cue, isPlayhead, isArmed, isFiring, onSelect, onEdit, s
       }}
     >
       <PlayheadIndicator visible={isPlayhead} />
+      {cue.trigger.kind !== 'manual' && !isPlayhead && (
+        <span
+          aria-hidden="true"
+          style={{
+            position: 'absolute',
+            left: 6,
+            top: '50%',
+            transform: 'translateY(-50%)',
+            fontSize: 10,
+            color: tokens.color.ink_disabled,
+            fontWeight: 700,
+            pointerEvents: 'none',
+          }}
+        >
+          &gt;
+        </span>
+      )}
       <DepartmentSideBar departments={cue.department} />
       <div
         data-testid="cue-label"
@@ -111,7 +139,12 @@ export function CueRow({ cue, isPlayhead, isArmed, isFiring, onSelect, onEdit, s
           fontWeight: 700,
           fontFamily: tokens.font.ui,
           color: isFiring ? tokens.color.bg : tokens.color.ink,
+          minWidth: 0,
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
         }}
+        title={cue.label}
       >
         {cue.label}
         {isFiring && (
@@ -124,8 +157,8 @@ export function CueRow({ cue, isPlayhead, isArmed, isFiring, onSelect, onEdit, s
           </span>
         )}
       </div>
-      <div>
-        <div style={{ fontSize: 16, color: tokens.color.ink }}>{cue.description}</div>
+      <div style={{ minWidth: 0 }}>
+        <div style={{ fontSize: 16, color: tokens.color.ink, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{cue.description}</div>
         {cue.standby_note && (
           <div style={{ fontStyle: 'italic', color: tokens.color.ink_secondary, fontSize: 14 }}>
             {cue.standby_note}
@@ -139,6 +172,26 @@ export function CueRow({ cue, isPlayhead, isArmed, isFiring, onSelect, onEdit, s
             ? `${cue.payloads.length} payload${cue.payloads.length > 1 ? 's' : ''} — ${cue.payloads.map((p) => ('cue_number' in p ? `cue ${(p as { cue_number: number }).cue_number}` : '')).filter(Boolean).join(', ')}`
             : ''}
         </div>
+      </div>
+      <TriggerCell
+        cue={cue}
+        cues={cues}
+        mode={mode}
+        editable={mode === 'rehearsal'}
+        onUpdate={(trigger) => onTriggerUpdate?.(trigger)}
+      />
+      <div
+        data-testid="duration-cell"
+        style={{
+          fontSize: 12,
+          fontFamily: tokens.font.mono,
+          color: tokens.color.ink_secondary,
+          whiteSpace: 'nowrap',
+          minWidth: 52,
+          textAlign: 'right',
+        }}
+      >
+        {formatDuration(cue.duration_hint_ms)}
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.space.s, alignItems: 'flex-end' }}>
         <CueTypeBadge trigger={cue.trigger} />

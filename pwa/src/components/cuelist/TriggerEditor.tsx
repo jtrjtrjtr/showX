@@ -31,18 +31,19 @@ export function TriggerEditor({ cue, cues, onChange, disabled }: TriggerEditorPr
   const labelStyle = {
     display: 'block',
     fontSize: 12,
-    color: tokens.color.gray_700,
+    color: tokens.color.ink_secondary,
     marginBottom: tokens.space.xs,
     fontWeight: 600,
   } as const;
 
   const inputStyle = {
     padding: `${tokens.space.xs}px ${tokens.space.s}px`,
-    border: `1px solid ${tokens.color.gray_300}`,
+    border: `1px solid ${tokens.color.border}`,
     borderRadius: tokens.radius.s,
     fontSize: 13,
     width: '100%',
-    background: disabled ? tokens.color.gray_50 : '#fff',
+    background: disabled ? tokens.color.raised : tokens.color.panel,
+    color: tokens.color.ink,
   } as const;
 
   return (

@@ -92,7 +92,7 @@ function RecentShowRow({ show, onOpen }: RecentShowRowProps) {
           {formatRelativeDate(show.last_opened_at)}
         </div>
         {show.cue_count !== undefined && (
-          <div style={{ fontSize: 11, color: tokens.color.gray_300, marginTop: 2 }}>
+          <div style={{ fontSize: 11, color: tokens.color.ink_secondary, marginTop: 2 }}>
             {show.cue_count} cues
           </div>
         )}

@@ -69,7 +69,7 @@ export function LxOperatorView({ cuelistId, watched }: LxOperatorViewProps) {
         <div
           data-testid="cue-history-marker"
           aria-live="polite"
-          style={{ padding: '4px 12px', fontSize: 11, background: '#f5f5f5', color: '#666', borderBottom: '1px solid #ddd' }}
+          style={{ padding: '4px 12px', fontSize: 11, background: tokens.color.raised, color: tokens.color.ink_secondary, borderBottom: `1px solid ${tokens.color.border}` }}
         >
           Missed: {lastHistoric.cue_id}
         </div>

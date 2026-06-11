@@ -390,6 +390,70 @@ describe('CueRow', () => {
     vi.useRealTimers();
   });
 
+  it('duration cell shows em-dash when duration_hint_ms is null', () => {
+    const cue = makeCue({ duration_hint_ms: null });
+    render(
+      <CueRow
+        cue={cue}
+        isPlayhead={false}
+        isArmed={false}
+        isFiring={false}
+        onSelect={() => {}}
+        stations={[]}
+        mode="rehearsal"
+      />,
+    );
+    expect(screen.getByTestId('duration-cell')).toHaveTextContent('—');
+  });
+
+  it('duration cell formats M:SS.t correctly', () => {
+    const cue = makeCue({ duration_hint_ms: 5000 });
+    render(
+      <CueRow
+        cue={cue}
+        isPlayhead={false}
+        isArmed={false}
+        isFiring={false}
+        onSelect={() => {}}
+        stations={[]}
+        mode="rehearsal"
+      />,
+    );
+    expect(screen.getByTestId('duration-cell')).toHaveTextContent('0:05.0');
+  });
+
+  it('duration cell formats 90500ms as 1:30.5', () => {
+    const cue = makeCue({ duration_hint_ms: 90500 });
+    render(
+      <CueRow
+        cue={cue}
+        isPlayhead={false}
+        isArmed={false}
+        isFiring={false}
+        onSelect={() => {}}
+        stations={[]}
+        mode="rehearsal"
+      />,
+    );
+    expect(screen.getByTestId('duration-cell')).toHaveTextContent('1:30.5');
+  });
+
+  it('trigger-cell is rendered with data-testid', () => {
+    const cue = makeCue();
+    render(
+      <CueRow
+        cue={cue}
+        isPlayhead={false}
+        isArmed={false}
+        isFiring={false}
+        onSelect={() => {}}
+        stations={[]}
+        mode="rehearsal"
+      />,
+    );
+    expect(screen.getByTestId('trigger-cell')).toBeInTheDocument();
+  });
+
   it('long-press does not also fire onSelect via subsequent click', () => {
     vi.useFakeTimers();
     const onSelect = vi.fn();

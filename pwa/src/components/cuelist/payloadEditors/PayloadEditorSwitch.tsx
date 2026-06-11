@@ -29,10 +29,10 @@ export function PayloadEditorSwitch({ payload, cuelistId, cueId, locked }: Paylo
   return (
     <div
       style={{
-        border: `1px solid ${tokens.color.gray_300}`,
+        border: `1px solid ${tokens.color.border}`,
         borderRadius: tokens.radius.m,
         padding: tokens.space.m,
-        background: '#fff',
+        background: tokens.color.raised,
       }}
     >
       <div

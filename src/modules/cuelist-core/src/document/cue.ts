@@ -285,13 +285,17 @@ export interface CueFieldPatch {
   label?: string;
   description?: string;
   standby_note?: string;
+  trigger?: Trigger;
+  duration_hint_ms?: number | null;
 }
 
 /**
- * Update one or more text fields on a cue in a single Yjs transaction.
+ * Update one or more fields on a cue in a single Yjs transaction.
  * Library-owned so the write path is unit-testable outside UI components.
- * Rules: label must be non-empty if provided; undefined keys are silently
- * skipped; throws if the cue doesn't exist.
+ * Validation rules:
+ *   label: non-empty if provided
+ *   trigger: per-kind constraints enforced; auto_follow.prev_cue_id must exist in cuelist
+ *   duration_hint_ms: null or >= 0
  */
 export function updateCueFields(
   doc: Y.Doc,
@@ -304,11 +308,36 @@ export function updateCueFields(
   if (patch.label !== undefined && patch.label.trim() === '') {
     throw new ValidationError('cue.label must be non-empty', 'label');
   }
+  if (patch.trigger !== undefined) {
+    const t = patch.trigger;
+    if (t.kind === 'auto_continue' && t.delay_ms < 0) {
+      throw new ValidationError('auto_continue.delay_ms must be >= 0', 'trigger.delay_ms');
+    }
+    if (t.kind === 'timecode' && t.time_ms < 0) {
+      throw new ValidationError('timecode.time_ms must be >= 0', 'trigger.time_ms');
+    }
+    if (t.kind === 'auto_follow') {
+      const cuelistDoc = getCuelist(doc, cuelistId);
+      if (!cuelistDoc) throw new ValidationError('cuelist not found for trigger validation', 'trigger.prev_cue_id');
+      const existingIds = getCues(cuelistDoc).toArray().map((c) => c.get('id') as string);
+      if (!existingIds.includes(t.prev_cue_id)) {
+        throw new ValidationError(
+          'auto_follow.prev_cue_id must reference an existing cue in the cuelist',
+          'trigger.prev_cue_id',
+        );
+      }
+    }
+  }
+  if (patch.duration_hint_ms !== undefined && patch.duration_hint_ms !== null && patch.duration_hint_ms < 0) {
+    throw new ValidationError('duration_hint_ms must be null or >= 0', 'duration_hint_ms');
+  }
   const cue = findCue(doc, cuelistId, cueId);
   doc.transact(() => {
     if (patch.label !== undefined) cue.set('label', patch.label);
     if (patch.description !== undefined) cue.set('description', patch.description);
     if (patch.standby_note !== undefined) cue.set('standby_note', patch.standby_note);
+    if (patch.trigger !== undefined) cue.set('trigger', patch.trigger);
+    if (patch.duration_hint_ms !== undefined) cue.set('duration_hint_ms', patch.duration_hint_ms);
     touchModified(cue, modifiedBy);
   });
 }

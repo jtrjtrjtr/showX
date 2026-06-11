@@ -71,7 +71,7 @@ export function VideoOperatorView({ cuelistId, watched }: VideoOperatorViewProps
           padding: `${tokens.space.m}px ${tokens.space.l}px`,
           borderBottom: `1px solid ${tokens.color.gray_300}`,
           background: tokens.color.dept['VIDEO'],
-          color: '#fff',
+          color: tokens.color.bg,
         }}
       >
         <h2 style={{ margin: 0, fontSize: 18 }}>VIDEO</h2>

@@ -43,7 +43,7 @@ interface StationsTableProps {
 
 export function StationsTable({ stations, canKick, onKick }: StationsTableProps) {
   if (stations.length === 0) {
-    return <p style={{ color: tokens.color.gray_300, fontFamily: tokens.font.ui }}>No stations connected.</p>;
+    return <p style={{ color: tokens.color.ink_secondary, fontFamily: tokens.font.ui }}>No stations connected.</p>;
   }
   return (
     <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: tokens.font.ui }}>

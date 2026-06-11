@@ -71,11 +71,11 @@ export function GenericOperatorView({ cuelistId, owned, watched }: GenericOperat
       <header
         style={{
           padding: `${tokens.space.m}px ${tokens.space.l}px`,
-          borderBottom: `1px solid ${tokens.color.gray_300}`,
-          background: tokens.color.gray_50,
+          borderBottom: `1px solid ${tokens.color.border}`,
+          background: tokens.color.panel,
         }}
       >
-        <h2 style={{ margin: 0, fontSize: 18 }}>{title}</h2>
+        <h2 style={{ margin: 0, fontSize: 18, color: tokens.color.ink }}>{title}</h2>
       </header>
       <div
         role="grid"

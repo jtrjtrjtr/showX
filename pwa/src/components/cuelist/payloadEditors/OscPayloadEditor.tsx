@@ -39,14 +39,15 @@ export function OscPayloadEditor({ payload, cuelistId, cueId, locked }: OscPaylo
 
   const modifiedBy = String(conn.doc.clientID);
 
-  const labelStyle = { display: 'block', fontSize: 12, color: tokens.color.gray_700, fontWeight: 600, marginBottom: tokens.space.xs } as const;
+  const labelStyle = { display: 'block', fontSize: 12, color: tokens.color.ink_secondary, fontWeight: 600, marginBottom: tokens.space.xs } as const;
   const inputStyle = (err?: boolean) => ({
     padding: `${tokens.space.xs}px ${tokens.space.s}px`,
-    border: `1px solid ${err ? tokens.color.red : tokens.color.gray_300}`,
+    border: `1px solid ${err ? tokens.color.red : tokens.color.border}`,
     borderRadius: tokens.radius.s,
     fontSize: 13,
     width: '100%',
-    background: locked ? tokens.color.gray_50 : '#fff',
+    background: locked ? tokens.color.raised : tokens.color.panel,
+    color: tokens.color.ink,
   } as const);
 
   const updateAddress = (addr: string) => {
@@ -123,7 +124,7 @@ export function OscPayloadEditor({ payload, cuelistId, cueId, locked }: OscPaylo
                 fontSize: 11,
                 padding: `${tokens.space.xs}px ${tokens.space.s}px`,
                 background: tokens.color.teal,
-                color: '#fff',
+                color: tokens.color.bg,
                 border: 'none',
                 borderRadius: tokens.radius.s,
                 cursor: 'pointer',
@@ -143,7 +144,7 @@ export function OscPayloadEditor({ payload, cuelistId, cueId, locked }: OscPaylo
                 const next: OscArg = t === 'nil' ? { type: 'nil' } : t === 'bool' ? { type: 'bool', value: false } : t === 'string' ? { type: 'string', value: '' } : { type: t as 'int' | 'float', value: 0 };
                 updateArg(idx, next);
               }}
-              style={{ padding: `${tokens.space.xs}px`, border: `1px solid ${tokens.color.gray_300}`, borderRadius: tokens.radius.s, fontSize: 12 }}
+              style={{ padding: `${tokens.space.xs}px`, border: `1px solid ${tokens.color.border}`, borderRadius: tokens.radius.s, fontSize: 12, background: tokens.color.panel, color: tokens.color.ink }}
               aria-label={`Arg ${idx + 1} type`}
             >
               {OSC_ARG_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
@@ -166,7 +167,7 @@ export function OscPayloadEditor({ payload, cuelistId, cueId, locked }: OscPaylo
                     const v = arg.type === 'int' ? parseInt(e.target.value, 10) : arg.type === 'float' ? parseFloat(e.target.value) : e.target.value;
                     updateArg(idx, { type: arg.type, value: v } as OscArg);
                   }}
-                  style={{ flex: 1, padding: `${tokens.space.xs}px`, border: `1px solid ${tokens.color.gray_300}`, borderRadius: tokens.radius.s, fontSize: 12 }}
+                  style={{ flex: 1, padding: `${tokens.space.xs}px`, border: `1px solid ${tokens.color.border}`, borderRadius: tokens.radius.s, fontSize: 12, background: tokens.color.panel, color: tokens.color.ink }}
                   aria-label={`Arg ${idx + 1} value`}
                 />
               )

@@ -22,7 +22,7 @@ export function DepartmentSelector({ value, onChange, disabled }: DepartmentSele
       <div
         style={{
           fontSize: 12,
-          color: tokens.color.gray_700,
+          color: tokens.color.ink_secondary,
           marginBottom: tokens.space.xs,
           fontWeight: 600,
         }}
@@ -40,9 +40,9 @@ export function DepartmentSelector({ value, onChange, disabled }: DepartmentSele
               aria-pressed={active}
               disabled={disabled}
               style={{
-                background: active ? tokens.color.teal : tokens.color.gray_50,
-                color: active ? '#fff' : tokens.color.ink,
-                border: `1px solid ${active ? tokens.color.teal : tokens.color.gray_300}`,
+                background: active ? tokens.color.teal : tokens.color.raised,
+                color: active ? tokens.color.bg : tokens.color.ink,
+                border: `1px solid ${active ? tokens.color.teal : tokens.color.border}`,
                 borderRadius: tokens.radius.s,
                 padding: `${tokens.space.xs}px ${tokens.space.s}px`,
                 fontSize: 12,

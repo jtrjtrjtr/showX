@@ -15,14 +15,15 @@ export function WaitPayloadEditor({ payload, cuelistId, cueId, locked }: WaitPay
   const conn = useConnection();
   const [durationErr, setDurationErr] = useState<string | null>(null);
 
-  const labelStyle = { display: 'block', fontSize: 12, color: tokens.color.gray_700, fontWeight: 600, marginBottom: tokens.space.xs } as const;
+  const labelStyle = { display: 'block', fontSize: 12, color: tokens.color.ink_secondary, fontWeight: 600, marginBottom: tokens.space.xs } as const;
   const inputStyle = (err?: boolean) => ({
     padding: `${tokens.space.xs}px ${tokens.space.s}px`,
-    border: `1px solid ${err ? tokens.color.red : tokens.color.gray_300}`,
+    border: `1px solid ${err ? tokens.color.red : tokens.color.border}`,
     borderRadius: tokens.radius.s,
     fontSize: 13,
     width: '100%',
-    background: locked ? tokens.color.gray_50 : '#fff',
+    background: locked ? tokens.color.raised : tokens.color.panel,
+    color: tokens.color.ink,
   } as const);
 
   return (

@@ -37,7 +37,7 @@ function PyroCueRow({ cue, isActionable, isArmed, isSelected, onArm, onFire, onS
         opacity: isActionable ? 1 : 0.4,
         padding: tokens.space.m,
         borderBottom: `1px solid ${tokens.color.gray_300}`,
-        background: isArmed ? '#fff0f0' : isSelected ? tokens.color.teal_dim : tokens.color.cream,
+        background: isArmed ? '#3B0A0A' : isSelected ? tokens.color.teal_dim : tokens.color.bg,
         alignItems: 'center',
         cursor: 'pointer',
       }}
@@ -88,7 +88,7 @@ function PyroCueRow({ cue, isActionable, isArmed, isSelected, onArm, onFire, onS
         style={{
           padding: `${tokens.space.s}px ${tokens.space.m}px`,
           background: isActionable && isArmed ? tokens.color.red : tokens.color.gray_300,
-          color: isActionable && isArmed ? '#fff' : tokens.color.gray_700,
+          color: isActionable && isArmed ? tokens.color.bg : tokens.color.ink_disabled,
           border: 'none',
           borderRadius: tokens.radius.s,
           fontWeight: 700,
@@ -171,7 +171,7 @@ export function PyroOperatorView({ cuelistId, watched }: PyroOperatorViewProps) 
         style={{
           padding: `${tokens.space.l}px`,
           background: tokens.color.red,
-          color: '#fff',
+          color: tokens.color.bg,
         }}
       >
         <h2 style={{ margin: 0, fontSize: 20 }}>PYRO — DOUBLE-TAP FIRE</h2>

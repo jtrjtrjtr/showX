@@ -206,7 +206,7 @@ export function RoutingTable({ ipc, mode }: RoutingTableProps) {
       )}
 
       {rules.length === 0 ? (
-        <p style={{ color: tokens.color.gray_300, fontFamily: tokens.font.ui, fontSize: 13 }}>
+        <p style={{ color: tokens.color.ink_secondary, fontFamily: tokens.font.ui, fontSize: 13 }}>
           No routing rules configured. Rules determine which device each cue payload goes to.
         </p>
       ) : (
@@ -234,7 +234,7 @@ export function RoutingTable({ ipc, mode }: RoutingTableProps) {
                 style={{ borderTop: `1px solid ${tokens.color.gray_50}`, cursor: locked ? 'default' : 'grab' }}
               >
                 {!locked && (
-                  <td style={{ ...td, color: tokens.color.gray_300, fontSize: 16, cursor: 'grab' }} aria-hidden>
+                  <td style={{ ...td, color: tokens.color.ink_disabled, fontSize: 16, cursor: 'grab' }} aria-hidden>
                     ⠿
                   </td>
                 )}
