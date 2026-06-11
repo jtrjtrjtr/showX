@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "project": "showX",
-  "phase": "bundle_ShowX-3.5_complete_v0.1.14_full_station_loop",
-  "updated_at": "2026-06-11T08:45:00Z",
-  "active_bundle": "ShowX-3.5-CLOSED",
+  "phase": "bundle_ShowX-3.6_in_progress",
+  "updated_at": "2026-06-11T09:30:00Z",
+  "active_bundle": "ShowX-3.6",
   "tasks": [
     {
       "id": "B001-001",
@@ -1298,6 +1298,115 @@
       "depends_on": [
         "B003-501",
         "B003-502"
+      ]
+    },
+    {
+      "id": "B003-601",
+      "slug": "timing_trigger_ui",
+      "title": "Timing & trigger UI — trigger cell, duration column, follow/continue glyphs",
+      "status": "queued",
+      "owner": null,
+      "task_path": "docs/agent_exchange/queued/B003-601_timing_trigger_ui.md",
+      "review_path": null,
+      "created_at": "2026-06-11T09:30:00Z",
+      "started_at": null,
+      "ended_at": null,
+      "reviewed_at": null,
+      "review_round": 0,
+      "spawned_from": "ShowX-3.6 operator MVP bundle architect-filed",
+      "depends_on": []
+    },
+    {
+      "id": "B003-602",
+      "slug": "playback_status_countdown",
+      "title": "Playback status — countdown, header, caret≠selection, autoscroll",
+      "status": "queued",
+      "owner": null,
+      "task_path": "docs/agent_exchange/queued/B003-602_playback_status_countdown.md",
+      "review_path": null,
+      "created_at": "2026-06-11T09:30:00Z",
+      "started_at": null,
+      "ended_at": null,
+      "reviewed_at": null,
+      "review_round": 0,
+      "spawned_from": "ShowX-3.6 operator MVP bundle architect-filed",
+      "depends_on": [
+        "B003-601"
+      ]
+    },
+    {
+      "id": "B003-603",
+      "slug": "go_ergonomics",
+      "title": "GO ergonomics — debounce, BACK, last-fired, hold-to-GO",
+      "status": "queued",
+      "owner": null,
+      "task_path": "docs/agent_exchange/queued/B003-603_go_ergonomics.md",
+      "review_path": null,
+      "created_at": "2026-06-11T09:30:00Z",
+      "started_at": null,
+      "ended_at": null,
+      "reviewed_at": null,
+      "review_round": 0,
+      "spawned_from": "ShowX-3.6 operator MVP bundle architect-filed",
+      "depends_on": [
+        "B003-602"
+      ]
+    },
+    {
+      "id": "B003-604",
+      "slug": "dark_sweep_editors",
+      "title": "Dark sweep round 2 — editors, shell panel, overflow",
+      "status": "queued",
+      "owner": null,
+      "task_path": "docs/agent_exchange/queued/B003-604_dark_sweep_editors.md",
+      "review_path": null,
+      "created_at": "2026-06-11T09:30:00Z",
+      "started_at": null,
+      "ended_at": null,
+      "reviewed_at": null,
+      "review_round": 0,
+      "spawned_from": "ShowX-3.6 operator MVP bundle architect-filed",
+      "depends_on": []
+    },
+    {
+      "id": "B003-605",
+      "slug": "inline_editing_cue_numbers",
+      "title": "Single-key inline editing + free-text cue numbers",
+      "status": "queued",
+      "owner": null,
+      "task_path": "docs/agent_exchange/queued/B003-605_inline_editing_cue_numbers.md",
+      "review_path": null,
+      "created_at": "2026-06-11T09:30:00Z",
+      "started_at": null,
+      "ended_at": null,
+      "reviewed_at": null,
+      "review_round": 0,
+      "spawned_from": "ShowX-3.6 operator MVP bundle architect-filed",
+      "depends_on": [
+        "B003-601",
+        "B003-602"
+      ]
+    },
+    {
+      "id": "B003-606",
+      "slug": "architect_e2e_gate",
+      "title": "Architect E2E gate — installed-DMG walkthrough (process)",
+      "status": "queued",
+      "owner": null,
+      "task_path": "docs/agent_exchange/queued/B003-606_architect_e2e_gate.md",
+      "review_path": null,
+      "created_at": "2026-06-11T09:30:00Z",
+      "started_at": null,
+      "ended_at": null,
+      "reviewed_at": null,
+      "review_round": 0,
+      "spawned_from": "ShowX-3.6 operator MVP bundle architect-filed",
+      "depends_on": [
+        "B003-601",
+        "B003-602",
+        "B003-603",
+        "B003-604",
+        "B003-605"
       ]
     }
   ]
