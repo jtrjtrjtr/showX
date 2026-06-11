@@ -7,12 +7,15 @@ export interface GoChannelState {
   standby: (cueId: string) => void;
   lastDispatched: GoDispatched | null;
   lastHistoric: GoDispatched | null;
+  /** Timestamp of the first live GO in this session; null until first GO fires. */
+  firstGoAt: number | null;
 }
 
 export function useGoChannel(cuelistId: string): GoChannelState {
   const conn = useConnection();
   const [lastDispatched, setLastDispatched] = useState<GoDispatched | null>(null);
   const [lastHistoric, setLastHistoric] = useState<GoDispatched | null>(null);
+  const [firstGoAt, setFirstGoAt] = useState<number | null>(null);
 
   useEffect(() => {
     return conn.sideChannel.on('go.dispatched', (event) => {
@@ -22,6 +25,7 @@ export function useGoChannel(cuelistId: string): GoChannelState {
         return;
       }
       setLastDispatched(event);
+      setFirstGoAt((prev) => (prev === null ? new Date(event.dispatched_at).getTime() : prev));
     });
   }, [conn.sideChannel, cuelistId]);
 
@@ -31,5 +35,6 @@ export function useGoChannel(cuelistId: string): GoChannelState {
     standby: (cueId) => conn.sideChannel.sendArmRequest(cuelistId, cueId),
     lastDispatched,
     lastHistoric,
+    firstGoAt,
   };
 }

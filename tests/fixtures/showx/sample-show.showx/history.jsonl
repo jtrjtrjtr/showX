@@ -121,3 +121,9 @@
 {"ts":"2026-06-11T08:25:08.265Z","kind":"recovery_from_json","show_id":"01907d2e-0000-7000-8000-000000000001","cuelist_count":1,"total_cues":3}
 {"ts":"2026-06-11T08:37:04.811Z","kind":"recovery_from_json","show_id":"01907d2e-0000-7000-8000-000000000001","cuelist_count":1,"total_cues":3}
 {"ts":"2026-06-11T08:38:28.883Z","kind":"recovery_from_json","show_id":"01907d2e-0000-7000-8000-000000000001","cuelist_count":1,"total_cues":3}
+{"ts":"2026-06-11T16:03:52.943Z","kind":"recovery_from_json","show_id":"01907d2e-0000-7000-8000-000000000001","cuelist_count":1,"total_cues":3}
+{"ts":"2026-06-11T16:04:21.513Z","kind":"recovery_from_json","show_id":"01907d2e-0000-7000-8000-000000000001","cuelist_count":1,"total_cues":3}
+{"ts":"2026-06-11T16:50:00.764Z","kind":"recovery_from_json","show_id":"01907d2e-0000-7000-8000-000000000001","cuelist_count":1,"total_cues":3}
+{"ts":"2026-06-11T16:50:00.820Z","kind":"save","reason":"migration_applied","by":"system"}
+{"ts":"2026-06-11T17:05:22.853Z","kind":"recovery_from_json","show_id":"01907d2e-0000-7000-8000-000000000001","cuelist_count":1,"total_cues":3}
+{"ts":"2026-06-11T17:05:22.949Z","kind":"save","reason":"migration_applied","by":"system"}

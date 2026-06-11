@@ -29,11 +29,14 @@ export interface Cue {
   created_by: string;
   modified_at: string;
   modified_by: string;
+  /** QLab-style display number (free-text, not ordering). Null = no number assigned. */
+  cue_number?: string | null;
 }
 
 export interface CueCatalogEntry {
   id: string;
   label: string;
+  cue_number?: string | null;
   cuelist_id: string;
   department: DepartmentTag[];
   payloads: Array<{

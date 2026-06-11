@@ -9,6 +9,8 @@ import type { StationAwareness } from '../../../../../pwa/src/lib/awareness.js';
 
 afterEach(() => cleanup());
 
+const BASE_NOW = 1_000_000;
+
 function makeCue(overrides: Partial<Cue> = {}): Cue {
   return {
     id: 'q1',
@@ -51,8 +53,11 @@ describe('CueRow', () => {
       <CueRow
         cue={cue}
         isPlayhead={false}
+        isSelected={false}
         isArmed={false}
         isFiring={false}
+        firedAt={null}
+        now={BASE_NOW}
         onSelect={() => {}}
         stations={[]}
         mode="rehearsal"
@@ -69,8 +74,11 @@ describe('CueRow', () => {
       <CueRow
         cue={cue}
         isPlayhead={false}
+        isSelected={false}
         isArmed={false}
         isFiring={false}
+        firedAt={null}
+        now={BASE_NOW}
         onSelect={() => {}}
         stations={[]}
         mode="rehearsal"
@@ -86,8 +94,11 @@ describe('CueRow', () => {
       <CueRow
         cue={cue}
         isPlayhead={false}
+        isSelected={false}
         isArmed={false}
         isFiring={false}
+        firedAt={null}
+        now={BASE_NOW}
         onSelect={() => {}}
         stations={[]}
         mode="rehearsal"
@@ -103,17 +114,18 @@ describe('CueRow', () => {
       <CueRow
         cue={cue}
         isPlayhead={false}
+        isSelected={false}
         isArmed={false}
         isFiring={false}
+        firedAt={null}
+        now={BASE_NOW}
         onSelect={() => {}}
         stations={[]}
         mode="rehearsal"
       />,
     );
-    // sidebar stripes have title attributes matching department names
     expect(container.querySelector('[title="LX"]')).toBeTruthy();
     expect(container.querySelector('[title="SX"]')).toBeTruthy();
-    // Both are sibling divs within the sidebar column
     const lxEl = container.querySelector('[title="LX"]') as HTMLElement;
     const sxEl = container.querySelector('[title="SX"]') as HTMLElement;
     expect(lxEl.parentElement).toBe(sxEl.parentElement);
@@ -125,8 +137,11 @@ describe('CueRow', () => {
       <CueRow
         cue={cue}
         isPlayhead={false}
+        isSelected={false}
         isArmed={false}
         isFiring={false}
+        firedAt={null}
+        now={BASE_NOW}
         onSelect={() => {}}
         stations={[]}
         mode="rehearsal"
@@ -143,8 +158,11 @@ describe('CueRow', () => {
       <CueRow
         cue={cue}
         isPlayhead={true}
+        isSelected={false}
         isArmed={false}
         isFiring={false}
+        firedAt={null}
+        now={BASE_NOW}
         onSelect={() => {}}
         stations={[]}
         mode="rehearsal"
@@ -160,8 +178,11 @@ describe('CueRow', () => {
       <CueRow
         cue={cue}
         isPlayhead={false}
+        isSelected={false}
         isArmed={false}
         isFiring={true}
+        firedAt={BASE_NOW - 100}
+        now={BASE_NOW}
         onSelect={() => {}}
         stations={[]}
         mode="rehearsal"
@@ -177,8 +198,11 @@ describe('CueRow', () => {
       <CueRow
         cue={cue}
         isPlayhead={false}
+        isSelected={false}
         isArmed={true}
         isFiring={false}
+        firedAt={null}
+        now={BASE_NOW}
         onSelect={() => {}}
         stations={[]}
         mode="rehearsal"
@@ -195,8 +219,11 @@ describe('CueRow', () => {
       <CueRow
         cue={cue}
         isPlayhead={false}
+        isSelected={false}
         isArmed={false}
         isFiring={false}
+        firedAt={null}
+        now={BASE_NOW}
         onSelect={() => {}}
         stations={stations}
         mode="rehearsal"
@@ -212,8 +239,11 @@ describe('CueRow', () => {
       <CueRow
         cue={cue}
         isPlayhead={false}
+        isSelected={false}
         isArmed={false}
         isFiring={false}
+        firedAt={null}
+        now={BASE_NOW}
         onSelect={() => {}}
         stations={[]}
         mode="show"
@@ -228,8 +258,11 @@ describe('CueRow', () => {
       <CueRow
         cue={cue}
         isPlayhead={false}
+        isSelected={false}
         isArmed={false}
         isFiring={false}
+        firedAt={null}
+        now={BASE_NOW}
         onSelect={() => {}}
         stations={[]}
         mode="rehearsal"
@@ -246,8 +279,11 @@ describe('CueRow', () => {
       <CueRow
         cue={cue}
         isPlayhead={false}
+        isSelected={false}
         isArmed={false}
         isFiring={false}
+        firedAt={null}
+        now={BASE_NOW}
         onSelect={onSelect}
         onEdit={onEdit}
         stations={[]}
@@ -267,8 +303,11 @@ describe('CueRow', () => {
       <CueRow
         cue={cue}
         isPlayhead={false}
+        isSelected={false}
         isArmed={false}
         isFiring={false}
+        firedAt={null}
+        now={BASE_NOW}
         onSelect={onSelect}
         stations={[]}
         mode="rehearsal"
@@ -286,8 +325,11 @@ describe('CueRow', () => {
       <CueRow
         cue={cue}
         isPlayhead={false}
+        isSelected={false}
         isArmed={false}
         isFiring={false}
+        firedAt={null}
+        now={BASE_NOW}
         onSelect={() => {}}
         onEdit={onEdit}
         stations={[]}
@@ -306,8 +348,11 @@ describe('CueRow', () => {
       <CueRow
         cue={cue}
         isPlayhead={false}
+        isSelected={false}
         isArmed={false}
         isFiring={false}
+        firedAt={null}
+        now={BASE_NOW}
         onSelect={() => {}}
         onEdit={onEdit}
         stations={[]}
@@ -327,8 +372,11 @@ describe('CueRow', () => {
       <CueRow
         cue={cue}
         isPlayhead={false}
+        isSelected={false}
         isArmed={false}
         isFiring={false}
+        firedAt={null}
+        now={BASE_NOW}
         onSelect={() => {}}
         onEdit={onEdit}
         stations={[]}
@@ -350,8 +398,11 @@ describe('CueRow', () => {
       <CueRow
         cue={cue}
         isPlayhead={false}
+        isSelected={false}
         isArmed={false}
         isFiring={false}
+        firedAt={null}
+        now={BASE_NOW}
         onSelect={() => {}}
         onEdit={onEdit}
         stations={[]}
@@ -373,8 +424,11 @@ describe('CueRow', () => {
       <CueRow
         cue={cue}
         isPlayhead={false}
+        isSelected={false}
         isArmed={false}
         isFiring={false}
+        firedAt={null}
+        now={BASE_NOW}
         onSelect={() => {}}
         onEdit={onEdit}
         stations={[]}
@@ -396,8 +450,11 @@ describe('CueRow', () => {
       <CueRow
         cue={cue}
         isPlayhead={false}
+        isSelected={false}
         isArmed={false}
         isFiring={false}
+        firedAt={null}
+        now={BASE_NOW}
         onSelect={() => {}}
         stations={[]}
         mode="rehearsal"
@@ -412,8 +469,11 @@ describe('CueRow', () => {
       <CueRow
         cue={cue}
         isPlayhead={false}
+        isSelected={false}
         isArmed={false}
         isFiring={false}
+        firedAt={null}
+        now={BASE_NOW}
         onSelect={() => {}}
         stations={[]}
         mode="rehearsal"
@@ -428,8 +488,11 @@ describe('CueRow', () => {
       <CueRow
         cue={cue}
         isPlayhead={false}
+        isSelected={false}
         isArmed={false}
         isFiring={false}
+        firedAt={null}
+        now={BASE_NOW}
         onSelect={() => {}}
         stations={[]}
         mode="rehearsal"
@@ -444,8 +507,11 @@ describe('CueRow', () => {
       <CueRow
         cue={cue}
         isPlayhead={false}
+        isSelected={false}
         isArmed={false}
         isFiring={false}
+        firedAt={null}
+        now={BASE_NOW}
         onSelect={() => {}}
         stations={[]}
         mode="rehearsal"
@@ -463,8 +529,11 @@ describe('CueRow', () => {
       <CueRow
         cue={cue}
         isPlayhead={false}
+        isSelected={false}
         isArmed={false}
         isFiring={false}
+        firedAt={null}
+        now={BASE_NOW}
         onSelect={onSelect}
         onEdit={onEdit}
         stations={[]}
@@ -478,5 +547,401 @@ describe('CueRow', () => {
     expect(onEdit).toHaveBeenCalledOnce();
     expect(onSelect).not.toHaveBeenCalled();
     vi.useRealTimers();
+  });
+
+  // ── Countdown tests ──────────────────────────────────────────────────────────
+
+  it('row-countdown is shown when firedAt + duration_hint_ms is in the future', () => {
+    const cue = makeCue({ duration_hint_ms: 30_000 });
+    // fired 5s ago, 30s duration → 25s remaining
+    const firedAt = BASE_NOW - 5_000;
+    render(
+      <CueRow
+        cue={cue}
+        isPlayhead={true}
+        isSelected={false}
+        isArmed={false}
+        isFiring={false}
+        firedAt={firedAt}
+        now={BASE_NOW}
+        onSelect={() => {}}
+        stations={[]}
+        mode="rehearsal"
+      />,
+    );
+    expect(screen.getByTestId('row-countdown')).toBeInTheDocument();
+    // 25000ms = 0:25.0
+    expect(screen.getByTestId('row-countdown')).toHaveTextContent('0:25.0');
+  });
+
+  it('row-countdown is NOT shown when duration_hint_ms is null', () => {
+    const cue = makeCue({ duration_hint_ms: null });
+    render(
+      <CueRow
+        cue={cue}
+        isPlayhead={true}
+        isSelected={false}
+        isArmed={false}
+        isFiring={false}
+        firedAt={BASE_NOW - 1_000}
+        now={BASE_NOW}
+        onSelect={() => {}}
+        stations={[]}
+        mode="rehearsal"
+      />,
+    );
+    expect(screen.queryByTestId('row-countdown')).toBeNull();
+  });
+
+  it('row-countdown is NOT shown when firedAt is null', () => {
+    const cue = makeCue({ duration_hint_ms: 30_000 });
+    render(
+      <CueRow
+        cue={cue}
+        isPlayhead={true}
+        isSelected={false}
+        isArmed={false}
+        isFiring={false}
+        firedAt={null}
+        now={BASE_NOW}
+        onSelect={() => {}}
+        stations={[]}
+        mode="rehearsal"
+      />,
+    );
+    expect(screen.queryByTestId('row-countdown')).toBeNull();
+  });
+
+  it('row-countdown is NOT shown when countdown has expired (remaining ≤ 0)', () => {
+    const cue = makeCue({ duration_hint_ms: 5_000 });
+    // fired 10s ago, 5s duration → remaining = -5s
+    render(
+      <CueRow
+        cue={cue}
+        isPlayhead={true}
+        isSelected={false}
+        isArmed={false}
+        isFiring={false}
+        firedAt={BASE_NOW - 10_000}
+        now={BASE_NOW}
+        onSelect={() => {}}
+        stations={[]}
+        mode="rehearsal"
+      />,
+    );
+    expect(screen.queryByTestId('row-countdown')).toBeNull();
+  });
+
+  it('counting-down row has red left border (Eos color)', () => {
+    const cue = makeCue({ duration_hint_ms: 30_000 });
+    const { container } = render(
+      <CueRow
+        cue={cue}
+        isPlayhead={true}
+        isSelected={false}
+        isArmed={false}
+        isFiring={false}
+        firedAt={BASE_NOW - 1_000}
+        now={BASE_NOW}
+        onSelect={() => {}}
+        stations={[]}
+        mode="rehearsal"
+      />,
+    );
+    const row = container.querySelector('[role="row"]') as HTMLElement;
+    expect(row).toHaveStyle({ borderLeftColor: tokens.color.red });
+  });
+
+  // ── ONYX caret≠selection tests ───────────────────────────────────────────────
+
+  it('isSelected adds boxShadow selection ring (aria-selected=true)', () => {
+    const cue = makeCue();
+    const { container } = render(
+      <CueRow
+        cue={cue}
+        isPlayhead={false}
+        isSelected={true}
+        isArmed={false}
+        isFiring={false}
+        firedAt={null}
+        now={BASE_NOW}
+        onSelect={() => {}}
+        stations={[]}
+        mode="rehearsal"
+      />,
+    );
+    const row = container.querySelector('[role="row"]') as HTMLElement;
+    expect(row).toHaveAttribute('aria-selected', 'true');
+    expect(row.style.boxShadow).toContain(tokens.color.teal);
+  });
+
+  it('non-selected non-playhead row has aria-selected=false', () => {
+    const cue = makeCue();
+    const { container } = render(
+      <CueRow
+        cue={cue}
+        isPlayhead={false}
+        isSelected={false}
+        isArmed={false}
+        isFiring={false}
+        firedAt={null}
+        now={BASE_NOW}
+        onSelect={() => {}}
+        stations={[]}
+        mode="rehearsal"
+      />,
+    );
+    const row = container.querySelector('[role="row"]') as HTMLElement;
+    expect(row).toHaveAttribute('aria-selected', 'false');
+  });
+
+  it('playhead row has aria-selected=true', () => {
+    const cue = makeCue();
+    const { container } = render(
+      <CueRow
+        cue={cue}
+        isPlayhead={true}
+        isSelected={false}
+        isArmed={false}
+        isFiring={false}
+        firedAt={null}
+        now={BASE_NOW}
+        onSelect={() => {}}
+        stations={[]}
+        mode="rehearsal"
+      />,
+    );
+    const row = container.querySelector('[role="row"]') as HTMLElement;
+    expect(row).toHaveAttribute('aria-selected', 'true');
+  });
+
+  it('gutter click calls onSetPlayhead and does NOT call onSelect', () => {
+    const onSelect = vi.fn();
+    const onSetPlayhead = vi.fn();
+    const cue = makeCue();
+    render(
+      <CueRow
+        cue={cue}
+        isPlayhead={false}
+        isSelected={false}
+        isArmed={false}
+        isFiring={false}
+        firedAt={null}
+        now={BASE_NOW}
+        onSelect={onSelect}
+        onSetPlayhead={onSetPlayhead}
+        stations={[]}
+        mode="rehearsal"
+      />,
+    );
+    const gutter = screen.getByTestId('playhead-gutter');
+    fireEvent.click(gutter);
+    expect(onSetPlayhead).toHaveBeenCalledOnce();
+    expect(onSelect).not.toHaveBeenCalled();
+  });
+
+  it('gutter has aria-label "Set playhead"', () => {
+    const cue = makeCue();
+    render(
+      <CueRow
+        cue={cue}
+        isPlayhead={false}
+        isSelected={false}
+        isArmed={false}
+        isFiring={false}
+        firedAt={null}
+        now={BASE_NOW}
+        onSelect={() => {}}
+        stations={[]}
+        mode="rehearsal"
+      />,
+    );
+    expect(screen.getByLabelText('Set playhead')).toBeInTheDocument();
+  });
+
+  // ── cue_number column ────────────────────────────────────────────────────────
+
+  it('renders cue-number-cell (empty when cue_number is null)', () => {
+    const cue = makeCue({ cue_number: null });
+    render(
+      <CueRow
+        cue={cue}
+        isPlayhead={false}
+        isSelected={false}
+        isArmed={false}
+        isFiring={false}
+        firedAt={null}
+        now={BASE_NOW}
+        onSelect={() => {}}
+        stations={[]}
+        mode="rehearsal"
+      />,
+    );
+    const cell = screen.getByTestId('cue-number-cell');
+    expect(cell).toBeInTheDocument();
+    expect(cell.textContent).toBe('');
+  });
+
+  it('renders cue_number value in cue-number-cell', () => {
+    const cue = makeCue({ cue_number: '1A' });
+    render(
+      <CueRow
+        cue={cue}
+        isPlayhead={false}
+        isSelected={false}
+        isArmed={false}
+        isFiring={false}
+        firedAt={null}
+        now={BASE_NOW}
+        onSelect={() => {}}
+        stations={[]}
+        mode="rehearsal"
+      />,
+    );
+    expect(screen.getByTestId('cue-number-cell')).toHaveTextContent('1A');
+  });
+
+  it('renders InlineEdit in cue-number-cell when inlineEditField=cue_number', () => {
+    const cue = makeCue({ cue_number: '5' });
+    render(
+      <CueRow
+        cue={cue}
+        isPlayhead={false}
+        isSelected={true}
+        isArmed={false}
+        isFiring={false}
+        firedAt={null}
+        now={BASE_NOW}
+        onSelect={() => {}}
+        stations={[]}
+        mode="rehearsal"
+        inlineEditField="cue_number"
+        onInlineCommit={vi.fn()}
+        onInlineCancel={vi.fn()}
+      />,
+    );
+    const input = screen.getByTestId('inline-edit-input') as HTMLInputElement;
+    expect(input).toBeInTheDocument();
+    expect(input.value).toBe('5');
+  });
+
+  it('calls onInlineCommit when inline edit commits cue_number', () => {
+    const onInlineCommit = vi.fn();
+    const cue = makeCue({ cue_number: null });
+    render(
+      <CueRow
+        cue={cue}
+        isPlayhead={false}
+        isSelected={true}
+        isArmed={false}
+        isFiring={false}
+        firedAt={null}
+        now={BASE_NOW}
+        onSelect={() => {}}
+        stations={[]}
+        mode="rehearsal"
+        inlineEditField="cue_number"
+        onInlineCommit={onInlineCommit}
+        onInlineCancel={vi.fn()}
+      />,
+    );
+    const input = screen.getByTestId('inline-edit-input');
+    fireEvent.change(input, { target: { value: '10' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    expect(onInlineCommit).toHaveBeenCalledWith('cue_number', '10');
+  });
+
+  it('calls onInlineCancel on Escape in inline edit', () => {
+    const onInlineCancel = vi.fn();
+    const cue = makeCue({ cue_number: '1' });
+    render(
+      <CueRow
+        cue={cue}
+        isPlayhead={false}
+        isSelected={true}
+        isArmed={false}
+        isFiring={false}
+        firedAt={null}
+        now={BASE_NOW}
+        onSelect={() => {}}
+        stations={[]}
+        mode="rehearsal"
+        inlineEditField="cue_number"
+        onInlineCommit={vi.fn()}
+        onInlineCancel={onInlineCancel}
+      />,
+    );
+    const input = screen.getByTestId('inline-edit-input');
+    fireEvent.keyDown(input, { key: 'Escape' });
+    expect(onInlineCancel).toHaveBeenCalledOnce();
+  });
+
+  it('renders InlineEdit for label when inlineEditField=label', () => {
+    const cue = makeCue({ label: 'Scene 1' });
+    render(
+      <CueRow
+        cue={cue}
+        isPlayhead={false}
+        isSelected={true}
+        isArmed={false}
+        isFiring={false}
+        firedAt={null}
+        now={BASE_NOW}
+        onSelect={() => {}}
+        stations={[]}
+        mode="rehearsal"
+        inlineEditField="label"
+        onInlineCommit={vi.fn()}
+        onInlineCancel={vi.fn()}
+      />,
+    );
+    const input = screen.getByTestId('inline-edit-input') as HTMLInputElement;
+    expect(input.value).toBe('Scene 1');
+  });
+
+  it('renders InlineEdit for duration_hint_ms when inlineEditField=duration_hint_ms', () => {
+    const cue = makeCue({ duration_hint_ms: 5000 });
+    render(
+      <CueRow
+        cue={cue}
+        isPlayhead={false}
+        isSelected={true}
+        isArmed={false}
+        isFiring={false}
+        firedAt={null}
+        now={BASE_NOW}
+        onSelect={() => {}}
+        stations={[]}
+        mode="rehearsal"
+        inlineEditField="duration_hint_ms"
+        onInlineCommit={vi.fn()}
+        onInlineCancel={vi.fn()}
+      />,
+    );
+    const input = screen.getByTestId('inline-edit-input') as HTMLInputElement;
+    // 5000ms = 5 seconds
+    expect(input.value).toBe('5');
+  });
+
+  it('no InlineEdit when inlineEditField is null', () => {
+    const cue = makeCue({ cue_number: '1' });
+    render(
+      <CueRow
+        cue={cue}
+        isPlayhead={false}
+        isSelected={true}
+        isArmed={false}
+        isFiring={false}
+        firedAt={null}
+        now={BASE_NOW}
+        onSelect={() => {}}
+        stations={[]}
+        mode="rehearsal"
+        inlineEditField={null}
+        onInlineCommit={vi.fn()}
+        onInlineCancel={vi.fn()}
+      />,
+    );
+    expect(screen.queryByTestId('inline-edit-input')).toBeNull();
   });
 });

@@ -36,12 +36,18 @@ export function HelpOverlay({ onClose }: HelpOverlayProps) {
         <table style={{ borderCollapse: 'collapse', width: '100%' }}>
           <tbody>
             {([
-              ['Space', 'GO — fire armed cue'],
+              ['Space', 'GO — fire armed cue (SHOW mode: hold 250ms)'],
               ['Q', 'Standby — arm playhead cue'],
+              ['B', 'BACK — re-arm previous cue (no dispatch)'],
               ['E', 'Edit playhead cue (REHEARSAL only)'],
               ['↑ / ↓', 'Navigate playhead'],
-              ['Esc', 'Unarm current cue'],
-              ['Cmd+Shift+G (long-press)', 'Override fire (SM emergency)'],
+              ['Esc', 'Unarm / close inline edit'],
+              ['N', 'Edit cue number of selected row (REHEARSAL)'],
+              ['L', 'Edit label of selected row (REHEARSAL)'],
+              ['D', 'Edit duration of selected row in seconds (REHEARSAL)'],
+              ['O', 'Edit standby note of selected row (REHEARSAL)'],
+              ['Tab', 'Commit inline edit + move to next field'],
+              ['Cmd+Shift+G', 'Override fire (SM emergency)'],
               ['?', 'This help'],
             ] as [string, string][]).map(([key, desc]) => (
               <tr key={key}>

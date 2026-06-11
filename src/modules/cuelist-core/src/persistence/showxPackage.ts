@@ -61,12 +61,23 @@ export async function openShowxPackage(pkgPath: string): Promise<OpenResult> {
     cuelists.push(JSON.parse(raw) as CuelistJson);
   }
 
+  // Pre-validate doc.yjs before running migrations — needed to correctly determine recoveredFromJson
+  // when migrations run (migration path always rebuilds from JSON regardless of doc.yjs state).
+  const docYjsPath = path.join(pkgPath, 'doc.yjs');
+  let yjsDoc: Y.Doc | null = null;
+  try {
+    const bin = await fs.readFile(docYjsPath);
+    if (bin.length > 0) {
+      const d = new Y.Doc();
+      Y.applyUpdate(d, new Uint8Array(bin));
+      yjsDoc = d;
+    }
+  } catch {
+    // Missing, unreadable, or corrupt — yjsDoc stays null
+  }
+
   // Run migrations on JSON projections
   const { migrated, applied } = await runMigrations({ show: showJson, cuelists });
-
-  // Attempt to load doc.yjs binary
-  const docYjsPath = path.join(pkgPath, 'doc.yjs');
-  const docYjsExists = await fileExists(docYjsPath);
 
   let doc: Y.Doc;
   let recoveredFromJson = false;
@@ -75,20 +86,9 @@ export async function openShowxPackage(pkgPath: string): Promise<OpenResult> {
     // Migrations ran — JSON is now authoritative; doc.yjs holds pre-migration state and must be discarded.
     // Rebuild Y.Doc from migrated JSON so CRDT state matches the migrated projections (data_model.md §11.3).
     doc = await rebuildDocFromJson(pkgPath, migrated.show, migrated.cuelists);
-  } else if (docYjsExists) {
-    try {
-      const bin = await fs.readFile(docYjsPath);
-      doc = new Y.Doc();
-      Y.applyUpdate(doc, new Uint8Array(bin));
-    } catch {
-      // Corrupt binary — fall back to JSON
-      doc = await rebuildDocFromJson(
-        pkgPath,
-        migrated.show,
-        migrated.cuelists,
-      );
-      recoveredFromJson = true;
-    }
+    recoveredFromJson = yjsDoc === null;
+  } else if (yjsDoc !== null) {
+    doc = yjsDoc;
   } else {
     doc = await rebuildDocFromJson(
       pkgPath,
@@ -181,13 +181,3 @@ export async function saveShowxPackage(
   });
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-async function fileExists(p: string): Promise<boolean> {
-  try {
-    await fs.stat(p);
-    return true;
-  } catch {
-    return false;
-  }
-}

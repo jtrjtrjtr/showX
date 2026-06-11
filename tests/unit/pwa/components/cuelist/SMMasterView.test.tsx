@@ -333,4 +333,287 @@ describe('SMMasterView', () => {
       expect(alert.textContent).not.toMatch(/:\d+/);
     });
   });
+
+  // ── B003-603 GO ergonomics ────────────────────────────────────────────────
+
+  describe('TransportBar BACK button', () => {
+    it('BACK button is present with correct testid', () => {
+      const conn = makeTestConnection();
+      addCuelist(conn.doc, 'cl1');
+      addCue(conn.doc, 'cl1', 'q1', 'First Cue');
+      render(<Wrapper cuelistId="cl1" conn={conn} />);
+      expect(screen.getByTestId('transport-back')).toBeInTheDocument();
+    });
+
+    it('BACK button does not call sendGoRequest', async () => {
+      const conn = makeTestConnection();
+      addCuelist(conn.doc, 'cl1');
+      addCue(conn.doc, 'cl1', 'q1', 'First Cue');
+      addCue(conn.doc, 'cl1', 'q2', 'Second Cue');
+      render(<Wrapper cuelistId="cl1" conn={conn} />);
+
+      // Navigate to second cue
+      await act(async () => {
+        fireEvent.keyDown(window, { code: 'ArrowDown' });
+        await new Promise<void>((r) => setTimeout(r, 150));
+      });
+      await act(async () => {
+        fireEvent.keyDown(window, { code: 'ArrowDown' });
+        await new Promise<void>((r) => setTimeout(r, 150));
+      });
+
+      const backBtn = screen.getByTestId('transport-back');
+      await act(async () => {
+        fireEvent.click(backBtn);
+        await new Promise<void>((r) => setTimeout(r, 150));
+      });
+
+      expect(conn.sideChannel.sendGoRequest).not.toHaveBeenCalled();
+    });
+
+    it('BACK button calls sendArmRequest for previous cue', async () => {
+      const conn = makeTestConnection();
+      addCuelist(conn.doc, 'cl1');
+      addCue(conn.doc, 'cl1', 'q1', 'First Cue');
+      addCue(conn.doc, 'cl1', 'q2', 'Second Cue');
+      render(<Wrapper cuelistId="cl1" conn={conn} />);
+
+      // Navigate to second cue
+      await act(async () => {
+        fireEvent.keyDown(window, { code: 'ArrowDown' });
+        await new Promise<void>((r) => setTimeout(r, 150));
+      });
+      await act(async () => {
+        fireEvent.keyDown(window, { code: 'ArrowDown' });
+        await new Promise<void>((r) => setTimeout(r, 150));
+      });
+
+      // Clear any prior arm calls from navigation
+      vi.mocked(conn.sideChannel.sendArmRequest).mockClear();
+
+      const backBtn = screen.getByTestId('transport-back');
+      await act(async () => {
+        fireEvent.click(backBtn);
+        await new Promise<void>((r) => setTimeout(r, 150));
+      });
+
+      // BACK arms the previous cue (q1) — does NOT fire a GO
+      expect(conn.sideChannel.sendArmRequest).toHaveBeenCalledWith('cl1', 'q1');
+    });
+
+    it('UNARM button is present with correct testid', () => {
+      const conn = makeTestConnection();
+      addCuelist(conn.doc, 'cl1');
+      render(<Wrapper cuelistId="cl1" conn={conn} />);
+      expect(screen.getByTestId('transport-unarm')).toBeInTheDocument();
+    });
+  });
+
+  describe('B key shortcut for BACK', () => {
+    it('B key calls sendArmRequest for previous cue (no sendGoRequest)', async () => {
+      const conn = makeTestConnection();
+      addCuelist(conn.doc, 'cl1');
+      addCue(conn.doc, 'cl1', 'q1', 'First Cue');
+      addCue(conn.doc, 'cl1', 'q2', 'Second Cue');
+      render(<Wrapper cuelistId="cl1" conn={conn} />);
+
+      // Navigate to second cue
+      await act(async () => {
+        fireEvent.keyDown(window, { code: 'ArrowDown' });
+        await new Promise<void>((r) => setTimeout(r, 150));
+      });
+      await act(async () => {
+        fireEvent.keyDown(window, { code: 'ArrowDown' });
+        await new Promise<void>((r) => setTimeout(r, 150));
+      });
+
+      vi.mocked(conn.sideChannel.sendArmRequest).mockClear();
+      vi.mocked(conn.sideChannel.sendGoRequest).mockClear();
+
+      await act(async () => {
+        fireEvent.keyDown(window, { code: 'KeyB' });
+        await new Promise<void>((r) => setTimeout(r, 150));
+      });
+
+      expect(conn.sideChannel.sendGoRequest).not.toHaveBeenCalled();
+      expect(conn.sideChannel.sendArmRequest).toHaveBeenCalledWith('cl1', 'q1');
+    });
+  });
+
+  describe('GO debounce guard (goInert)', () => {
+    beforeEach(() => vi.useFakeTimers());
+    afterEach(() => vi.useRealTimers());
+
+    it('Space fires once; second Space within 300ms is blocked', async () => {
+      const conn = makeTestConnection();
+      addCuelist(conn.doc, 'cl1');
+      addCue(conn.doc, 'cl1', 'q1', 'Fire This');
+      render(<Wrapper cuelistId="cl1" conn={conn} />);
+
+      // Navigate to first cue
+      await act(async () => {
+        fireEvent.keyDown(window, { code: 'ArrowDown' });
+        vi.advanceTimersByTime(150);
+      });
+      // Arm
+      await act(async () => {
+        fireEvent.keyDown(window, { code: 'KeyQ' });
+        vi.advanceTimersByTime(150);
+      });
+
+      // First GO
+      await act(async () => {
+        fireEvent.keyDown(window, { code: 'Space' });
+      });
+
+      // Second GO within debounce window (< 300ms)
+      await act(async () => {
+        vi.advanceTimersByTime(100);
+        fireEvent.keyDown(window, { code: 'Space' });
+      });
+
+      // Only one GO should have been sent
+      expect(conn.sideChannel.sendGoRequest).toHaveBeenCalledTimes(1);
+    });
+
+    it('Space fires again after 300ms debounce window clears', async () => {
+      const conn = makeTestConnection();
+      addCuelist(conn.doc, 'cl1');
+      addCue(conn.doc, 'cl1', 'q1', 'Fire This');
+      render(<Wrapper cuelistId="cl1" conn={conn} />);
+
+      await act(async () => {
+        fireEvent.keyDown(window, { code: 'ArrowDown' });
+        vi.advanceTimersByTime(150);
+      });
+      await act(async () => {
+        fireEvent.keyDown(window, { code: 'KeyQ' });
+        vi.advanceTimersByTime(150);
+      });
+
+      // First GO
+      await act(async () => {
+        fireEvent.keyDown(window, { code: 'Space' });
+      });
+
+      // Advance past debounce window
+      await act(async () => {
+        vi.advanceTimersByTime(350);
+      });
+
+      // Arm again (awareness update needed between GOs in real usage)
+      await act(async () => {
+        fireEvent.keyDown(window, { code: 'KeyQ' });
+        vi.advanceTimersByTime(150);
+      });
+
+      // Second GO after debounce clears
+      await act(async () => {
+        fireEvent.keyDown(window, { code: 'Space' });
+      });
+
+      expect(conn.sideChannel.sendGoRequest).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  // ── Inline editing shortcuts ──────────────────────────────────────────────────
+
+  describe('inline editing shortcuts (N/L/D/O)', () => {
+    it('N key on selected row in rehearsal opens cue_number inline edit', async () => {
+      const conn = makeTestConnection();
+      addCuelist(conn.doc, 'cl1');
+      addCue(conn.doc, 'cl1', 'q1', 'Scene 1');
+      render(<Wrapper cuelistId="cl1" conn={conn} />);
+
+      // Click to select the first row
+      await act(async () => {
+        const rows = screen.getAllByRole('row');
+        fireEvent.click(rows[0]);
+      });
+
+      await act(async () => {
+        fireEvent.keyDown(window, { code: 'KeyN' });
+      });
+
+      expect(screen.getByTestId('inline-edit-input')).toBeInTheDocument();
+    });
+
+    it('L key on selected row opens label inline edit', async () => {
+      const conn = makeTestConnection();
+      addCuelist(conn.doc, 'cl1');
+      addCue(conn.doc, 'cl1', 'q1', 'Scene 1');
+      render(<Wrapper cuelistId="cl1" conn={conn} />);
+
+      await act(async () => {
+        const rows = screen.getAllByRole('row');
+        fireEvent.click(rows[0]);
+      });
+
+      await act(async () => {
+        fireEvent.keyDown(window, { code: 'KeyL' });
+      });
+
+      const input = screen.getByTestId('inline-edit-input') as HTMLInputElement;
+      expect(input.value).toBe('Scene 1');
+    });
+
+    it('N key does nothing when no row is selected', async () => {
+      const conn = makeTestConnection();
+      addCuelist(conn.doc, 'cl1');
+      addCue(conn.doc, 'cl1', 'q1', 'Scene 1');
+      render(<Wrapper cuelistId="cl1" conn={conn} />);
+
+      await act(async () => {
+        fireEvent.keyDown(window, { code: 'KeyN' });
+      });
+
+      expect(screen.queryByTestId('inline-edit-input')).toBeNull();
+    });
+
+    it('N key does nothing in show mode', async () => {
+      const conn = makeTestConnection();
+      addCuelist(conn.doc, 'cl1');
+      addCue(conn.doc, 'cl1', 'q1', 'Scene 1');
+      render(<Wrapper cuelistId="cl1" conn={conn} />);
+
+      // Select
+      await act(async () => {
+        const rows = screen.getAllByRole('row');
+        fireEvent.click(rows[0]);
+      });
+
+      // Switch to show mode
+      await act(async () => {
+        fireEvent.click(screen.getByTestId('mode-badge'));
+      });
+
+      await act(async () => {
+        fireEvent.keyDown(window, { code: 'KeyN' });
+      });
+
+      expect(screen.queryByTestId('inline-edit-input')).toBeNull();
+    });
+
+    it('Escape closes inline edit without committing', async () => {
+      const conn = makeTestConnection();
+      addCuelist(conn.doc, 'cl1');
+      addCue(conn.doc, 'cl1', 'q1', 'Scene 1');
+      render(<Wrapper cuelistId="cl1" conn={conn} />);
+
+      await act(async () => {
+        const rows = screen.getAllByRole('row');
+        fireEvent.click(rows[0]);
+      });
+      await act(async () => { fireEvent.keyDown(window, { code: 'KeyN' }); });
+
+      expect(screen.getByTestId('inline-edit-input')).toBeInTheDocument();
+
+      await act(async () => {
+        const input = screen.getByTestId('inline-edit-input');
+        fireEvent.keyDown(input, { key: 'Escape' });
+      });
+
+      expect(screen.queryByTestId('inline-edit-input')).toBeNull();
+    });
+  });
 });

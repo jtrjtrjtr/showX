@@ -142,13 +142,14 @@ describe('Round-trip', () => {
     expect(recoveredFromJson).toBe(false);
   });
 
-  it('save then open: appliedMigrations is empty (no migrations registered in MVP)', async () => {
+  it('save then open: M001_add_cue_number runs on first open of a pre-migration doc', async () => {
     const dir = await makeTmp();
     const doc = buildTestDoc();
     await saveShowxPackage(doc, dir, { reason: 'explicit' });
 
     const { appliedMigrations } = await openShowxPackage(dir);
-    expect(appliedMigrations).toHaveLength(0);
+    expect(appliedMigrations).toHaveLength(1);
+    expect(appliedMigrations).toContain('M001_add_cue_number');
   });
 
   it('doc.yjs binary is present and non-empty after save', async () => {
@@ -464,11 +465,18 @@ describe('Sample fixture', () => {
       '../../../../fixtures/showx/sample-show.showx',
     );
 
-    // fixture has no doc.yjs — should open via recovery
-    const { doc, recoveredFromJson } = await openShowxPackage(fixturePath);
-    expect(recoveredFromJson).toBe(true);
-    expect(getMeta(doc).get('title')).toBe('Sample Show');
-    const cl = getCuelists(doc).get(0);
-    expect((cl.get('cues') as Y.Array<Y.Map<unknown>>).length).toBe(3);
+    // Copy to temp dir — openShowxPackage writes back when migrations run; must not mutate the fixture.
+    const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'showx-fixture-sample-'));
+    try {
+      await fs.cp(fixturePath, tmpDir, { recursive: true });
+      // fixture has no doc.yjs — should open via recovery (recoveredFromJson=true)
+      const { doc, recoveredFromJson } = await openShowxPackage(tmpDir);
+      expect(recoveredFromJson).toBe(true);
+      expect(getMeta(doc).get('title')).toBe('Sample Show');
+      const cl = getCuelists(doc).get(0);
+      expect((cl.get('cues') as Y.Array<Y.Map<unknown>>).length).toBe(3);
+    } finally {
+      await fs.rm(tmpDir, { recursive: true, force: true });
+    }
   });
 });

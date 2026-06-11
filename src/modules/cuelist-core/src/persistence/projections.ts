@@ -50,6 +50,7 @@ export interface CueJson {
   created_by: string;
   modified_at: string;
   modified_by: string;
+  cue_number?: string | null;
 }
 
 export interface CuelistJson {
@@ -185,6 +186,7 @@ function cueMapToJson(cueMap: Y.Map<unknown>): CueJson {
     created_by: (cueMap.get('created_by') as string) ?? '',
     modified_at: (cueMap.get('modified_at') as string) ?? '',
     modified_by: (cueMap.get('modified_by') as string) ?? '',
+    cue_number: (cueMap.get('cue_number') as string | null | undefined) ?? null,
   };
 }
 
@@ -301,6 +303,7 @@ function rebuildCueMap(cue: CueJson, sortKey: number): Y.Map<unknown> {
   cueMap.set('created_by', cue.created_by);
   cueMap.set('modified_at', cue.modified_at);
   cueMap.set('modified_by', cue.modified_by);
+  cueMap.set('cue_number', cue.cue_number ?? null);
   cueMap.set('sort_key', sortKey);
 
   const payloadsArr = new Y.Array<Y.Map<unknown>>();

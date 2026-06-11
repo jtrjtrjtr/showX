@@ -34,6 +34,7 @@ export function makeCueMap(opts: MakeCueOpts): Y.Map<unknown> {
   m.set('duration_hint_ms', null);
   // TODO(0.2): upgrade notes/standby_note to Y.Text for collab char-level merge
   m.set('notes', '');
+  m.set('cue_number', null);
   m.set('payload_frozen_at', null);
   // sort_key determines display order — set by addCue / insertCueAfter / reorderCues
   m.set('sort_key', 0);
@@ -287,6 +288,8 @@ export interface CueFieldPatch {
   standby_note?: string;
   trigger?: Trigger;
   duration_hint_ms?: number | null;
+  /** QLab-style display number. Trimmed, max 8 chars. Null clears. No uniqueness constraint. */
+  cue_number?: string | null;
 }
 
 /**
@@ -331,6 +334,12 @@ export function updateCueFields(
   if (patch.duration_hint_ms !== undefined && patch.duration_hint_ms !== null && patch.duration_hint_ms < 0) {
     throw new ValidationError('duration_hint_ms must be null or >= 0', 'duration_hint_ms');
   }
+  if (patch.cue_number !== undefined && patch.cue_number !== null) {
+    const trimmed = patch.cue_number.trim();
+    if (trimmed.length > 8) {
+      throw new ValidationError('cue_number max 8 chars', 'cue_number');
+    }
+  }
   const cue = findCue(doc, cuelistId, cueId);
   doc.transact(() => {
     if (patch.label !== undefined) cue.set('label', patch.label);
@@ -338,6 +347,9 @@ export function updateCueFields(
     if (patch.standby_note !== undefined) cue.set('standby_note', patch.standby_note);
     if (patch.trigger !== undefined) cue.set('trigger', patch.trigger);
     if (patch.duration_hint_ms !== undefined) cue.set('duration_hint_ms', patch.duration_hint_ms);
+    if (patch.cue_number !== undefined) {
+      cue.set('cue_number', patch.cue_number !== null ? patch.cue_number.trim() : null);
+    }
     touchModified(cue, modifiedBy);
   });
 }

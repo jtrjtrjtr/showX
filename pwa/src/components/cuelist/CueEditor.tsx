@@ -67,7 +67,7 @@ function DeleteConfirmDialog({ cueLabel, onConfirm, onCancel }: DeleteConfirmDia
             style={{
               padding: `${tokens.space.s}px ${tokens.space.l}px`,
               background: tokens.color.red,
-              color: tokens.color.ink,
+              color: tokens.color.bg,
               border: 'none',
               borderRadius: tokens.radius.s,
               fontSize: 14,
@@ -158,7 +158,7 @@ export function CueEditor({ cuelistId, cueId, onClose }: CueEditorProps) {
             aria-label="SHOW mode lock banner"
             style={{
               background: tokens.color.red,
-              color: tokens.color.ink,
+              color: tokens.color.bg,
               padding: `${tokens.space.s}px ${tokens.space.l}px`,
               fontSize: 13,
               display: 'flex',
@@ -210,7 +210,7 @@ export function CueEditor({ cuelistId, cueId, onClose }: CueEditorProps) {
             disabled={isLocked}
             style={{
               background: isLocked ? tokens.color.raised : tokens.color.red,
-              color: isLocked ? tokens.color.ink_disabled : tokens.color.ink,
+              color: isLocked ? tokens.color.ink_disabled : tokens.color.bg,
               border: 'none',
               borderRadius: tokens.radius.s,
               padding: `${tokens.space.s}px ${tokens.space.l}px`,

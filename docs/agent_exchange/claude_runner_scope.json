@@ -1,14 +1,8 @@
 {
-  "enabled": true,
-  "bundle_id": "ShowX-3.6",
-  "allowed_task_ids": [
-    "B003-601",
-    "B003-602",
-    "B003-603",
-    "B003-604",
-    "B003-605"
-  ],
-  "rationale": "ShowX-3.6 Operator MVP per roadmap M1 (Jindrich approved 2026-06-11). Order: 604 -> 601 -> 602 -> 603 -> 605. B003-606 = Architect-owned E2E gate, NOT for Forge. Decision: decisions/2026-06-11_showx_3_6_bundle_open.md",
-  "updated_at": "2026-06-11T09:30:00Z",
+  "enabled": false,
+  "bundle_id": "ShowX-3.6-CLOSED",
+  "allowed_task_ids": [],
+  "rationale": "ShowX-3.6 Operator MVP complete 2026-06-11 ~19:45 CEST. 6/6 accepted (601 r1, 602 r1, 603 r1, 604 r3, 605 r1, 606 architect E2E gate PASSED on installed v0.2.0 DMG). Suite 1488/1488. Gate evidence in close decision. Roadmap M1 part 1 done.",
+  "updated_at": "2026-06-11T17:45:00Z",
   "updated_by": "architect"
 }

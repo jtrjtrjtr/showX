@@ -268,3 +268,13 @@ Architect edits this file to:
 - Binding strategy: `../xlab-strategy/decisions/2026-06-05_bridgex_to_showx_module.md`
 - MVP scope: `../xlab-strategy/docs/showx_mvp_scope.md`
 - Module architecture: `../xlab-strategy/docs/showx_module_architecture.md`
+
+## E2E gate (binding od ShowX-3.6, per Jindřich 2026-06-11)
+
+Každý bundle MUSÍ obsahovat finální architect-owned verifikační task (`type: verification`, `owner_hint: architect`):
+1. Plný typecheck + test suite zelené
+2. Production build (`pnpm build` + PWA build) + DMG + instalace do /Applications
+3. Proklik klíčových flows NA INSTALOVANÉ aplikaci (browser stanice + shell okno), včetně OSC capture kde relevantní
+4. Evidence (logy, capture, screenshoty) v bundle close decision
+
+Bundle nelze uzavřít bez tohoto tasku. Rationale: 3.4 (3 post-accept rescues) + 3.5 (4 rescues — mj. GO nikdy nemohl projít, rozbitý prod build) — unit testy + Critic review nechytají wiring-level bugy.

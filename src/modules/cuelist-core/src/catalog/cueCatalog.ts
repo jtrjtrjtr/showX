@@ -20,6 +20,7 @@ export function computeCueCatalog(doc: Y.Doc): CueCatalog {
       const cueJson = cueMap.toJSON() as {
         id: string;
         label: string;
+        cue_number?: string | null;
         department: string[];
         payloads: Payload[];
       };
@@ -49,6 +50,7 @@ export function computeCueCatalog(doc: Y.Doc): CueCatalog {
       entries.push({
         id: cueJson.id,
         label: cueJson.label,
+        cue_number: cueJson.cue_number ?? null,
         cuelist_id: cuelistId,
         department: cueJson.department,
         payloads: entryPayloads,
