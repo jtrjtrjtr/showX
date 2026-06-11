@@ -18,3 +18,7 @@ Competitive research (10 produktů, 4 research agenti — `xlab-strategy/docs/sh
 ## Scope flag
 
 enabled: true, allowed: B003-601..605 (606 = architect-owned, Forge přeskakuje).
+
+## Addendum 17:10 — freeze exception
+
+Stabilizační freeze (#104, applied 2026-06-11 na všechny vibecoding runnery) zastavil bundle na ~7h. Jindřich rozhodl variantu A: ShowX runnery obnoveny (explicitní dnešní autorizace 3.6 má přednost), EventX + BridgeX zůstávají frozen. Logged in carl_it.md.
