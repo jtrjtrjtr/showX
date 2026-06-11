@@ -1,8 +1,13 @@
 {
-  "enabled": false,
-  "bundle_id": "ShowX-3.6-CLOSED",
-  "allowed_task_ids": [],
-  "rationale": "ShowX-3.6 Operator MVP complete 2026-06-11 ~19:45 CEST. 6/6 accepted (601 r1, 602 r1, 603 r1, 604 r3, 605 r1, 606 architect E2E gate PASSED on installed v0.2.0 DMG). Suite 1488/1488. Gate evidence in close decision. Roadmap M1 part 1 done.",
-  "updated_at": "2026-06-11T17:45:00Z",
+  "enabled": true,
+  "bundle_id": "ShowX-3.7",
+  "allowed_task_ids": [
+    "B003-701",
+    "B003-702",
+    "B003-703",
+    "B003-704"
+  ],
+  "rationale": "ShowX-3.7 M1 completion (Jindrich 'rozjed to' 2026-06-11 19:50): cue authoring UI, payload editing in browser, MIDI routing UI, yellow contrast. Order: 701 -> 704 -> 702 -> 703. B003-705 = Architect gate. Layout hotfix 0a0ae7c applied by Architect pre-bundle per direct instruction.",
+  "updated_at": "2026-06-11T18:25:00Z",
   "updated_by": "architect"
 }

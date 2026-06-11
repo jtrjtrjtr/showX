@@ -278,3 +278,6 @@ Každý bundle MUSÍ obsahovat finální architect-owned verifikační task (`ty
 4. Evidence (logy, capture, screenshoty) v bundle close decision
 
 Bundle nelze uzavřít bez tohoto tasku. Rationale: 3.4 (3 post-accept rescues) + 3.5 (4 rescues — mj. GO nikdy nemohl projít, rozbitý prod build) — unit testy + Critic review nechytají wiring-level bugy.
+
+### E2E gate dodatek (2026-06-11 večer, po 3.6 layout regresi)
+Gate MUSÍ zahrnovat vizuální prohlídku screenshotů lidským/architektovým okem — testid asserty layout regrese nechytí (3.6: prohozené grid sloupce prošly gate, Jindřich je našel za 5 minut).
