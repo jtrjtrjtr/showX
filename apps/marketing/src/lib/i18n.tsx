@@ -17,6 +17,7 @@ const dict: Record<string, { cs: string; en: string }> = {
   'nav.downloads': { cs: 'Ke stažení', en: 'Downloads' },
   'nav.docs': { cs: 'Dokumentace', en: 'Docs' },
   'nav.guide': { cs: 'Návod', en: 'Guide' },
+  'nav.scenarios': { cs: 'Scénáře', en: 'Scenarios' },
   'nav.preview': { cs: 'Požádat o přístup →', en: 'Request preview access →' },
 
   // Footer

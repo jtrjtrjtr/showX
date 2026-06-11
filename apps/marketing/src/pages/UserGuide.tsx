@@ -464,6 +464,156 @@ const sections: Section[] = [
     },
   },
   {
+    id: 'pairing-qr',
+    title: { cs: '7a. Párování QR kódem & trvalá session (0.2)', en: '7a. QR pairing & persistent session (0.2)' },
+    body: {
+      cs: (
+        <>
+          <p>Od 0.2 se páruješ <strong>jednou</strong>. Shell okno dole zobrazuje <strong>STATIONS panel</strong>: URL + QR kód (v test módu s předvyplněným PINem). Mobil naskenuje QR → formulář → hotovo. Refresh stránky ani restart aplikace tě o session nepřipraví.</p>
+          <ul>
+            <li><strong>Open station in this Mac's browser</strong> — tlačítko pro lokální stanici</li>
+            <li>Role <strong>Stage Manager</strong> = drží GO a playhead; <strong>Operator</strong> = vidí svoje departmenty</li>
+            <li>Zrušení zařízení: shell → Pairing → revoke</li>
+          </ul>
+        </>
+      ),
+      en: (
+        <>
+          <p>Since 0.2 you pair <strong>once</strong>. The shell window shows a <strong>STATIONS panel</strong>: URL + QR code (test mode pre-fills the PIN). Scan, submit, done. Page refresh or app relaunch keeps your session.</p>
+          <ul>
+            <li><strong>Open station in this Mac's browser</strong> — local station shortcut</li>
+            <li><strong>Stage Manager</strong> role = owns GO and the playhead; <strong>Operator</strong> = sees their departments</li>
+            <li>Revoke a device: shell → Pairing → revoke</li>
+          </ul>
+        </>
+      ),
+    },
+  },
+  {
+    id: 'authoring',
+    title: { cs: '7b. Stavba show z browseru (0.2)', en: '7b. Building a show from the browser (0.2)' },
+    body: {
+      cs: (
+        <>
+          <p>Celou show postavíš ze stanice — shell potřebuješ jen na devices a routing.</p>
+          <ul>
+            <li><strong>+ Add cue</strong> (prázdná show) nebo <strong>+ below</strong> na vybraném řádku — nové cue se rovnou edituje</li>
+            <li><strong>🗑</strong> smaže cue, 2 s běží <strong>Undo</strong> toast</li>
+            <li><strong>Drag &amp; drop</strong> řádků mění pořadí (i dlouhým podržením na dotyku)</li>
+            <li>Rychlé klávesy na vybraném řádku: <kbd>N</kbd> číslo · <kbd>L</kbd> název · <kbd>D</kbd> duration (s) · <kbd>O</kbd> standby note. Enter uloží, Esc zruší, Tab skočí na další pole</li>
+            <li><strong>Double-click</strong> → dialog: texty + <strong>Payloads</strong> (OSC adresa+argy, lx_ref cue číslo, MIDI, wait)</li>
+            <li>Vše se živě propisuje všem stanicím a ukládá do .showx</li>
+          </ul>
+        </>
+      ),
+      en: (
+        <>
+          <p>Build the entire show from a station — the shell is only needed for devices and routing.</p>
+          <ul>
+            <li><strong>+ Add cue</strong> (empty show) or <strong>+ below</strong> on the selected row — the new cue opens straight into editing</li>
+            <li><strong>🗑</strong> deletes with a 2-second <strong>Undo</strong> toast</li>
+            <li><strong>Drag &amp; drop</strong> rows to reorder (long-press on touch)</li>
+            <li>Single-key edits on the selected row: <kbd>N</kbd> number · <kbd>L</kbd> label · <kbd>D</kbd> duration (s) · <kbd>O</kbd> standby note. Enter commits, Esc cancels, Tab hops fields</li>
+            <li><strong>Double-click</strong> → dialog: texts + <strong>Payloads</strong> (OSC address+args, lx_ref cue number, MIDI, wait)</li>
+            <li>Everything syncs live to all stations and persists into .showx</li>
+          </ul>
+        </>
+      ),
+    },
+  },
+  {
+    id: 'triggers-timing',
+    title: { cs: '7c. Triggery, durations & countdown (0.2)', en: '7c. Triggers, durations & countdown (0.2)' },
+    body: {
+      cs: (
+        <>
+          <p>Sloupec <strong>TRIGGER</strong> říká, jak cue startuje; sloupec <strong>DUR</strong> jak dlouho běží.</p>
+          <ul>
+            <li><strong>⏵ manual</strong> — čeká na GO (výchozí)</li>
+            <li><strong>→ follow</strong> — startuje, když předchozí cue doběhne</li>
+            <li><strong>⏩ +N s continue</strong> — startuje N sekund po startu předchozího</li>
+            <li><strong>⏱ timecode</strong> — připraveno pro LTC/MTC (plná implementace na roadmapě)</li>
+          </ul>
+          <p>Klik na trigger buňku (rehearsal) = přepínač. Cues, které startují samy, mají v levém okraji nenápadné <code>&gt;</code> — vidíš tvar show na první pohled.</p>
+          <p>Po GO běží v řádku <strong>live countdown</strong> + progress bar (z duration). Horní lišta: <strong>LAST FIRED</strong> · <strong>NEXT</strong> · <strong>ELAPSED</strong> od prvního GO.</p>
+        </>
+      ),
+      en: (
+        <>
+          <p>The <strong>TRIGGER</strong> column says how a cue starts; <strong>DUR</strong> how long it runs.</p>
+          <ul>
+            <li><strong>⏵ manual</strong> — waits for GO (default)</li>
+            <li><strong>→ follow</strong> — starts when the previous cue completes</li>
+            <li><strong>⏩ +N s continue</strong> — starts N seconds after the previous cue starts</li>
+            <li><strong>⏱ timecode</strong> — ready for LTC/MTC (full implementation on the roadmap)</li>
+          </ul>
+          <p>Click the trigger cell (rehearsal) to change it. Self-starting cues carry a subtle <code>&gt;</code> in the left gutter — read the show's shape at a glance.</p>
+          <p>After GO the row runs a <strong>live countdown</strong> + progress bar (from duration). Top strip: <strong>LAST FIRED</strong> · <strong>NEXT</strong> · <strong>ELAPSED</strong> since the first GO.</p>
+        </>
+      ),
+    },
+  },
+  {
+    id: 'transport',
+    title: { cs: '7d. STBY · GO · BACK — transport (0.2)', en: '7d. STBY · GO · BACK — transport (0.2)' },
+    body: {
+      cs: (
+        <>
+          <ul>
+            <li><strong>Klik na cue</strong> = výběr (editace, na řádku se objeví <strong>STBY</strong>)</li>
+            <li><strong>STBY</strong> = postav na standby + připrav GO (totéž dělají tlačítka ve standby panelu)</li>
+            <li><strong>GO</strong> = odpal. 300 ms ochrana proti dvojkliku; pokud následují follow cues, GO ukazuje „+N follow"</li>
+            <li><strong>BACK</strong> = playhead zpět + standby předchozího cue. Nikdy nic nevystřelí</li>
+            <li><strong>UNARM</strong> (Esc) = zruš přípravu</li>
+            <li>V <strong>SHOW</strong> módu GO vyžaduje podržení ~0,25 s (radiální výplň) — pojistka naostro</li>
+            <li>Po každém GO: potvrzení „fired: …" přímo pod tlačítkem + řádek v Dispatch Logu shellu</li>
+          </ul>
+        </>
+      ),
+      en: (
+        <>
+          <ul>
+            <li><strong>Click a cue</strong> = select (editing; an <strong>STBY</strong> button appears on the row)</li>
+            <li><strong>STBY</strong> = put on standby + arm GO (standby panel buttons do the same)</li>
+            <li><strong>GO</strong> = fire. 300 ms double-tap guard; if follow cues chain on, GO shows “+N follow”</li>
+            <li><strong>BACK</strong> = playhead back + standby the previous cue. Never fires anything</li>
+            <li><strong>UNARM</strong> (Esc) = drop the armed cue</li>
+            <li>In <strong>SHOW</strong> mode GO is hold-to-fire (~0.25 s radial fill) — the live-night safety</li>
+            <li>Every GO: “fired: …” confirmation under the button + a Dispatch Log row in the shell</li>
+          </ul>
+        </>
+      ),
+    },
+  },
+  {
+    id: 'routing-midi',
+    title: { cs: '7e. Devices, routing & MIDI (0.2)', en: '7e. Devices, routing & MIDI (0.2)' },
+    body: {
+      cs: (
+        <>
+          <p>Třívrstvý model: <strong>payload</strong> (CO — záměr v jazyce show) → <strong>routing rule</strong> (CO jde KAM) → <strong>device</strong> (KAM — IP/port/MIDI port + driver, který přeloží záměr do dialektu zařízení).</p>
+          <ul>
+            <li>Devices: OSC (host, port, driver eos/ma3/hog/chamsys/qlab/generic) i <strong>MIDI</strong> (výběr portu; na macOS funguje IAC Driver na testy)</li>
+            <li>Routing rules: match podle typu payloadu / tagu / device — nejspecifičtější vyhrává, catch-all fallback jistí</li>
+            <li><strong>Dispatch Log</strong> v shell okně: každý odpal s časem, transportem (osc×1, midi×1…), ok/fail a délkou — účtenka show</li>
+            <li>Rychlý test bez hardwaru: <code>nc -ul 7000</code> v terminálu a GO — packet uvidíš přiletět</li>
+          </ul>
+        </>
+      ),
+      en: (
+        <>
+          <p>Three-layer model: <strong>payload</strong> (WHAT — intent in show language) → <strong>routing rule</strong> (WHAT goes WHERE) → <strong>device</strong> (WHERE — IP/port/MIDI port + a driver translating intent into the device's dialect).</p>
+          <ul>
+            <li>Devices: OSC (host, port, driver eos/ma3/hog/chamsys/qlab/generic) and <strong>MIDI</strong> (port picker; macOS IAC Driver works for tests)</li>
+            <li>Routing rules: match by payload type / tag / device — most specific wins, a catch-all fallback backs you up</li>
+            <li><strong>Dispatch Log</strong> in the shell window: every fire with time, transport (osc×1, midi×1…), ok/fail and duration — the show's receipt</li>
+            <li>Quick no-hardware test: <code>nc -ul 7000</code> in a terminal, hit GO — watch the packet land</li>
+          </ul>
+        </>
+      ),
+    },
+  },
+  {
     id: 'import',
     title: { cs: '8. Import (CSV)', en: '8. Import (CSV)' },
     body: {

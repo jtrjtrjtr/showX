@@ -8,6 +8,7 @@ export function Nav() {
     { to: '/status', label: t('nav.status') },
     { to: '/downloads', label: t('nav.downloads') },
     { to: '/guide', label: t('nav.guide') },
+    { to: '/scenarios', label: t('nav.scenarios') },
     { to: '/docs', label: t('nav.docs') },
   ]
 
