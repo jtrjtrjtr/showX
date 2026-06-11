@@ -1,13 +1,8 @@
 {
-  "enabled": true,
-  "bundle_id": "ShowX-3.7",
-  "allowed_task_ids": [
-    "B003-701",
-    "B003-702",
-    "B003-703",
-    "B003-704"
-  ],
-  "rationale": "ShowX-3.7 M1 completion (Jindrich 'rozjed to' 2026-06-11 19:50): cue authoring UI, payload editing in browser, MIDI routing UI, yellow contrast. Order: 701 -> 704 -> 702 -> 703. B003-705 = Architect gate. Layout hotfix 0a0ae7c applied by Architect pre-bundle per direct instruction.",
-  "updated_at": "2026-06-11T18:25:00Z",
+  "enabled": false,
+  "bundle_id": "ShowX-3.7-CLOSED",
+  "allowed_task_ids": [],
+  "rationale": "ShowX-3.7 complete 2026-06-11 ~21:15. 5/5 (701-704 Forge r1, 705 gate PASSED with eyes-on screenshots). v0.2.1 installed. M1 Operator MVP CELÉ HOTOVÉ. Suite 1509/1509.",
+  "updated_at": "2026-06-11T19:15:00Z",
   "updated_by": "architect"
 }

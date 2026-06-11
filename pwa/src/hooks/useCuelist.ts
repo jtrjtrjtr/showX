@@ -4,10 +4,19 @@ import type { Cue } from 'showx-shared';
 import { useConnection } from '../lib/ConnectionProvider.js';
 import {
   updateCueFields,
+  addCue as engineAddCue,
+  insertCueAfter as engineInsertCueAfter,
+  removeCue as engineRemoveCue,
+  reorderCues as engineReorderCues,
   type CueFieldPatch,
+  type MakeCueOpts,
 } from '../../../src/modules/cuelist-core/src/document/cue.js';
+import { getCuesSorted } from '../../../src/modules/cuelist-core/src/document/cuelist.js';
 
 export type { CueFieldPatch };
+
+/** MakeCueOpts without created_by — the hook injects clientID automatically. */
+export type AddCueOpts = Omit<MakeCueOpts, 'created_by'>;
 
 export interface CuelistJson {
   id: string;
@@ -24,6 +33,10 @@ interface RawSnapshot {
 
 export interface CuelistSnapshot extends RawSnapshot {
   updateFields: (cueId: string, patch: CueFieldPatch, modifiedBy: string) => void;
+  addCue: (opts: AddCueOpts) => string;
+  insertCueAfter: (afterCueId: string | null, opts: AddCueOpts) => string;
+  removeCue: (cueId: string) => void;
+  reorderCues: (newOrder: string[]) => void;
 }
 
 function findCuelistMap(doc: Y.Doc, cuelistId: string): Y.Map<unknown> | undefined {
@@ -57,14 +70,14 @@ export function useCuelist(cuelistId: string): CuelistSnapshot {
         cache.current = EMPTY_RAW;
         return cache.current;
       }
-      const cues = (cl.get('cues') as Y.Array<Y.Map<unknown>>)
-        .toArray()
-        .map((m) => m.toJSON() as Cue);
+      const cues = getCuesSorted(cl).map((m) => m.toJSON() as Cue);
       cache.current = { cuelist: cl.toJSON() as CuelistJson, cues };
       return cache.current;
     },
     () => EMPTY_RAW,
   );
+
+  const createdBy = String(conn.doc.clientID);
 
   const updateFields = useCallback(
     (cueId: string, patch: CueFieldPatch, modifiedBy: string) => {
@@ -73,5 +86,33 @@ export function useCuelist(cuelistId: string): CuelistSnapshot {
     [conn.doc, cuelistId],
   );
 
-  return { ...raw, updateFields };
+  const addCue = useCallback(
+    (opts: AddCueOpts): string => {
+      return engineAddCue(conn.doc, cuelistId, { ...opts, created_by: createdBy });
+    },
+    [conn.doc, cuelistId, createdBy],
+  );
+
+  const insertCueAfter = useCallback(
+    (afterCueId: string | null, opts: AddCueOpts): string => {
+      return engineInsertCueAfter(conn.doc, cuelistId, afterCueId, { ...opts, created_by: createdBy });
+    },
+    [conn.doc, cuelistId, createdBy],
+  );
+
+  const removeCue = useCallback(
+    (cueId: string): void => {
+      engineRemoveCue(conn.doc, cuelistId, cueId);
+    },
+    [conn.doc, cuelistId],
+  );
+
+  const reorderCues = useCallback(
+    (newOrder: string[]): void => {
+      engineReorderCues(conn.doc, cuelistId, newOrder);
+    },
+    [conn.doc, cuelistId],
+  );
+
+  return { ...raw, updateFields, addCue, insertCueAfter, removeCue, reorderCues };
 }

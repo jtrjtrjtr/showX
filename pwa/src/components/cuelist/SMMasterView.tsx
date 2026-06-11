@@ -2,6 +2,7 @@ import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import type { Cue } from 'showx-shared';
 import { useCuelist } from '../../hooks/useCuelist.js';
 import type { CueFieldPatch } from '../../hooks/useCuelist.js';
+import { AddCueButton } from './AddCueButton.js';
 import { CueEditDialog } from './CueEditDialog.js';
 import { useMode } from '../../hooks/useMode.js';
 import { useStations } from '../../hooks/useStations.js';
@@ -31,7 +32,7 @@ function getNextCues(cues: Cue[], playheadCueId: string | null, count: number): 
   return cues.slice(idx + 1, idx + 1 + count);
 }
 
-function EmptyState() {
+function EmptyState({ onAdd }: { onAdd?: () => void }) {
   return (
     <div
       style={{
@@ -45,28 +46,14 @@ function EmptyState() {
       }}
     >
       <div style={{ fontSize: 18, color: tokens.color.ink_secondary }}>No cues yet — click + to add</div>
-      <button
-        aria-label="Add first cue"
-        style={{
-          padding: `${tokens.space.m}px ${tokens.space.xl}px`,
-          background: tokens.color.teal,
-          color: tokens.color.bg,
-          border: 'none',
-          borderRadius: tokens.radius.m,
-          fontSize: 16,
-          cursor: 'pointer',
-          fontWeight: 600,
-        }}
-      >
-        + Add cue
-      </button>
+      {onAdd && <AddCueButton onClick={onAdd} />}
     </div>
   );
 }
 
 export function SMMasterView({ cuelistId }: SMMasterViewProps) {
   const conn = useConnection();
-  const { cuelist, cues, updateFields } = useCuelist(cuelistId);
+  const { cuelist, cues, updateFields, addCue, insertCueAfter, removeCue, reorderCues } = useCuelist(cuelistId);
   const { mode, transition } = useMode();
   const stations = useStations();
   const { go, standby, lastDispatched, lastHistoric, firstGoAt } = useGoChannel(cuelistId);
@@ -149,6 +136,16 @@ export function SMMasterView({ cuelistId }: SMMasterViewProps) {
   // ── Inline editing state ───────────────────────────────────────────────────
   const [inlineEdit, setInlineEdit] = useState<{ cueId: string; field: InlineEditField } | null>(null);
 
+  // ── Undo-delete toast ─────────────────────────────────────────────────────
+  const [pendingDelete, setPendingDelete] = useState<{ cueId: string; label: string } | null>(null);
+  const pendingDeleteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // ── Drag-reorder state ────────────────────────────────────────────────────
+  const [draggingCueId, setDraggingCueId] = useState<string | null>(null);
+  const [dragOverCueId, setDragOverCueId] = useState<string | null>(null);
+  const isDragActiveRef = useRef(false);
+  const dragLongPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const INLINE_TAB_ORDER: InlineEditField[] = ['cue_number', 'label', 'duration_hint_ms', 'standby_note'];
 
   const handleInlineCommit = useCallback((field: InlineEditField, value: string, cueId: string) => {
@@ -181,6 +178,101 @@ export function SMMasterView({ cuelistId }: SMMasterViewProps) {
     // Re-open on same cue with next field (use setTimeout to let commit settle)
     setTimeout(() => setInlineEdit({ cueId, field: nextField }), 0);
   }, [handleInlineCommit]);
+
+  // ── Authoring: add first cue (EmptyState) ────────────────────────────────
+  const handleAddFirstCue = useCallback(() => {
+    if (mode !== 'rehearsal') return;
+    const newId = addCue({ label: 'New cue', department: ['SM'] });
+    setSelectedCueId(newId);
+    setTimeout(() => setInlineEdit({ cueId: newId, field: 'label' }), 0);
+  }, [mode, addCue]);
+
+  // ── Authoring: insert cue after given cue (or at end if afterCueId=null) ─
+  const handleInsertAfter = useCallback((afterCueId: string | null) => {
+    if (mode !== 'rehearsal') return;
+    const newId = afterCueId
+      ? insertCueAfter(afterCueId, { label: 'New cue', department: ['SM'] })
+      : addCue({ label: 'New cue', department: ['SM'] });
+    setSelectedCueId(newId);
+    setTimeout(() => setInlineEdit({ cueId: newId, field: 'label' }), 0);
+  }, [mode, addCue, insertCueAfter]);
+
+  // ── Authoring: delete with 2s undo window ────────────────────────────────
+  const handleDeleteCue = useCallback((cueId: string, label: string) => {
+    if (mode !== 'rehearsal') return;
+    // If there's already a pending delete, commit it immediately before queuing the new one
+    if (pendingDeleteTimerRef.current !== null) {
+      clearTimeout(pendingDeleteTimerRef.current);
+      pendingDeleteTimerRef.current = null;
+      if (pendingDelete) {
+        try { removeCue(pendingDelete.cueId); } catch { /* already gone */ }
+      }
+    }
+    setPendingDelete({ cueId, label });
+    pendingDeleteTimerRef.current = setTimeout(() => {
+      pendingDeleteTimerRef.current = null;
+      setPendingDelete(null);
+      try { removeCue(cueId); } catch { /* already gone */ }
+    }, 2000);
+    // Deselect if we're deleting the selected cue
+    setSelectedCueId((prev) => prev === cueId ? null : prev);
+  }, [mode, removeCue, pendingDelete]);
+
+  const handleUndoDelete = useCallback(() => {
+    if (pendingDeleteTimerRef.current !== null) {
+      clearTimeout(pendingDeleteTimerRef.current);
+      pendingDeleteTimerRef.current = null;
+    }
+    setPendingDelete(null);
+  }, []);
+
+  // ── Authoring: drag-reorder pointer events ───────────────────────────────
+  const handleDragHandlePointerDown = useCallback((cueId: string) => (e: React.PointerEvent<HTMLDivElement>) => {
+    if (mode !== 'rehearsal') return;
+    e.stopPropagation();
+
+    if (e.pointerType === 'touch') {
+      dragLongPressTimerRef.current = setTimeout(() => {
+        dragLongPressTimerRef.current = null;
+        isDragActiveRef.current = true;
+        setDraggingCueId(cueId);
+      }, 500);
+    } else {
+      isDragActiveRef.current = true;
+      setDraggingCueId(cueId);
+    }
+  }, [mode]);
+
+  const handleListPointerMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDragActiveRef.current) return;
+    e.preventDefault();
+    const el = document.elementFromPoint(e.clientX, e.clientY);
+    const row = el?.closest('[data-cue-id]') as HTMLElement | null;
+    const targetId = row?.dataset.cueId ?? null;
+    setDragOverCueId(targetId !== draggingCueId ? targetId : null);
+  }, [draggingCueId]);
+
+  const commitDragReorder = useCallback(() => {
+    if (dragLongPressTimerRef.current !== null) {
+      clearTimeout(dragLongPressTimerRef.current);
+      dragLongPressTimerRef.current = null;
+    }
+    if (isDragActiveRef.current && draggingCueId && dragOverCueId) {
+      const currentOrder = cues.map((c) => c.id);
+      const fromIdx = currentOrder.indexOf(draggingCueId);
+      const toIdx = currentOrder.indexOf(dragOverCueId);
+      if (fromIdx !== -1 && toIdx !== -1 && fromIdx !== toIdx) {
+        const newOrder = [...currentOrder];
+        newOrder.splice(fromIdx, 1);
+        newOrder.splice(toIdx, 0, draggingCueId);
+        reorderCues(newOrder);
+      }
+    }
+    isDragActiveRef.current = false;
+    setDraggingCueId(null);
+    setDragOverCueId(null);
+  }, [draggingCueId, dragOverCueId, cues, reorderCues]);
+
   const [rejectedReason, setRejectedReason] = useState<string | null>(null);
   const rejectionSeqRef = useRef(0);
 
@@ -236,6 +328,35 @@ export function SMMasterView({ cuelistId }: SMMasterViewProps) {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [armedCueId]);
+
+  // Cmd/Ctrl+N — insert cue after selection (or add first cue if none selected)
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.code === 'KeyN' && !e.shiftKey) {
+        e.preventDefault();
+        if (mode === 'rehearsal') {
+          handleInsertAfter(selectedCueId);
+        }
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [mode, selectedCueId, handleInsertAfter]);
+
+  // Document-level pointerup to commit drag reorder
+  useEffect(() => {
+    const onUp = () => {
+      if (isDragActiveRef.current || dragLongPressTimerRef.current !== null) {
+        commitDragReorder();
+      }
+    };
+    document.addEventListener('pointerup', onUp);
+    document.addEventListener('pointercancel', onUp);
+    return () => {
+      document.removeEventListener('pointerup', onUp);
+      document.removeEventListener('pointercancel', onUp);
+    };
+  }, [commitDragReorder]);
 
   // ── handleGo: shared by button click, Space (rehearsal), Space hold (show) ─
   const handleGo = useCallback(() => {
@@ -520,6 +641,7 @@ export function SMMasterView({ cuelistId }: SMMasterViewProps) {
         role="grid"
         aria-label="Cue list"
         ref={listRef}
+        onPointerMove={handleListPointerMove}
         style={{ flex: 1, overflowY: 'auto', padding: 0, position: 'relative' }}
       >
         {filtered.length > 0 && (
@@ -554,7 +676,7 @@ export function SMMasterView({ cuelistId }: SMMasterViewProps) {
           </div>
         )}
         {filtered.length === 0 ? (
-          <EmptyState />
+          <EmptyState onAdd={mode === 'rehearsal' ? handleAddFirstCue : undefined} />
         ) : (
           filtered.map((cue) => {
             const firedAt =
@@ -563,6 +685,8 @@ export function SMMasterView({ cuelistId }: SMMasterViewProps) {
                 : null;
             const rowInlineField =
               inlineEdit?.cueId === cue.id ? inlineEdit.field : null;
+            // Don't render a cue that's in pending-delete state (optimistic hide)
+            if (pendingDelete?.cueId === cue.id) return null;
             return (
               <CueRow
                 key={cue.id}
@@ -590,9 +714,30 @@ export function SMMasterView({ cuelistId }: SMMasterViewProps) {
                 onInlineCommit={(field, value) => handleInlineCommit(field, value, cue.id)}
                 onInlineCancel={() => setInlineEdit(null)}
                 onInlineTab={(field, value) => handleInlineTab(field, value, cue.id)}
+                onInsertAfter={mode === 'rehearsal' ? () => handleInsertAfter(cue.id) : undefined}
+                onDelete={mode === 'rehearsal' ? () => handleDeleteCue(cue.id, cue.label) : undefined}
+                isDragging={draggingCueId === cue.id}
+                isDragTarget={dragOverCueId === cue.id}
+                onDragHandlePointerDown={mode === 'rehearsal' ? handleDragHandlePointerDown(cue.id) : undefined}
               />
             );
           })
+        )}
+
+        {/* Add cue button — shown at bottom of list in rehearsal mode */}
+        {mode === 'rehearsal' && filtered.length > 0 && (
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'center',
+              padding: `${tokens.space.m}px ${tokens.space.l}px`,
+            }}
+          >
+            <AddCueButton
+              onClick={() => handleInsertAfter(cues.length > 0 ? cues[cues.length - 1].id : null)}
+              compact
+            />
+          </div>
         )}
 
         {/* Jump-to-playhead pill — shown when followGrid is OFF and playhead is off-screen */}
@@ -623,6 +768,46 @@ export function SMMasterView({ cuelistId }: SMMasterViewProps) {
           </button>
         )}
       </main>
+
+      {/* Undo-delete toast — 2s window after cue deletion */}
+      {pendingDelete && (
+        <div
+          data-testid="undo-delete-toast"
+          role="alert"
+          aria-live="assertive"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: `${tokens.space.s}px ${tokens.space.m}px`,
+            background: tokens.color.panel,
+            borderTop: `1px solid ${tokens.color.border}`,
+            fontSize: 13,
+            color: tokens.color.ink,
+            flexShrink: 0,
+            gap: tokens.space.m,
+          }}
+        >
+          <span>Deleted: <strong>{pendingDelete.label}</strong></span>
+          <button
+            data-testid="undo-delete-btn"
+            onClick={handleUndoDelete}
+            style={{
+              padding: `${tokens.space.xs}px ${tokens.space.m}px`,
+              background: tokens.color.teal,
+              color: tokens.color.bg,
+              border: 'none',
+              borderRadius: tokens.radius.s,
+              fontSize: 12,
+              fontWeight: 700,
+              cursor: 'pointer',
+              fontFamily: tokens.font.ui,
+            }}
+          >
+            Undo
+          </button>
+        </div>
+      )}
 
       <StandbyPanel
         nextCues={getNextCues(cues, playheadCueId, 3)}
@@ -723,6 +908,8 @@ export function SMMasterView({ cuelistId }: SMMasterViewProps) {
       {editingCue && (
         <CueEditDialog
           cue={editingCue}
+          cuelistId={cuelistId}
+          locked={mode === 'show'}
           onSave={(patch) => {
             updateFields(editingCue.id, patch, String(conn.doc.clientID));
             setEditingCue(null);

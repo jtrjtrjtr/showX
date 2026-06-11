@@ -64,6 +64,7 @@ export function DevicesTable({ ipc, mode }: DevicesTableProps) {
   const [confirmDelete, setConfirmDelete] = useState<ConfirmDeleteState | null>(null);
   const [testResult, setTestResult] = useState<TestResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [midiOutputs, setMidiOutputs] = useState<string[]>([]);
 
   const locked = mode === 'show';
 
@@ -74,6 +75,12 @@ export function DevicesTable({ ipc, mode }: DevicesTableProps) {
     } catch (e) {
       setError(String(e));
     }
+  }, [ipc]);
+
+  useEffect(() => {
+    void ipc.invoke<Array<{ index: number; name: string }>>('cuelist-core/list-midi-outputs')
+      .then((ports) => setMidiOutputs((ports ?? []).map((p) => p.name)))
+      .catch(() => { /* not fatal — dialog falls back to text input */ });
   }, [ipc]);
 
   useEffect(() => {
@@ -247,6 +254,7 @@ export function DevicesTable({ ipc, mode }: DevicesTableProps) {
               <th style={th}>Host</th>
               <th style={th}>Port</th>
               <th style={th}>Driver</th>
+              <th style={th}>MIDI Port</th>
               <th style={th}></th>
             </tr>
           </thead>
@@ -276,6 +284,9 @@ export function DevicesTable({ ipc, mode }: DevicesTableProps) {
                   </td>
                   <td style={{ ...td, fontSize: 12 }}>
                     {device.driver ?? '—'}
+                  </td>
+                  <td style={{ ...td, fontFamily: tokens.font.mono, fontSize: 12 }}>
+                    {device.midi_port ?? '—'}
                   </td>
                   <td style={{ ...td, whiteSpace: 'nowrap' }}>
                     {testing && testResult!.result !== null && (
@@ -336,6 +347,7 @@ export function DevicesTable({ ipc, mode }: DevicesTableProps) {
         isEdit={!!editDevice}
         onSave={(d) => void handleSaveDevice(d)}
         onClose={() => setDialogOpen(false)}
+        midiOutputs={midiOutputs}
       />
 
       {confirmDelete && (

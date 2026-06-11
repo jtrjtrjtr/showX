@@ -151,6 +151,7 @@ describe('DevicesTable — delete confirmation', () => {
   it('clicking Delete shows confirmation dialog', async () => {
     const ipc = createMockIpc();
     (ipc.invoke as ReturnType<typeof vi.fn>)
+      .mockResolvedValueOnce([])             // list-midi-outputs
       .mockResolvedValueOnce(sampleDevices)  // get-devices
       .mockResolvedValueOnce([]);            // device-deps
 
@@ -167,6 +168,7 @@ describe('DevicesTable — delete confirmation', () => {
   it('Cancel closes confirmation dialog', async () => {
     const ipc = createMockIpc();
     (ipc.invoke as ReturnType<typeof vi.fn>)
+      .mockResolvedValueOnce([])             // list-midi-outputs
       .mockResolvedValueOnce(sampleDevices)
       .mockResolvedValueOnce([]);
 
@@ -187,8 +189,9 @@ describe('DevicesTable — test button', () => {
   it('test button calls cuelist-core/device-test', async () => {
     const ipc = createMockIpc();
     (ipc.invoke as ReturnType<typeof vi.fn>)
-      .mockResolvedValueOnce(sampleDevices)
-      .mockResolvedValueOnce(true); // device-test returns true
+      .mockResolvedValueOnce([])             // list-midi-outputs
+      .mockResolvedValueOnce(sampleDevices)  // get-devices
+      .mockResolvedValueOnce(true);          // device-test returns true
 
     render(<DevicesTable ipc={ipc} />);
     await waitFor(() => screen.getAllByRole('button', { name: /test/i }));

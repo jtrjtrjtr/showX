@@ -3,11 +3,16 @@ import type { CSSProperties, ReactNode } from 'react';
 import type { Cue } from 'showx-shared';
 import type { CueFieldPatch } from '../../hooks/useCuelist.js';
 import { tokens } from './tokens.js';
+import { PayloadList } from './PayloadList.js';
 
 export interface CueEditDialogProps {
   cue: Cue;
   onSave: (patch: CueFieldPatch) => void;
   onCancel: () => void;
+  /** If provided, shows the Payloads section (requires ConnectionContext ancestor). */
+  cuelistId?: string;
+  /** When true, payload section is read-only (SHOW mode). */
+  locked?: boolean;
 }
 
 function durationMsToSecs(ms: number | null): string {
@@ -15,7 +20,7 @@ function durationMsToSecs(ms: number | null): string {
   return (ms / 1000).toFixed(1);
 }
 
-export function CueEditDialog({ cue, onSave, onCancel }: CueEditDialogProps) {
+export function CueEditDialog({ cue, onSave, onCancel, cuelistId, locked = false }: CueEditDialogProps) {
   const [label, setLabel] = useState(cue.label);
   const [description, setDescription] = useState(cue.description);
   const [standbyNote, setStandbyNote] = useState(cue.standby_note);
@@ -79,7 +84,9 @@ export function CueEditDialog({ cue, onSave, onCancel }: CueEditDialogProps) {
           borderRadius: tokens.radius.l,
           padding: tokens.space.xxl,
           minWidth: 420,
-          maxWidth: 560,
+          maxWidth: cuelistId ? 680 : 560,
+          maxHeight: '90vh',
+          overflowY: 'auto',
           width: '100%',
           display: 'flex',
           flexDirection: 'column',
@@ -141,6 +148,39 @@ export function CueEditDialog({ cue, onSave, onCancel }: CueEditDialogProps) {
             style={inputStyle(false)}
           />
         </Field>
+
+        {cuelistId && (
+          <div>
+            <div
+              style={{
+                fontSize: 12,
+                fontWeight: 600,
+                color: tokens.color.ink_secondary,
+                fontFamily: tokens.font.ui,
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+                marginBottom: tokens.space.s,
+              }}
+            >
+              Payloads
+            </div>
+            {locked && (
+              <div
+                data-testid="payload-frozen-notice"
+                style={{
+                  fontSize: 12,
+                  color: tokens.color.ink_disabled,
+                  fontStyle: 'italic',
+                  marginBottom: tokens.space.s,
+                  fontFamily: tokens.font.ui,
+                }}
+              >
+                Payloads locked in SHOW mode
+              </div>
+            )}
+            <PayloadList cue={cue} cuelistId={cuelistId} locked={locked} />
+          </div>
+        )}
 
         <div style={{ display: 'flex', gap: tokens.space.m, justifyContent: 'flex-end', marginTop: tokens.space.s }}>
           <button

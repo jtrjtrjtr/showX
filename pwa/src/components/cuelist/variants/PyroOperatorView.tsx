@@ -72,7 +72,7 @@ function PyroCueRow({ cue, isActionable, isArmed, isSelected, onArm, onFire, onS
         style={{
           padding: `${tokens.space.s}px ${tokens.space.m}px`,
           background: tokens.color.yellow,
-          color: tokens.color.ink,
+          color: tokens.color.bg,
           border: 'none',
           borderRadius: tokens.radius.s,
           fontWeight: 600,

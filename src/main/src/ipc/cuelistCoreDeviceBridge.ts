@@ -11,6 +11,7 @@ import {
   type Device,
 } from '@showx/module-cuelist-core/document/devices.js';
 import { getRoutingRules } from '@showx/module-cuelist-core/document/routing.js';
+import { listOutputPorts } from '../shared/dispatcher/midiOut.js';
 
 const ACTOR = { actorId: 'shell' };
 
@@ -88,6 +89,11 @@ export function registerDeviceBridge(
     return getRoutingRules(doc)
       .filter((r) => r.target_device_id === deviceId || r.match.device_id === deviceId)
       .map((r) => r.rule_id);
+  });
+
+  ipc.handle('cuelist-core/list-midi-outputs', async () => {
+    logger.debug('device.ipc', { channel: 'list-midi-outputs' });
+    return listOutputPorts();
   });
 
   ipc.handle('cuelist-core/device-test', async (_e, deviceId: string) => {

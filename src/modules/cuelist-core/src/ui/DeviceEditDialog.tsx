@@ -8,6 +8,7 @@ interface DeviceEditDialogProps {
   isEdit: boolean;
   onSave: (d: Device) => void;
   onClose: () => void;
+  midiOutputs?: string[];
 }
 
 const TRANSPORTS: DeviceTransport[] = ['osc', 'midi', 'msc', 'dmx'];
@@ -40,6 +41,9 @@ function validate(form: Partial<Device>): Record<string, string> {
   }
   if (form.driver && form.transport !== 'osc') {
     errors.driver = 'Driver is only valid for OSC transport';
+  }
+  if ((form.transport === 'midi' || form.transport === 'msc') && !form.midi_port?.trim()) {
+    errors.midi_port = 'Required for MIDI/MSC';
   }
   return errors;
 }
@@ -89,7 +93,7 @@ function Field({
   );
 }
 
-export function DeviceEditDialog({ open, initial, isEdit, onSave, onClose }: DeviceEditDialogProps) {
+export function DeviceEditDialog({ open, initial, isEdit, onSave, onClose, midiOutputs }: DeviceEditDialogProps) {
   const [form, setForm] = useState<Partial<Device>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -233,13 +237,27 @@ export function DeviceEditDialog({ open, initial, isEdit, onSave, onClose }: Dev
 
         {(form.transport === 'midi' || form.transport === 'msc') && (
           <Field label="MIDI Port" error={errors.midi_port}>
-            <input
-              style={inputStyle}
-              value={form.midi_port ?? ''}
-              onChange={(e) => set('midi_port', e.target.value)}
-              placeholder="e.g. IAC Driver Bus 1"
-              aria-label="MIDI Port"
-            />
+            {midiOutputs && midiOutputs.length > 0 ? (
+              <select
+                style={inputStyle}
+                value={form.midi_port ?? ''}
+                onChange={(e) => set('midi_port', e.target.value || undefined)}
+                aria-label="MIDI Port"
+              >
+                <option value="">Select port…</option>
+                {midiOutputs.map((name) => (
+                  <option key={name} value={name}>{name}</option>
+                ))}
+              </select>
+            ) : (
+              <input
+                style={inputStyle}
+                value={form.midi_port ?? ''}
+                onChange={(e) => set('midi_port', e.target.value)}
+                placeholder="e.g. IAC Driver Bus 1"
+                aria-label="MIDI Port"
+              />
+            )}
           </Field>
         )}
 

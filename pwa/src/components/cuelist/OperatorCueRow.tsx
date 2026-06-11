@@ -99,7 +99,7 @@ export function OperatorCueRow({
         style={{
           padding: `${tokens.space.s}px ${tokens.space.m}px`,
           background: tokens.color.yellow,
-          color: tokens.color.ink,
+          color: tokens.color.bg,
           border: 'none',
           borderRadius: tokens.radius.s,
           cursor: isActionable ? 'pointer' : 'default',

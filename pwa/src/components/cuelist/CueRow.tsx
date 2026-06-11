@@ -48,6 +48,16 @@ export interface CueRowProps {
   onInlineTab?: (field: InlineEditField, value: string) => void;
   /** Standby+arm THIS cue (shown as STBY button on the selected row) */
   onStandby?: () => void;
+  /** Insert a new cue after this one (rehearsal only) */
+  onInsertAfter?: () => void;
+  /** Delete this cue (rehearsal only; parent handles undo toast) */
+  onDelete?: () => void;
+  /** True while this row is being dragged (renders semi-transparent) */
+  isDragging?: boolean;
+  /** Show drop indicator line above this row */
+  isDragTarget?: boolean;
+  /** Called on pointerdown of the drag handle (rehearsal only) */
+  onDragHandlePointerDown?: (e: React.PointerEvent<HTMLDivElement>) => void;
 }
 
 export function CueRow({
@@ -70,6 +80,11 @@ export function CueRow({
   onInlineCancel,
   onInlineTab,
   onStandby,
+  onInsertAfter,
+  onDelete,
+  isDragging = false,
+  isDragTarget = false,
+  onDragHandlePointerDown,
 }: CueRowProps) {
   const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const longPressFiredRef = useRef(false);
@@ -142,12 +157,33 @@ export function CueRow({
   // Duration in seconds for inline edit initial value
   const durationSecs = cue.duration_hint_ms !== null ? (cue.duration_hint_ms / 1000).toString() : '';
 
+  const showAuthoringActions = mode === 'rehearsal' && (isSelected || isPlayhead);
+
   return (
+    <div
+      data-cue-id={cue.id}
+      style={{ position: 'relative' }}
+    >
+      {/* Drop target indicator — blue line above this row when drag is over it */}
+      {isDragTarget && (
+        <div
+          aria-hidden="true"
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 2,
+            background: tokens.color.teal,
+            zIndex: 20,
+            pointerEvents: 'none',
+          }}
+        />
+      )}
     <div
       role="row"
       aria-selected={isPlayhead || isSelected}
       data-testid="cue-row"
-      data-cue-id={cue.id}
       data-cue-type={isCompound ? 'compound' : deptTag}
       onClick={(e) => {
         if (longPressFiredRef.current) { longPressFiredRef.current = false; return; }
@@ -172,6 +208,7 @@ export function CueRow({
         boxShadow: selectionShadow,
         cursor: 'pointer',
         transition: 'background 0.15s',
+        opacity: isDragging ? 0.4 : 1,
       }}
     >
       {/* 24px gutter zone — click to set playhead without affecting selection */}
@@ -191,6 +228,35 @@ export function CueRow({
           zIndex: 5,
         }}
       />
+
+      {/* Drag handle — visible in rehearsal mode, hidden in show mode */}
+      {mode === 'rehearsal' && onDragHandlePointerDown && (
+        <div
+          data-testid="drag-handle"
+          aria-label="Drag to reorder"
+          title="Drag to reorder"
+          onPointerDown={onDragHandlePointerDown}
+          style={{
+            position: 'absolute',
+            right: 4,
+            top: '50%',
+            transform: 'translateY(-50%)',
+            width: 20,
+            height: 28,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'grab',
+            fontSize: 14,
+            color: tokens.color.ink_disabled,
+            zIndex: 6,
+            touchAction: 'none',
+            userSelect: 'none',
+          }}
+        >
+          ⠿
+        </div>
+      )}
 
       <PlayheadIndicator visible={isPlayhead} />
       {cue.trigger.kind !== 'manual' && !isPlayhead && (
@@ -359,6 +425,49 @@ export function CueRow({
             STBY
           </button>
         )}
+        {showAuthoringActions && onInsertAfter && (
+          <button
+            data-testid="row-insert-after-btn"
+            aria-label={`Insert cue after ${cue.label}`}
+            title="Insert cue below (Cmd/Ctrl+N)"
+            onClick={(e) => { e.stopPropagation(); onInsertAfter(); }}
+            style={{
+              padding: '3px 8px',
+              background: 'none',
+              color: tokens.color.teal,
+              border: `1px solid ${tokens.color.teal}`,
+              borderRadius: tokens.radius.s,
+              fontSize: 12,
+              fontWeight: 700,
+              cursor: 'pointer',
+              fontFamily: tokens.font.ui,
+              lineHeight: 1,
+            }}
+          >
+            + below
+          </button>
+        )}
+        {showAuthoringActions && onDelete && (
+          <button
+            data-testid="row-delete-btn"
+            aria-label={`Delete cue ${cue.label}`}
+            title="Delete cue"
+            onClick={(e) => { e.stopPropagation(); onDelete(); }}
+            style={{
+              padding: '3px 8px',
+              background: 'none',
+              color: tokens.color.ink_secondary,
+              border: `1px solid ${tokens.color.border}`,
+              borderRadius: tokens.radius.s,
+              fontSize: 13,
+              cursor: 'pointer',
+              fontFamily: tokens.font.ui,
+              lineHeight: 1,
+            }}
+          >
+            🗑
+          </button>
+        )}
         <CueTypeBadge trigger={cue.trigger} />
         <DepartmentChips departments={cue.department} />
         {mode === 'show' && (
@@ -418,6 +527,7 @@ export function CueRow({
           }}
         />
       )}
+    </div>
     </div>
   );
 }

@@ -89,3 +89,16 @@ export class MidiOutPool {
     this.outputs.delete(portName);
   }
 }
+
+export function listOutputPorts(factory: MidiFactory = defaultMidiFactory()): Array<{ index: number; name: string }> {
+  try {
+    const out = factory.output();
+    const ports: Array<{ index: number; name: string }> = [];
+    for (let i = 0; i < out.getPortCount(); i++) {
+      ports.push({ index: i, name: out.getPortName(i) });
+    }
+    return ports;
+  } catch {
+    return [];
+  }
+}

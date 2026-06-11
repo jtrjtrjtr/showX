@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { MidiOutPool } from '../../../../src/main/src/shared/dispatcher/midiOut.js';
+import { MidiOutPool, listOutputPorts } from '../../../../src/main/src/shared/dispatcher/midiOut.js';
 import type { MidiOutLike, MidiFactory } from '../../../../src/main/src/shared/dispatcher/midiOut.js';
 
 function makeMockMidiOut(ports: string[] = ['IAC Driver Bus 1']): MidiOutLike & { _sent: number[][] } {
@@ -72,6 +72,22 @@ describe('MidiOutPool', () => {
     const result = pool.claim('IAC', 'm1');
     expect(result.ok).toBe(true);
     expect(handle.openPort).toHaveBeenCalledWith(0);
+  });
+
+  it('listOutputPorts returns port names from factory', () => {
+    const handle = makeMockMidiOut(['IAC Driver Bus 1', 'USB MIDI Interface']);
+    const factory = makeFactory(handle);
+    const ports = listOutputPorts(factory);
+    expect(ports).toEqual([
+      { index: 0, name: 'IAC Driver Bus 1' },
+      { index: 1, name: 'USB MIDI Interface' },
+    ]);
+  });
+
+  it('listOutputPorts returns empty array when factory throws', () => {
+    const factory: MidiFactory = { output: () => { throw new Error('midi unavailable'); } };
+    const ports = listOutputPorts(factory);
+    expect(ports).toEqual([]);
   });
 
   it('status() reflects current port owners', () => {
