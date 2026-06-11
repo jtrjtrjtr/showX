@@ -1,15 +1,8 @@
 {
-  "enabled": true,
-  "bundle_id": "ShowX-3.5",
-  "allowed_task_ids": [
-    "B003-501",
-    "B003-502",
-    "B003-503",
-    "B003-504",
-    "B003-505",
-    "B003-506"
-  ],
-  "rationale": "ShowX-3.5 Testable Station Loop + FOH Redesign opened 2026-06-11 per Jindřich GO. 6 tasks: dark theme, SM presence fix, onboarding UX, GO dispatch wiring, dispatch log, cue editing. Suggested order: 501 -> 504 -> 502 -> 503 -> 505 -> 506. Decision: docs/agent_exchange/decisions/2026-06-11_showx_3_5_bundle_open.md",
-  "updated_at": "2026-06-11T00:30:00Z",
+  "enabled": false,
+  "bundle_id": "ShowX-3.5-CLOSED",
+  "allowed_task_ids": [],
+  "rationale": "ShowX-3.5 complete 2026-06-11 ~10:45 CEST. 6/6 accepted + 4 Architect E2E rescues (octx, routing scoring, PWA prod build, atomicWrite). v0.1.14 installed, full loop verified: GO->OSC captured, edit survives relaunch. Suite 1380/1380 green. Decision: docs/agent_exchange/decisions/2026-06-11_showx_3_5_bundle_complete.md",
+  "updated_at": "2026-06-11T08:45:00Z",
   "updated_by": "architect"
 }

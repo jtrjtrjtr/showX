@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "project": "showX",
-  "phase": "bundle_ShowX-3.5_in_progress",
-  "updated_at": "2026-06-11T05:42:00Z",
-  "active_bundle": "ShowX-3.5",
+  "phase": "bundle_ShowX-3.5_complete_v0.1.14_full_station_loop",
+  "updated_at": "2026-06-11T08:45:00Z",
+  "active_bundle": "ShowX-3.5-CLOSED",
   "tasks": [
     {
       "id": "B001-001",
