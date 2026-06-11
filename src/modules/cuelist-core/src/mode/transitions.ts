@@ -4,6 +4,8 @@ import { writeSnapshot, type SnapshotResult } from './snapshot.js';
 import { appendHistoryEvent } from '../persistence/historyJsonl.js';
 import { getCuelists, getCues } from '../document/cuelist.js';
 
+import { getMode } from './modeState.js';
+export { getMode } from './modeState.js';
 export type Mode = ShowMode;
 
 export interface TransitionContext {
@@ -21,10 +23,6 @@ export type TransitionResult =
 export type GateResult =
   | { ok: true }
   | { ok: false; reason: 'no_op' | 'not_sm' | 'unknown_target' };
-
-export function getMode(doc: Y.Doc): Mode {
-  return (doc.getMap('meta').get('mode') as Mode) ?? 'rehearsal';
-}
 
 export function canTransitionMode(
   doc: Y.Doc,

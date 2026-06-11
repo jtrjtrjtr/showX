@@ -1,5 +1,5 @@
 import * as Y from 'yjs';
-import { getMode } from './transitions.js';
+import { getMode } from './modeState.js';
 
 export type EditKind = 'payload' | 'structure' | 'meta';
 

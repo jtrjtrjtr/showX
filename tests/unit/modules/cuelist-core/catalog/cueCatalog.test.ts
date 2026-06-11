@@ -194,7 +194,17 @@ describe('CatalogPublisher', () => {
 
   afterEach(async () => {
     vi.useRealTimers();
-    await fs.rm(pkgPath, { recursive: true, force: true });
+    // A debounced catalog write restored by useRealTimers can land a fresh file
+    // inside media/.cache while rm() is enumerating — retry shields the race.
+    for (let attempt = 0; ; attempt++) {
+      try {
+        await fs.rm(pkgPath, { recursive: true, force: true });
+        break;
+      } catch (e) {
+        if ((e as NodeJS.ErrnoException).code !== 'ENOTEMPTY' || attempt >= 4) throw e;
+        await new Promise((r) => setTimeout(r, 50));
+      }
+    }
   });
 
   // 20. Initial publish on start() — fires before any debounce

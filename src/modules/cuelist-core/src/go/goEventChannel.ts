@@ -1,6 +1,7 @@
 import * as Y from 'yjs';
 import type { EventBus, Logger, CueCompleteEvent, ShowModeChangeEvent, ShowMode } from 'showx-shared';
 import { authorise, type AuthorityCuelist, type OperatorContext } from './authority.js';
+export type { OperatorContext } from './authority.js';
 import { IdempotencyStore } from './idempotencyStore.js';
 import { isHistoricReplay, RingBuffer } from './replayWindow.js';
 import { SequenceCounter } from './sequence.js';

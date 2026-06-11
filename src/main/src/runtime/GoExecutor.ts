@@ -3,6 +3,7 @@ import type { EventBus, Logger, CueFireEvent } from 'showx-shared';
 import type { SideChannelMessage, Subscription } from 'showx-shared';
 import type { OutputDispatcher } from 'showx-shared';
 import { GoEventChannel } from '@showx/module-cuelist-core/go/goEventChannel.js';
+import type { OperatorContext } from '@showx/module-cuelist-core/go/goEventChannel.js';
 import { dispatchCue } from '@showx/module-cuelist-core/dispatch/payloadDispatch.js';
 import type { DispatchDeps } from '@showx/module-cuelist-core/dispatch/payloadDispatch.js';
 import type { Cue } from 'showx-shared';
@@ -31,11 +32,17 @@ interface GoExecutorSyncBroker {
 
 // ── GoExecutor ────────────────────────────────────────────────────────────────
 
+/** PairingStore subset — operator authority resolution (operator_id == device_id in 3.x). */
+interface GoExecutorPairing {
+  getDevice(deviceId: string): { owned_departments: string[] } | null;
+}
+
 export interface GoExecutorDeps {
   syncBroker: GoExecutorSyncBroker;
   events: EventBus;
   output: OutputDispatcher;
   log: Logger;
+  pairing: GoExecutorPairing;
 }
 
 /**
@@ -92,6 +99,15 @@ export class GoExecutor {
       publishToStation: (_stationId, env) => {
         syncBroker.publishSideChannel(showId, env as unknown as SideChannelMessage);
       },
+      // Authority context from PairingStore: operator_id == device_id (3.x),
+      // owned_departments captured at claim (PairingView adds 'SM' for sm-role stations).
+      // Without octx, sm_called cuelists reject every GO with not_sm.
+      octx: {
+        operatorOwns: (operatorId: string, dept: string): boolean =>
+          this.deps.pairing.getDevice(operatorId)?.owned_departments.includes(dept) ?? false,
+        operatorOwned: (operatorId: string): string[] =>
+          this.deps.pairing.getDevice(operatorId)?.owned_departments ?? [],
+      } satisfies OperatorContext,
       subscribe: (topic, handler) => {
         const sub = syncBroker.subscribeSideChannel(showId, (m) => {
           const msg = m as unknown as Record<string, unknown>;

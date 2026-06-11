@@ -58,10 +58,20 @@ export function resolveDeviceTransport(
 
   for (const e of entries) {
     let s = 0;
-    if (e.match.device_id === device_id) s += 4;
-    if (e.match.payload_type === payload_type) s += 2;
+    // A specified match field that DOESN'T match disqualifies the rule entirely;
+    // an unspecified field is a wildcard worth 0 points. (Previously
+    // `undefined === undefined` scored +4, letting a payload_type-mismatched rule
+    // beat the explicit catch-all fallback — packets silently went to a dead device.)
+    if (e.match.device_id !== undefined) {
+      if (e.match.device_id !== device_id) continue;
+      s += 4;
+    }
+    if (e.match.payload_type !== undefined) {
+      if (e.match.payload_type !== payload_type) continue;
+      s += 2;
+    }
     if (e.match.tag) s += 1;
-    if (s > 0) ranked.push({ entry: e, specificity: s });
+    ranked.push({ entry: e, specificity: s });
   }
 
   ranked.sort((a, b) => b.specificity - a.specificity);

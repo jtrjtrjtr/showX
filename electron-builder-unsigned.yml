@@ -6,7 +6,7 @@ copyright: "Copyright © 2026 XLAB s.r.o."
 extraMetadata:
   main: index.js
   name: showx
-  version: 0.1.13
+  version: 0.1.14
   type: module
 
 # Extra resources bundled into the app (read-only inside .app/Contents/Resources)

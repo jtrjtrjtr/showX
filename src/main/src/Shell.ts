@@ -346,6 +346,7 @@ export class Shell {
       events: this.events,
       output: this.output,
       log: this.logger,
+      pairing: this.pairing,
     });
     this.activeShow!.onChange((kind) => {
       if (kind === 'opened') {
