@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import type * as Y from 'yjs';
 import type { PairedSession } from '../lib/types.js';
+import { loadSession, clearSession, saveSession } from '../lib/session.js';
 import { ConnectionProvider, useConnection } from '../lib/ConnectionProvider.js';
 import type { ConnectOpts } from '../lib/cuelistData.js';
 import type { DepartmentTag } from 'showx-shared';
@@ -8,6 +9,7 @@ import { SMMasterView } from './cuelist/SMMasterView.js';
 import { OperatorView } from './cuelist/OperatorView.js';
 import { GenericOperatorView } from './cuelist/variants/GenericOperatorView.js';
 import { DiscoveryView } from './DiscoveryView.js';
+import { PairingView } from './PairingView.js';
 import { tokens } from './cuelist/tokens.js';
 
 interface ActiveShowResponse {
@@ -106,9 +108,6 @@ function StationContent({ session }: StationContentProps) {
   }, [conn.provider]);
 
   // Resolve first cuelist from doc.
-  // cuelist-core stores cuelists as Y.Array<Y.Map> (per document/cuelist.ts).
-  // Using getMap here throws "Type with the name cuelists has already been
-  // defined with a different constructor" and silently hangs Loading.
   useEffect(() => {
     const cuelists = conn.doc.getArray<Y.Map<unknown>>('cuelists');
 
@@ -209,10 +208,57 @@ interface StationRouterProps {
   session: PairedSession | null;
 }
 
-export function StationRouter({ session }: StationRouterProps) {
-  const [currentShowId, setCurrentShowId] = useState<string | undefined>(session?.show_id);
+function pairingHostFromLocation(): { host: string; port: number; pairingAvailable: true } | null {
+  if (window.location.pathname === '/pairing') {
+    return {
+      host: window.location.hostname,
+      port: Number(window.location.port) || 80,
+      pairingAvailable: true,
+    };
+  }
+  return null;
+}
+
+export function StationRouter({ session: sessionProp }: StationRouterProps) {
+  // Synchronously read localStorage on first render.
+  // If a stored session exists, we must validate it before showing the station.
+  const storedOnMount = loadSession();
+
+  const [resolvedSession, setResolvedSession] = useState<PairedSession | null>(
+    // If no stored session: use the prop immediately (no async needed)
+    storedOnMount ? null : sessionProp,
+  );
+  const [validating, setValidating] = useState(storedOnMount !== null);
+
+  const [currentShowId, setCurrentShowId] = useState<string | undefined>(
+    sessionProp?.show_id,
+  );
   const [closedByShell, setClosedByShell] = useState(false);
   const [switchingTitle, setSwitchingTitle] = useState<string | null>(null);
+
+  // Validate stored session on mount
+  useEffect(() => {
+    if (!storedOnMount) return;
+
+    fetch(`http://${storedOnMount.host}:${storedOnMount.port}/api/pairing/validate`, {
+      headers: { Authorization: `Bearer ${storedOnMount.token}` },
+    })
+      .then((r) => r.json() as Promise<{ valid: boolean }>)
+      .then((data) => {
+        if (data.valid) {
+          setResolvedSession(storedOnMount);
+          setCurrentShowId(storedOnMount.show_id);
+        } else {
+          clearSession();
+          setResolvedSession(sessionProp);
+        }
+      })
+      .catch(() => {
+        // Network error — fall back to prop (usually null)
+        setResolvedSession(sessionProp);
+      })
+      .finally(() => setValidating(false));
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Clear the switching overlay after 2 seconds max
   useEffect(() => {
@@ -223,10 +269,10 @@ export function StationRouter({ session }: StationRouterProps) {
 
   // Poll /api/active-show every 2s to detect show open/close/switch
   useEffect(() => {
-    if (!session) return;
+    if (!resolvedSession) return;
     const poll = setInterval(async () => {
       try {
-        const r = await fetch(`http://${session.host}:${session.port}/api/active-show`);
+        const r = await fetch(`http://${resolvedSession.host}:${resolvedSession.port}/api/active-show`);
         const data = (await r.json()) as ActiveShowResponse;
         if (!data.open) {
           setClosedByShell(true);
@@ -242,9 +288,44 @@ export function StationRouter({ session }: StationRouterProps) {
       }
     }, 2000);
     return () => clearInterval(poll);
-  }, [session, currentShowId]);
+  }, [resolvedSession, currentShowId]);
 
-  if (!session) {
+  if (validating) {
+    return (
+      <div
+        data-testid="station-validating"
+        style={{
+          padding: 32,
+          textAlign: 'center',
+          fontFamily: tokens.font.ui,
+          background: tokens.color.bg,
+          color: tokens.color.ink_secondary,
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        Connecting…
+      </div>
+    );
+  }
+
+  if (!resolvedSession) {
+    // If at /pairing path, show pairing form; otherwise discovery
+    const pairingHost = pairingHostFromLocation();
+    if (pairingHost) {
+      return (
+        <PairingView
+          host={pairingHost}
+          onPaired={(s) => {
+            saveSession(s);
+            setResolvedSession(s);
+            setCurrentShowId(s.show_id);
+          }}
+        />
+      );
+    }
     return <DiscoveryView onPick={() => { window.location.reload(); }} />;
   }
 
@@ -272,12 +353,12 @@ export function StationRouter({ session }: StationRouterProps) {
     );
   }
 
-  const effectiveShowId = currentShowId ?? session.show_id ?? 'default';
-  const opts = buildConnectOpts({ ...session, show_id: effectiveShowId });
+  const effectiveShowId = currentShowId ?? resolvedSession.show_id ?? 'default';
+  const opts = buildConnectOpts({ ...resolvedSession, show_id: effectiveShowId });
 
   return (
     <ConnectionProvider key={effectiveShowId} opts={opts}>
-      <StationContent session={{ ...session, show_id: effectiveShowId }} />
+      <StationContent session={{ ...resolvedSession, show_id: effectiveShowId }} />
     </ConnectionProvider>
   );
 }

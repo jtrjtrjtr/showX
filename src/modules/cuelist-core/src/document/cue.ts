@@ -279,5 +279,39 @@ export function setCueDurationHint(
   });
 }
 
+// ── Batch text-field update ────────────────────────────────────────────────────
+
+export interface CueFieldPatch {
+  label?: string;
+  description?: string;
+  standby_note?: string;
+}
+
+/**
+ * Update one or more text fields on a cue in a single Yjs transaction.
+ * Library-owned so the write path is unit-testable outside UI components.
+ * Rules: label must be non-empty if provided; undefined keys are silently
+ * skipped; throws if the cue doesn't exist.
+ */
+export function updateCueFields(
+  doc: Y.Doc,
+  cuelistId: string,
+  cueId: string,
+  patch: CueFieldPatch,
+  modifiedBy: string,
+): void {
+  assertEditAllowed(doc, 'meta');
+  if (patch.label !== undefined && patch.label.trim() === '') {
+    throw new ValidationError('cue.label must be non-empty', 'label');
+  }
+  const cue = findCue(doc, cuelistId, cueId);
+  doc.transact(() => {
+    if (patch.label !== undefined) cue.set('label', patch.label);
+    if (patch.description !== undefined) cue.set('description', patch.description);
+    if (patch.standby_note !== undefined) cue.set('standby_note', patch.standby_note);
+    touchModified(cue, modifiedBy);
+  });
+}
+
 // Re-export for convenience
 export { getPayloads } from './payload.js';

@@ -1,4 +1,5 @@
 import * as crypto from 'node:crypto';
+import * as os from 'node:os';
 import type express from 'express';
 import QRCode from 'qrcode';
 import type { Logger } from 'showx-shared';
@@ -7,6 +8,27 @@ import type { PinManager } from './pinManager.js';
 import type { TokenManager } from './tokenManager.js';
 import { ClaimRequest, PinInvalidError, TokenInvalidError } from './types.js';
 import type { ActiveShowDoc } from '../../runtime/ActiveShowDoc.js';
+
+function getLanIp(): string {
+  const ifaces = os.networkInterfaces();
+  // Prefer en0 (macOS Wi-Fi / Ethernet)
+  const preferred = ['en0', 'en1', 'eth0', 'eth1'];
+  for (const name of preferred) {
+    const list = ifaces[name];
+    if (!list) continue;
+    for (const iface of list) {
+      if (!iface.internal && iface.family === 'IPv4') return iface.address;
+    }
+  }
+  // Fallback: first non-internal IPv4
+  for (const list of Object.values(ifaces)) {
+    if (!list) continue;
+    for (const iface of list) {
+      if (!iface.internal && iface.family === 'IPv4') return iface.address;
+    }
+  }
+  return '127.0.0.1';
+}
 
 export interface PairingApiDeps {
   pairing: PairingStore;
@@ -151,5 +173,31 @@ export function mountPairingRoutes(
       title: meta?.title ?? null,
       mode: meta?.mode ?? null,
     });
+  });
+
+  // Validate a pairing bearer token — used by station browsers on reload
+  router.get('/pairing/validate', (req: express.Request, res: express.Response) => {
+    const authHeader = req.headers.authorization;
+    if (!authHeader?.startsWith('Bearer ')) {
+      res.status(401).json({ valid: false });
+      return;
+    }
+    const token = authHeader.slice(7);
+    try {
+      deps.pairing.resolveToken(token);
+      res.json({ valid: true });
+    } catch {
+      res.status(401).json({ valid: false });
+    }
+  });
+
+  // Server discovery info — used by StationsPanel in the shell to build QR + URLs
+  router.get('/server-info', (_req: express.Request, res: express.Response) => {
+    const lanIp = getLanIp();
+    const { port } = deps.hostInfo;
+    const mdnsName = `${deps.hostInfo.host}.local`;
+    // test_pin only returned when env var is explicitly set (never in production)
+    const testPin = process.env['SHOWX_PAIRING_TEST_PIN'] ?? null;
+    res.json({ lan_ip: lanIp, port, mdns_name: mdnsName, test_pin: testPin });
   });
 }

@@ -2,7 +2,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { ModuleContext } from 'showx-shared';
 
 import { manifest } from '../../../../src/modules/cuelist-core/src/manifest.js';
-import CuelistCore from '../../../../src/modules/cuelist-core/src/index.js';
+// default export is a Module INSTANCE (loader contract since 3.3 packed-asar fix); class is the named export
+import { CuelistCore } from '../../../../src/modules/cuelist-core/src/index.js';
 import { configSchema } from '../../../../src/modules/cuelist-core/src/config/schema.js';
 
 function makeMockContext(overrides: { slug?: string } = {}): ModuleContext {

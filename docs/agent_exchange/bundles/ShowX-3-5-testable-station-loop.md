@@ -32,3 +32,7 @@ Suggested Forge order: 501 → 504 → 502 → 503 → 505 → 506 (501 unblocks
 ## Close criteria
 
 All 6 accepted by Critic + Architect E2E walkthrough on v0.1.14 DMG: pair (once) → readable UI → GO → OSC packet captured → edit survives relaunch. Close decision note documents evidence.
+
+## Polish notes (non-blocking, observed during Architect visual verification)
+
+- CueRow label column (80px grid track) overflows into description for longer labels ("Announce") — needs `minWidth: 0` / wider track or ellipsis. Fold into B003-505/506 round or post-bundle polish.

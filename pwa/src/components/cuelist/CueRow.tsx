@@ -1,3 +1,4 @@
+import { useRef, useCallback } from 'react';
 import type { Cue } from 'showx-shared';
 import type { ShowMode } from 'showx-shared';
 import type { StationAwareness } from '../../lib/awareness.js';
@@ -7,17 +8,63 @@ import { DepartmentChips, DepartmentSideBar } from './DepartmentChips.js';
 import { OperatorPresenceIndicators } from './OperatorPresenceIndicators.js';
 import { PlayheadIndicator } from './PlayheadIndicator.js';
 
+const LONG_PRESS_MS = 500;
+const LONG_PRESS_MOVE_THRESHOLD = 10;
+
 export interface CueRowProps {
   cue: Cue;
   isPlayhead: boolean;
   isArmed: boolean;
   isFiring: boolean;
   onSelect: () => void;
+  onEdit?: () => void;
   stations: StationAwareness[];
   mode: ShowMode;
 }
 
-export function CueRow({ cue, isPlayhead, isArmed, isFiring, onSelect, stations, mode }: CueRowProps) {
+export function CueRow({ cue, isPlayhead, isArmed, isFiring, onSelect, onEdit, stations, mode }: CueRowProps) {
+  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const longPressFiredRef = useRef(false);
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+
+  const clearLongPress = useCallback(() => {
+    if (longPressTimerRef.current !== null) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+    touchStartRef.current = null;
+  }, []);
+
+  const handleTouchStart = useCallback((e: React.TouchEvent<HTMLDivElement>) => {
+    const touch = e.touches[0];
+    if (!touch) return;
+    clearLongPress();
+    longPressFiredRef.current = false;
+    touchStartRef.current = { x: touch.clientX, y: touch.clientY };
+    longPressTimerRef.current = setTimeout(() => {
+      longPressTimerRef.current = null;
+      if (onEdit && mode === 'rehearsal') {
+        longPressFiredRef.current = true;
+        onEdit();
+      }
+    }, LONG_PRESS_MS);
+  }, [clearLongPress, onEdit, mode]);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent<HTMLDivElement>) => {
+    if (!touchStartRef.current) return;
+    const touch = e.touches[0];
+    if (!touch) return;
+    const dx = touch.clientX - touchStartRef.current.x;
+    const dy = touch.clientY - touchStartRef.current.y;
+    if (Math.sqrt(dx * dx + dy * dy) > LONG_PRESS_MOVE_THRESHOLD) {
+      clearLongPress();
+    }
+  }, [clearLongPress]);
+
+  const handleTouchEnd = useCallback(() => {
+    clearLongPress();
+  }, [clearLongPress]);
+
   let bg: string = tokens.color.bg;
   if (isFiring) bg = tokens.color.green;
   else if (isPlayhead) bg = tokens.color.playhead_bg;
@@ -31,7 +78,15 @@ export function CueRow({ cue, isPlayhead, isArmed, isFiring, onSelect, stations,
       aria-selected={isPlayhead}
       data-testid="cue-row"
       data-cue-type={isCompound ? 'compound' : deptTag}
-      onClick={onSelect}
+      onClick={(e) => {
+        if (longPressFiredRef.current) { longPressFiredRef.current = false; return; }
+        if (e.detail !== 2) onSelect();
+      }}
+      onDoubleClick={() => { if (onEdit && mode === 'rehearsal') onEdit(); }}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      onTouchCancel={handleTouchEnd}
       style={{
         position: 'relative',
         display: 'grid',

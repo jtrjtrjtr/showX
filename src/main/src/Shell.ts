@@ -36,6 +36,8 @@ import { registerUiPanelBridge } from './ipc/uiPanelBridge.js';
 import { registerDeviceBridge } from './ipc/cuelistCoreDeviceBridge.js';
 import { registerRoutingBridge } from './ipc/cuelistCoreRoutingBridge.js';
 import { registerShowStateBridge } from './ipc/cuelistCoreShowStateBridge.js';
+import { registerShellOpenExternal } from './ipc/shellOpenExternal.js';
+import { registerDispatchLogBridge } from './ipc/dispatchLogBridge.js';
 import { ActiveShowDoc, setActiveShowDoc } from './runtime/index.js';
 import { GoExecutor } from './runtime/GoExecutor.js';
 
@@ -388,10 +390,11 @@ export class Shell {
 
     // 13. Browser window + IPC
     if (!this.deps.skipWindow) {
+      const apiPort = this.assets.port();
       const pwaUrl =
         process.env['SHOWX_DEV'] === '1'
-          ? `http://localhost:5174/?mode=shell`
-          : `http://localhost:${this.assets.port()}/?mode=shell`;
+          ? `http://localhost:5174/?mode=shell&api_port=${apiPort}`
+          : `http://localhost:${apiPort}/?mode=shell`;
       await createMainWindow({
         pwaUrl,
         preloadPath: preloadFilePath(),
@@ -403,11 +406,14 @@ export class Shell {
         pins: this.pinManager,
         shellConfig: this.shellConfig,
         logger: this.logger,
+        assetPort: () => this.assets.port(),
       }, this.deps.ipcBridge);
       registerUiPanelBridge(this.shellConfig, this.activeShow, this.deps.ipcBridge);
       registerDeviceBridge(this.activeShow, this.deps.ipcBridge, this.logger);
       registerRoutingBridge(this.activeShow, this.deps.ipcBridge, this.logger);
       registerShowStateBridge(this.activeShow, this.deps.ipcBridge, this.logger);
+      registerShellOpenExternal(this.deps.ipcBridge);
+      registerDispatchLogBridge(this.goExecutor!, this.deps.ipcBridge);
     }
   }
 

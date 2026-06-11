@@ -22,6 +22,8 @@ export interface IpcDeps {
   pins: PinManager;
   shellConfig: ShellConfigStore;
   logger: Logger;
+  /** Returns the port the AssetServer is listening on. Used by TEST_GET_PORT. */
+  assetPort?: () => number;
 }
 
 export function registerIpcHandlers(deps: IpcDeps, ipc: IpcMainBridge = ipcMain): void {
@@ -69,6 +71,11 @@ export function registerIpcHandlers(deps: IpcDeps, ipc: IpcMainBridge = ipcMain)
     await deps.shellConfig.set(key, value);
     return { ok: true };
   });
+
+  if (deps.assetPort) {
+    const assetPort = deps.assetPort;
+    ipc.handle(IPC.TEST_GET_PORT, async () => assetPort());
+  }
 
   registerShowActions(deps.shellConfig, ipc);
 }

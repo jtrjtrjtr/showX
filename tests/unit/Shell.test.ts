@@ -126,6 +126,7 @@ function makeMocks(callOrder: string[]): ShellDeps & { callOrder: string[] } {
     claim: vi.fn(),
     cleanupExpired: vi.fn(),
     activePinCount: vi.fn(() => 0),
+    registerTestPin: vi.fn(),
   };
 
   const pairing = {

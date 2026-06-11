@@ -31,6 +31,7 @@ const showxApi = {
     openExisting: () => ipcRenderer.invoke('cuelist-core:open-file-picker'),
     createNew: () => ipcRenderer.invoke('cuelist-core:create-new'),
     openRecent: (showPath: string) => ipcRenderer.invoke('cuelist-core:open-recent', showPath),
+    openExternal: (url: string) => ipcRenderer.invoke('shell.openExternal', url),
     onShowChanged: (cb: () => void) => {
       const listener = () => cb();
       ipcRenderer.on(
@@ -51,6 +52,15 @@ const showxApi = {
       const listener = (_e: unknown, ...a: unknown[]) => handler(...a);
       ipcRenderer.on(channel, listener as Parameters<typeof ipcRenderer.on>[1]);
       return () => ipcRenderer.off(channel, listener as Parameters<typeof ipcRenderer.on>[1]);
+    },
+  },
+  dispatchLog: {
+    list: (): Promise<unknown[]> => ipcRenderer.invoke('dispatchLog:list'),
+    onAppend: (cb: (record: unknown) => void): (() => void) => {
+      const listener = (_e: unknown, record: unknown) => cb(record);
+      ipcRenderer.on('dispatchLog:append', listener as Parameters<typeof ipcRenderer.on>[1]);
+      return () =>
+        ipcRenderer.off('dispatchLog:append', listener as Parameters<typeof ipcRenderer.on>[1]);
     },
   },
 };

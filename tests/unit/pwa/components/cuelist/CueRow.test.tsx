@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-import { describe, it, expect, afterEach } from 'vitest';
-import { render, screen, cleanup, within } from '@testing-library/react';
+import { describe, it, expect, afterEach, vi } from 'vitest';
+import { render, screen, cleanup, within, fireEvent, act } from '@testing-library/react';
 import React from 'react';
 import type { Cue } from 'showx-shared';
 import { CueRow } from '../../../../../pwa/src/components/cuelist/CueRow.js';
@@ -236,5 +236,183 @@ describe('CueRow', () => {
       />,
     );
     expect(screen.queryByLabelText('Payload locked')).toBeNull();
+  });
+
+  it('click calls onSelect but not onEdit', () => {
+    const onSelect = vi.fn();
+    const onEdit = vi.fn();
+    const cue = makeCue();
+    const { container } = render(
+      <CueRow
+        cue={cue}
+        isPlayhead={false}
+        isArmed={false}
+        isFiring={false}
+        onSelect={onSelect}
+        onEdit={onEdit}
+        stations={[]}
+        mode="rehearsal"
+      />,
+    );
+    const row = container.querySelector('[role="row"]')!;
+    fireEvent.click(row);
+    expect(onSelect).toHaveBeenCalledOnce();
+    expect(onEdit).not.toHaveBeenCalled();
+  });
+
+  it('second click of dblclick (detail=2) does not call onSelect', () => {
+    const onSelect = vi.fn();
+    const cue = makeCue();
+    const { container } = render(
+      <CueRow
+        cue={cue}
+        isPlayhead={false}
+        isArmed={false}
+        isFiring={false}
+        onSelect={onSelect}
+        stations={[]}
+        mode="rehearsal"
+      />,
+    );
+    const row = container.querySelector('[role="row"]')!;
+    fireEvent.click(row, { detail: 2 });
+    expect(onSelect).not.toHaveBeenCalled();
+  });
+
+  it('double click in rehearsal mode calls onEdit', () => {
+    const onEdit = vi.fn();
+    const cue = makeCue();
+    const { container } = render(
+      <CueRow
+        cue={cue}
+        isPlayhead={false}
+        isArmed={false}
+        isFiring={false}
+        onSelect={() => {}}
+        onEdit={onEdit}
+        stations={[]}
+        mode="rehearsal"
+      />,
+    );
+    const row = container.querySelector('[role="row"]')!;
+    fireEvent.dblClick(row);
+    expect(onEdit).toHaveBeenCalledOnce();
+  });
+
+  it('double click in show mode does NOT call onEdit', () => {
+    const onEdit = vi.fn();
+    const cue = makeCue();
+    const { container } = render(
+      <CueRow
+        cue={cue}
+        isPlayhead={false}
+        isArmed={false}
+        isFiring={false}
+        onSelect={() => {}}
+        onEdit={onEdit}
+        stations={[]}
+        mode="show"
+      />,
+    );
+    const row = container.querySelector('[role="row"]')!;
+    fireEvent.dblClick(row);
+    expect(onEdit).not.toHaveBeenCalled();
+  });
+
+  it('touch long-press ≥500ms calls onEdit in rehearsal mode', () => {
+    vi.useFakeTimers();
+    const onEdit = vi.fn();
+    const cue = makeCue();
+    const { container } = render(
+      <CueRow
+        cue={cue}
+        isPlayhead={false}
+        isArmed={false}
+        isFiring={false}
+        onSelect={() => {}}
+        onEdit={onEdit}
+        stations={[]}
+        mode="rehearsal"
+      />,
+    );
+    const row = container.querySelector('[role="row"]')!;
+    fireEvent.touchStart(row, { touches: [{ clientX: 100, clientY: 100 }] });
+    act(() => { vi.advanceTimersByTime(500); });
+    expect(onEdit).toHaveBeenCalledOnce();
+    vi.useRealTimers();
+  });
+
+  it('touch long-press does NOT call onEdit in show mode', () => {
+    vi.useFakeTimers();
+    const onEdit = vi.fn();
+    const cue = makeCue();
+    const { container } = render(
+      <CueRow
+        cue={cue}
+        isPlayhead={false}
+        isArmed={false}
+        isFiring={false}
+        onSelect={() => {}}
+        onEdit={onEdit}
+        stations={[]}
+        mode="show"
+      />,
+    );
+    const row = container.querySelector('[role="row"]')!;
+    fireEvent.touchStart(row, { touches: [{ clientX: 100, clientY: 100 }] });
+    act(() => { vi.advanceTimersByTime(500); });
+    expect(onEdit).not.toHaveBeenCalled();
+    vi.useRealTimers();
+  });
+
+  it('touch released before 500ms does NOT call onEdit', () => {
+    vi.useFakeTimers();
+    const onEdit = vi.fn();
+    const cue = makeCue();
+    const { container } = render(
+      <CueRow
+        cue={cue}
+        isPlayhead={false}
+        isArmed={false}
+        isFiring={false}
+        onSelect={() => {}}
+        onEdit={onEdit}
+        stations={[]}
+        mode="rehearsal"
+      />,
+    );
+    const row = container.querySelector('[role="row"]')!;
+    fireEvent.touchStart(row, { touches: [{ clientX: 100, clientY: 100 }] });
+    act(() => { vi.advanceTimersByTime(400); });
+    fireEvent.touchEnd(row);
+    act(() => { vi.advanceTimersByTime(200); });
+    expect(onEdit).not.toHaveBeenCalled();
+    vi.useRealTimers();
+  });
+
+  it('long-press does not also fire onSelect via subsequent click', () => {
+    vi.useFakeTimers();
+    const onSelect = vi.fn();
+    const onEdit = vi.fn();
+    const cue = makeCue();
+    const { container } = render(
+      <CueRow
+        cue={cue}
+        isPlayhead={false}
+        isArmed={false}
+        isFiring={false}
+        onSelect={onSelect}
+        onEdit={onEdit}
+        stations={[]}
+        mode="rehearsal"
+      />,
+    );
+    const row = container.querySelector('[role="row"]')!;
+    fireEvent.touchStart(row, { touches: [{ clientX: 100, clientY: 100 }] });
+    act(() => { vi.advanceTimersByTime(500); });
+    fireEvent.click(row);
+    expect(onEdit).toHaveBeenCalledOnce();
+    expect(onSelect).not.toHaveBeenCalled();
+    vi.useRealTimers();
   });
 });

@@ -38,6 +38,7 @@ export function HelpOverlay({ onClose }: HelpOverlayProps) {
             {([
               ['Space', 'GO — fire armed cue'],
               ['Q', 'Standby — arm playhead cue'],
+              ['E', 'Edit playhead cue (REHEARSAL only)'],
               ['↑ / ↓', 'Navigate playhead'],
               ['Esc', 'Unarm current cue'],
               ['Cmd+Shift+G (long-press)', 'Override fire (SM emergency)'],

@@ -1,6 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import { CuelistCorePanel, FirstLaunchPicker, RecentShowsList } from '../../../src/modules/cuelist-core/src/ui/index.js';
 import { createIpcBridge, getShellApi } from '../lib/uiPanelBridge.js';
+import { StationsPanel } from './StationsPanel.js';
+import { DispatchLogPanel } from './DispatchLogPanel.js';
 import type { IpcBridge, ShellState } from '../lib/uiPanelBridge.js';
 
 function Loading() {
@@ -49,17 +51,27 @@ export function ShellRouter() {
 
   if (!ipcBridge || !state) return <Loading />;
 
+  let mainContent: React.ReactNode;
   if (state.kind === 'no-show') {
     if (state.recentShows.length > 0) {
-      return (
+      mainContent = (
         <RecentShowsList
           ipc={ipcBridge}
           recentShows={state.recentShows}
         />
       );
+    } else {
+      mainContent = <FirstLaunchPicker ipc={ipcBridge} />;
     }
-    return <FirstLaunchPicker ipc={ipcBridge} />;
+  } else {
+    mainContent = <CuelistCorePanel ipc={ipcBridge} />;
   }
 
-  return <CuelistCorePanel ipc={ipcBridge} />;
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+      <div style={{ flex: 1 }}>{mainContent}</div>
+      <StationsPanel />
+      <DispatchLogPanel />
+    </div>
+  );
 }

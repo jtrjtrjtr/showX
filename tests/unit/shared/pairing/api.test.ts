@@ -330,4 +330,69 @@ describe('Pairing HTTP API', () => {
       .set('x-showx-local-secret', 'test-local-secret-xyz');
     expect(res.status).toBe(200);
   });
+
+  // ── /pairing/validate endpoint ────────────────────────────────────────────
+
+  it('GET /pairing/validate with valid token → 200 {valid: true}', async () => {
+    const { app } = await makeApp();
+
+    // Pair a device to get a valid token
+    const initRes = await request(app).post('/pairing/initiate').send({});
+    const claimRes = await request(app)
+      .post('/pairing/claim')
+      .send({ pin: initRes.body.pin, display_name: 'LX Op', owned_departments: ['LX'] });
+
+    const { token } = claimRes.body;
+
+    const res = await request(app)
+      .get('/pairing/validate')
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ valid: true });
+  });
+
+  it('GET /pairing/validate with invalid token → 401 {valid: false}', async () => {
+    const { app } = await makeApp();
+    const res = await request(app)
+      .get('/pairing/validate')
+      .set('Authorization', 'Bearer totally-invalid-token');
+    expect(res.status).toBe(401);
+    expect(res.body).toEqual({ valid: false });
+  });
+
+  it('GET /pairing/validate with missing Authorization header → 401 {valid: false}', async () => {
+    const { app } = await makeApp();
+    const res = await request(app).get('/pairing/validate');
+    expect(res.status).toBe(401);
+    expect(res.body).toEqual({ valid: false });
+  });
+
+  // ── /server-info endpoint ─────────────────────────────────────────────────
+
+  it('GET /server-info → 200 with lan_ip, port, mdns_name, test_pin:null (no env var)', async () => {
+    const { app } = await makeApp();
+    // Ensure env var is not set
+    delete process.env['SHOWX_PAIRING_TEST_PIN'];
+
+    const res = await request(app).get('/server-info');
+    expect(res.status).toBe(200);
+    expect(typeof res.body.lan_ip).toBe('string');
+    expect(res.body.port).toBe(5300);
+    expect(res.body.mdns_name).toBe('localhost.local');
+    expect(res.body.test_pin).toBeNull();
+  });
+
+  it('GET /server-info with SHOWX_PAIRING_TEST_PIN set → test_pin populated', async () => {
+    const { app } = await makeApp();
+    process.env['SHOWX_PAIRING_TEST_PIN'] = '123456';
+
+    try {
+      const res = await request(app).get('/server-info');
+      expect(res.status).toBe(200);
+      expect(res.body.test_pin).toBe('123456');
+    } finally {
+      delete process.env['SHOWX_PAIRING_TEST_PIN'];
+    }
+  });
 });

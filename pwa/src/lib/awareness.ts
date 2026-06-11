@@ -61,36 +61,59 @@ export function extractStations(
   return result;
 }
 
-type AwarenessLike = {
+export type AwarenessLike = {
   getStates(): Map<number, Record<string, unknown>>;
   clientID: number;
 };
 
 /**
+ * Returns true iff any awareness state (including local) has role === 'sm'.
+ * Presence in the states map is the liveness signal — Yjs prunes disconnected
+ * clients after ~30s, so no timestamp math is needed.
+ */
+export function isSmPresent(awareness: AwarenessLike): boolean {
+  for (const [, s] of awareness.getStates()) {
+    if ((s as unknown as StationAwareness).role === 'sm') return true;
+  }
+  return false;
+}
+
+/**
  * Returns the clientID of the playhead authority station.
- * SM-role station wins; if no SM connected, lowest clientID is authority (deterministic).
+ * Among SM-role stations, picks the LOWEST clientID (deterministic — avoids
+ * split-brain when two SM-role tabs are open and each client's Map iteration
+ * order differs). Falls back to lowest clientID overall when no SM present.
  */
 export function getPlayheadAuthorityClientId(awareness: AwarenessLike): number | null {
   const states = Array.from(awareness.getStates().entries());
   if (states.length === 0) return null;
 
-  // Prefer SM-role station
-  const sm = states.find(([, s]) => (s as unknown as StationAwareness).role === 'sm');
-  if (sm) return sm[0];
+  const sms = states
+    .filter(([, s]) => (s as unknown as StationAwareness).role === 'sm')
+    .sort(([a], [b]) => a - b);
+  if (sms.length > 0) return sms[0][0];
 
   // Fallback: lowest clientID (deterministic)
-  const sorted = [...states].sort(([a], [b]) => a - b);
-  return sorted[0]?.[0] ?? null;
+  return [...states].sort(([a], [b]) => a - b)[0]?.[0] ?? null;
 }
 
 /**
  * Returns the current playhead state from the authority station's awareness.
+ * If the authority has no playhead yet (freshly promoted), falls back to any
+ * state carrying a playhead so the UI doesn't blank on authority handover.
  */
 export function getPlayheadState(awareness: AwarenessLike): PlayheadAwareness | null {
   const authorityId = getPlayheadAuthorityClientId(awareness);
   if (authorityId === null) return null;
   const state = awareness.getStates().get(authorityId) as unknown as StationAwareness | undefined;
-  return state?.playhead ?? null;
+  if (state?.playhead) return state.playhead;
+
+  // Authority has no playhead yet — fall back to any state that carries one
+  for (const [, s] of awareness.getStates()) {
+    const sa = s as unknown as StationAwareness;
+    if (sa?.playhead) return sa.playhead;
+  }
+  return null;
 }
 
 export type { ShowMode };

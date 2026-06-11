@@ -16,6 +16,7 @@ import {
   setCueTrigger,
   setCueStandbyNote,
   setCueNotes,
+  updateCueFields,
 } from '../../../../../src/modules/cuelist-core/src/document/cue.js';
 import { ValidationError } from '../../../../../src/modules/cuelist-core/src/document/payload.js';
 import { InvariantError } from '../../../../../src/modules/cuelist-core/src/cue/invariants.js';
@@ -142,5 +143,55 @@ describe('setCueDescription / setCueStandbyNote / setCueNotes', () => {
     setCueNotes(doc, cuelistId, id, 'Long note about Q1', 'op1');
     const cue = getCues(getCuelist(doc, cuelistId)!).toArray().find((c) => c.get('id') === id)!;
     expect(cue.get('notes')).toBe('Long note about Q1');
+  });
+});
+
+describe('updateCueFields', () => {
+  it('updates label, description, and standby_note in one transaction', () => {
+    const { doc, cuelistId } = makeDocWithCuelist();
+    const id = addCue(doc, cuelistId, { label: 'Q1', description: 'Old desc', department: ['LX'], created_by: 'op1' });
+    updateCueFields(doc, cuelistId, id, { label: 'Q1 new', description: 'New desc', standby_note: 'Standby LX' }, 'op2');
+    const cue = getCues(getCuelist(doc, cuelistId)!).toArray().find((c) => c.get('id') === id)!;
+    expect(cue.get('label')).toBe('Q1 new');
+    expect(cue.get('description')).toBe('New desc');
+    expect(cue.get('standby_note')).toBe('Standby LX');
+    expect(cue.get('modified_by')).toBe('op2');
+  });
+
+  it('silently skips undefined patch keys', () => {
+    const { doc, cuelistId } = makeDocWithCuelist();
+    const id = addCue(doc, cuelistId, { label: 'Q1', description: 'Keep me', department: ['SM'], created_by: 'op1' });
+    updateCueFields(doc, cuelistId, id, { label: 'Q1 renamed' }, 'op1');
+    const cue = getCues(getCuelist(doc, cuelistId)!).toArray().find((c) => c.get('id') === id)!;
+    expect(cue.get('label')).toBe('Q1 renamed');
+    expect(cue.get('description')).toBe('Keep me');
+  });
+
+  it('throws ValidationError when label is empty string', () => {
+    const { doc, cuelistId } = makeDocWithCuelist();
+    const id = addCue(doc, cuelistId, { label: 'Q1', department: ['LX'], created_by: 'op1' });
+    expect(() => updateCueFields(doc, cuelistId, id, { label: '' }, 'op1')).toThrow(ValidationError);
+  });
+
+  it('throws ValidationError when label is whitespace-only', () => {
+    const { doc, cuelistId } = makeDocWithCuelist();
+    const id = addCue(doc, cuelistId, { label: 'Q1', department: ['LX'], created_by: 'op1' });
+    expect(() => updateCueFields(doc, cuelistId, id, { label: '   ' }, 'op1')).toThrow(ValidationError);
+  });
+
+  it('throws on unknown cue id', () => {
+    const { doc, cuelistId } = makeDocWithCuelist();
+    expect(() =>
+      updateCueFields(doc, cuelistId, 'no-such-cue', { label: 'X' }, 'op1'),
+    ).toThrow(/not found/);
+  });
+
+  it('does not modify payloads', () => {
+    const { doc, cuelistId } = makeDocWithCuelist();
+    const id = addCue(doc, cuelistId, { label: 'Q1', department: ['LX'], created_by: 'op1' });
+    const cue = getCues(getCuelist(doc, cuelistId)!).toArray().find((c) => c.get('id') === id)!;
+    const payloadsBefore = cue.get('payloads');
+    updateCueFields(doc, cuelistId, id, { label: 'Q1 new' }, 'op1');
+    expect(cue.get('payloads')).toBe(payloadsBefore);
   });
 });

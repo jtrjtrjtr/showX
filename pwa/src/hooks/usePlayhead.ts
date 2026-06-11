@@ -4,6 +4,7 @@ import { useCuelist } from './useCuelist.js';
 import {
   getPlayheadAuthorityClientId,
   getPlayheadState,
+  isSmPresent,
   type PlayheadAwareness,
 } from '../lib/awareness.js';
 
@@ -33,8 +34,6 @@ export interface PlayheadResult {
 
 /** Max awareness write rate: 10 Hz */
 const RATE_LIMIT_MS = 100;
-/** Playhead is "stale" (SM offline) if not updated within this window */
-const SM_OFFLINE_MS = 30_000;
 
 type AwarenessLike = Parameters<typeof getPlayheadState>[0];
 
@@ -53,6 +52,7 @@ export function usePlayhead(cuelistId: string): PlayheadResult {
   const [isAuthority, setIsAuthority] = useState<boolean>(
     () => getPlayheadAuthorityClientId(aw) === localClientId,
   );
+  const [smOnline, setSmOnline] = useState<boolean>(() => isSmPresent(aw));
 
   // Rate-limit state for writes
   const pendingRef = useRef<PlayheadAwareness | null>(null);
@@ -95,6 +95,7 @@ export function usePlayhead(cuelistId: string): PlayheadResult {
     const onAwarenessChange = () => {
       setPlayheadState(getPlayheadState(aw));
       setIsAuthority(getPlayheadAuthorityClientId(aw) === localClientId);
+      setSmOnline(isSmPresent(aw));
     };
     awareness.on('change', onAwarenessChange);
     onAwarenessChange();
@@ -144,12 +145,6 @@ export function usePlayhead(cuelistId: string): PlayheadResult {
     assertAuthority();
     writePlayhead({ armed_cue_id: null });
   }, [assertAuthority, writePlayhead]);
-
-  const smOnline = (() => {
-    if (!playhead) return false;
-    const age = Date.now() - new Date(playhead.updated_at).getTime();
-    return age < SM_OFFLINE_MS;
-  })();
 
   return {
     playhead,

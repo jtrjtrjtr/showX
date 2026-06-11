@@ -1,7 +1,13 @@
-import { useRef, useSyncExternalStore } from 'react';
+import { useRef, useSyncExternalStore, useCallback } from 'react';
 import * as Y from 'yjs';
 import type { Cue } from 'showx-shared';
 import { useConnection } from '../lib/ConnectionProvider.js';
+import {
+  updateCueFields,
+  type CueFieldPatch,
+} from '../../../src/modules/cuelist-core/src/document/cue.js';
+
+export type { CueFieldPatch };
 
 export interface CuelistJson {
   id: string;
@@ -11,9 +17,13 @@ export interface CuelistJson {
   playhead: { cue_id: string | null; armed_cue_id: string | null };
 }
 
-export interface CuelistSnapshot {
+interface RawSnapshot {
   cuelist: CuelistJson | null;
   cues: Cue[];
+}
+
+export interface CuelistSnapshot extends RawSnapshot {
+  updateFields: (cueId: string, patch: CueFieldPatch, modifiedBy: string) => void;
 }
 
 function findCuelistMap(doc: Y.Doc, cuelistId: string): Y.Map<unknown> | undefined {
@@ -23,14 +33,14 @@ function findCuelistMap(doc: Y.Doc, cuelistId: string): Y.Map<unknown> | undefin
     .find((m) => m.get('id') === cuelistId);
 }
 
-const EMPTY: CuelistSnapshot = { cuelist: null, cues: [] };
+const EMPTY_RAW: RawSnapshot = { cuelist: null, cues: [] };
 
 export function useCuelist(cuelistId: string): CuelistSnapshot {
   const conn = useConnection();
   // Cache cleared on every Yjs mutation so getSnapshot returns a fresh object → React detects change.
-  const cache = useRef<CuelistSnapshot | null>(null);
+  const cache = useRef<RawSnapshot | null>(null);
 
-  return useSyncExternalStore(
+  const raw = useSyncExternalStore(
     (cb) => {
       const cuelists = conn.doc.getArray('cuelists');
       const handler = () => {
@@ -44,7 +54,7 @@ export function useCuelist(cuelistId: string): CuelistSnapshot {
       if (cache.current !== null) return cache.current;
       const cl = findCuelistMap(conn.doc, cuelistId);
       if (!cl) {
-        cache.current = EMPTY;
+        cache.current = EMPTY_RAW;
         return cache.current;
       }
       const cues = (cl.get('cues') as Y.Array<Y.Map<unknown>>)
@@ -53,6 +63,15 @@ export function useCuelist(cuelistId: string): CuelistSnapshot {
       cache.current = { cuelist: cl.toJSON() as CuelistJson, cues };
       return cache.current;
     },
-    () => EMPTY,
+    () => EMPTY_RAW,
   );
+
+  const updateFields = useCallback(
+    (cueId: string, patch: CueFieldPatch, modifiedBy: string) => {
+      updateCueFields(conn.doc, cuelistId, cueId, patch, modifiedBy);
+    },
+    [conn.doc, cuelistId],
+  );
+
+  return { ...raw, updateFields };
 }

@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import type { Cue } from 'showx-shared';
 import { useCuelist } from '../../hooks/useCuelist.js';
+import { CueEditDialog } from './CueEditDialog.js';
 import { useMode } from '../../hooks/useMode.js';
 import { useStations } from '../../hooks/useStations.js';
 import { useGoChannel } from '../../hooks/useGoChannel.js';
@@ -61,7 +62,7 @@ function EmptyState() {
 
 export function SMMasterView({ cuelistId }: SMMasterViewProps) {
   const conn = useConnection();
-  const { cuelist, cues } = useCuelist(cuelistId);
+  const { cuelist, cues, updateFields } = useCuelist(cuelistId);
   const { mode, transition } = useMode();
   const stations = useStations();
   const { go, standby, lastDispatched, lastHistoric } = useGoChannel(cuelistId);
@@ -76,6 +77,7 @@ export function SMMasterView({ cuelistId }: SMMasterViewProps) {
   const [search, setSearch] = useState('');
   const [showHelp, setShowHelp] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [editingCue, setEditingCue] = useState<Cue | null>(null);
   const [rejectedReason, setRejectedReason] = useState<string | null>(null);
   const rejectionSeqRef = useRef(0);
 
@@ -113,12 +115,18 @@ export function SMMasterView({ cuelistId }: SMMasterViewProps) {
           arm(playheadCueId);
         }
       },
+      KeyE: () => {
+        if (mode === 'rehearsal' && playheadCueId) {
+          const cue = cues.find((c) => c.id === playheadCueId);
+          if (cue) setEditingCue(cue);
+        }
+      },
       ArrowUp: () => retreat(),
       ArrowDown: () => advance(),
-      Escape: () => unarm(),
+      Escape: () => { if (!editingCue) unarm(); },
       Slash: () => setShowHelp((v) => !v),
     }),
-    [armedCueId, playheadCueId, go, standby, arm, unarm, advance, retreat],
+    [armedCueId, playheadCueId, mode, cues, editingCue, go, standby, arm, unarm, advance, retreat],
   );
 
   useKeyboardShortcuts(shortcuts);
@@ -242,6 +250,7 @@ export function SMMasterView({ cuelistId }: SMMasterViewProps) {
                 Date.now() - new Date(lastDispatched.dispatched_at).getTime() < 2000
               }
               onSelect={() => setPlayhead(cue.id)}
+              onEdit={() => setEditingCue(cue)}
               stations={stations.filter((s) => s.cursor.cue_id === cue.id)}
               mode={mode}
             />
@@ -330,6 +339,16 @@ export function SMMasterView({ cuelistId }: SMMasterViewProps) {
           cue={armedCue}
           onConfirm={handleConfirmOverride}
           onCancel={() => setShowConfirmDialog(false)}
+        />
+      )}
+      {editingCue && (
+        <CueEditDialog
+          cue={editingCue}
+          onSave={(patch) => {
+            updateFields(editingCue.id, patch, String(conn.doc.clientID));
+            setEditingCue(null);
+          }}
+          onCancel={() => setEditingCue(null)}
         />
       )}
     </div>

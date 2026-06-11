@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   getPlayheadAuthorityClientId,
   getPlayheadState,
+  isSmPresent,
   type PlayheadAwareness,
   type StationAwareness,
 } from '../../../../pwa/src/lib/awareness.js';
@@ -45,6 +46,40 @@ const samplePlayhead: PlayheadAwareness = {
   updated_at: new Date().toISOString(),
   updated_by: '100',
 };
+
+describe('isSmPresent', () => {
+  it('returns false when no states', () => {
+    const aw = makeAwareness(10, []);
+    expect(isSmPresent(aw)).toBe(false);
+  });
+
+  it('returns true when a remote state has role=sm', () => {
+    const aw = makeAwareness(10, [[100, baseState('sm')]]);
+    expect(isSmPresent(aw)).toBe(true);
+  });
+
+  it('returns true when the LOCAL state has role=sm (self is SM)', () => {
+    const aw = makeAwareness(10, [[10, baseState('sm')]]);
+    expect(isSmPresent(aw)).toBe(true);
+  });
+
+  it('returns false when all states have role=operator', () => {
+    const aw = makeAwareness(10, [
+      [100, baseState('operator')],
+      [200, baseState('operator')],
+    ]);
+    expect(isSmPresent(aw)).toBe(false);
+  });
+
+  it('returns false after SM state is removed', () => {
+    const map = new Map<number, Record<string, unknown>>();
+    map.set(100, baseState('sm') as Record<string, unknown>);
+    const aw = { clientID: 10, getStates: () => map };
+    expect(isSmPresent(aw)).toBe(true);
+    map.delete(100);
+    expect(isSmPresent(aw)).toBe(false);
+  });
+});
 
 describe('getPlayheadAuthorityClientId', () => {
   it('returns null when no states', () => {
@@ -116,6 +151,18 @@ describe('getPlayheadState', () => {
     expect(ph!.cue_id).toBe('q5');
   });
 
+  it('falls back to any state with playhead when authority has none (freshly-promoted authority)', () => {
+    // SM (authority) was just promoted and has not yet written a playhead.
+    // A previous state in another client carries the last-known playhead.
+    const aw = makeAwareness(10, [
+      [100, baseState('sm')],  // authority — no playhead
+      [200, { ...baseState('operator'), playhead: samplePlayhead }],  // non-authority has one
+    ]);
+    const ph = getPlayheadState(aw);
+    expect(ph).not.toBeNull();
+    expect(ph!.cue_id).toBe('q5');
+  });
+
   it('does NOT return playhead from non-authority station', () => {
     const nonAuthorityPlayhead: PlayheadAwareness = {
       ...samplePlayhead,
@@ -137,12 +184,26 @@ describe('authority determinism with two observers', () => {
       [30, baseState('operator')],
       [70, baseState('operator')],
     ];
-    // Observer A (clientID=50) sees all stations
     const awA = makeAwareness(50, states);
-    // Observer B (clientID=30) sees the same states
     const awB = makeAwareness(30, states);
     expect(getPlayheadAuthorityClientId(awA)).toBe(getPlayheadAuthorityClientId(awB));
     expect(getPlayheadAuthorityClientId(awA)).toBe(30);  // lowest
+  });
+
+  it('two SM clients both elect lowest SM clientID as authority (split-brain fix)', () => {
+    // SM-A has clientID 50, SM-B has clientID 90
+    const states: [number, Partial<StationAwareness>][] = [
+      [50, baseState('sm')],
+      [90, baseState('sm')],
+      [70, baseState('operator')],
+    ];
+    // Client A (local=90) and client B (local=50) see identical state sets but
+    // different Map insertion order (local state is inserted first on each client).
+    // Both must agree on the same authority = lowest SM = 50.
+    const awA = makeAwareness(90, states);
+    const awB = makeAwareness(50, states);
+    expect(getPlayheadAuthorityClientId(awA)).toBe(50);
+    expect(getPlayheadAuthorityClientId(awB)).toBe(50);
   });
 
   it('SM disconnect → authority falls back to lowest clientID', () => {
@@ -153,7 +214,6 @@ describe('authority determinism with two observers', () => {
     const awWithSm = makeAwareness(30, withSm);
     expect(getPlayheadAuthorityClientId(awWithSm)).toBe(100);  // SM wins
 
-    // SM disconnects — remove from states
     const withoutSm: [number, Partial<StationAwareness>][] = [
       [30, baseState('operator')],
     ];

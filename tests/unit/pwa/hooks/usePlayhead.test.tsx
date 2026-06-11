@@ -463,9 +463,50 @@ describe('usePlayhead — authority fallback', () => {
 });
 
 describe('usePlayhead — smOnline', () => {
-  it('smOnline is false when playhead is null', async () => {
+  it('smOnline is true when SM is present in awareness (even with no playhead written)', async () => {
     const { conn } = makeSmSetup();
+    // makeSmSetup seeds { role: 'sm' } for the local station
     addCuelist(conn.doc, 'cl1');
+
+    let captured: PlayheadResult | null = null;
+    render(
+      <ConnectionContext.Provider value={conn}>
+        <PlayheadCapture cuelistId="cl1" onState={(s) => { captured = s; }} />
+      </ConnectionContext.Provider>,
+    );
+    await waitFor(() => expect(captured).not.toBeNull());
+    expect(captured!.smOnline).toBe(true);
+  });
+
+  it('smOnline is true when SM is present and idle 60s (no time-based logic)', async () => {
+    const doc = new Y.Doc();
+    const awareness = createAwareness(doc.clientID);
+    const conn = makeConnWithDoc(doc, awareness);
+    addCuelist(doc, 'cl1');
+
+    const smId = doc.clientID + 10000;
+    // SM present but has not written a playhead — simulates idle SM in awareness
+    awareness.states.set(smId, { role: 'sm' });
+    awareness.states.set(doc.clientID, { role: 'operator' });
+
+    let captured: PlayheadResult | null = null;
+    render(
+      <ConnectionContext.Provider value={conn}>
+        <PlayheadCapture cuelistId="cl1" onState={(s) => { captured = s; }} />
+      </ConnectionContext.Provider>,
+    );
+    await waitFor(() => expect(captured).not.toBeNull());
+    expect(captured!.smOnline).toBe(true);
+  });
+
+  it('smOnline is false when no role=sm in awareness states', async () => {
+    const doc = new Y.Doc();
+    const awareness = createAwareness(doc.clientID);
+    const conn = makeConnWithDoc(doc, awareness);
+    addCuelist(doc, 'cl1');
+
+    awareness.states.set(doc.clientID, { role: 'operator' });
+    awareness.states.set(doc.clientID + 1000, { role: 'operator' });
 
     let captured: PlayheadResult | null = null;
     render(
@@ -477,23 +518,14 @@ describe('usePlayhead — smOnline', () => {
     expect(captured!.smOnline).toBe(false);
   });
 
-  it('smOnline is true when playhead was recently updated', async () => {
+  it('smOnline becomes false when SM disconnects from awareness', async () => {
     const doc = new Y.Doc();
     const awareness = createAwareness(doc.clientID);
     const conn = makeConnWithDoc(doc, awareness);
     addCuelist(doc, 'cl1');
 
     const smId = doc.clientID + 10000;
-    awareness.states.set(smId, {
-      role: 'sm',
-      playhead: {
-        cuelist_id: 'cl1',
-        cue_id: 'q1',
-        armed_cue_id: null,
-        updated_at: new Date().toISOString(),
-        updated_by: String(smId),
-      } as PlayheadAwareness,
-    });
+    awareness.states.set(smId, { role: 'sm' });
     awareness.states.set(doc.clientID, { role: 'operator' });
 
     let captured: PlayheadResult | null = null;
@@ -504,5 +536,12 @@ describe('usePlayhead — smOnline', () => {
     );
     await waitFor(() => expect(captured).not.toBeNull());
     expect(captured!.smOnline).toBe(true);
+
+    await act(async () => {
+      awareness.states.delete(smId);
+      awareness._triggerChange();
+    });
+
+    await waitFor(() => expect(captured!.smOnline).toBe(false));
   });
 });

@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import { saveSession, getOrCreateClientPubkey } from '../lib/auth.js';
+import { useState, useEffect } from 'react';
+import { saveSession as saveAuthSession, getOrCreateClientPubkey } from '../lib/auth.js';
+import { saveSession, loadSession, clearSession } from '../lib/session.js';
 import type { DiscoveredHost, PairedSession } from '../lib/types.js';
 import { tokens } from './cuelist/tokens.js';
 
@@ -10,7 +11,7 @@ interface Props {
 
 const DEPARTMENTS = ['LX', 'SND', 'VID', 'SM'];
 
-type Phase = 'idle' | 'claiming';
+type Phase = 'validating' | 'idle' | 'claiming';
 
 const inputStyle = {
   display: 'block',
@@ -33,37 +34,71 @@ const labelStyle = {
   marginBottom: tokens.space.xs,
 };
 
+function urlParams(): { pin: string | null; name: string | null } {
+  const u = new URLSearchParams(window.location.search);
+  return { pin: u.get('pin'), name: u.get('name') };
+}
+
 export function PairingView({ host, onPaired }: Props) {
-  const [pin, setPin] = useState('');
-  const [displayName, setDisplayName] = useState('');
+  const params = urlParams();
+  const [pin, setPin] = useState(params.pin ?? '');
+  const [displayName, setDisplayName] = useState(params.name ?? '');
   const [role, setRole] = useState<'sm' | 'operator'>('operator');
   const [ownedDepts, setOwnedDepts] = useState<string[]>([]);
   const [watchedDepts, setWatchedDepts] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [phase, setPhase] = useState<Phase>('idle');
+  const [phase, setPhase] = useState<Phase>('validating');
   const [pairedDevice, setPairedDevice] = useState<{ device_id: string; token: string } | null>(null);
+
+  // On mount: try to restore a stored session for this host
+  useEffect(() => {
+    const stored = loadSession();
+    if (!stored || stored.host !== host.host || stored.port !== host.port) {
+      setPhase('idle');
+      return;
+    }
+    fetch(`http://${host.host}:${host.port}/api/pairing/validate`, {
+      headers: { Authorization: `Bearer ${stored.token}` },
+    })
+      .then((r) => r.json() as Promise<{ valid: boolean }>)
+      .then((data) => {
+        if (data.valid) {
+          onPaired(stored);
+        } else {
+          clearSession();
+          setPhase('idle');
+        }
+      })
+      .catch(() => {
+        setPhase('idle');
+      });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Auto-submit when both pin and name come from URL params and form is idle
+  useEffect(() => {
+    if (phase !== 'idle') return;
+    if (params.pin && params.name) {
+      void doSubmit(params.pin, params.name);
+    }
+  }, [phase]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function toggleDept(list: string[], setList: (v: string[]) => void, dept: string) {
     setList(list.includes(dept) ? list.filter((d) => d !== dept) : [...list, dept]);
   }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (phase !== 'idle') return;
+  async function doSubmit(submitPin: string, submitName: string) {
     setError(null);
     setPhase('claiming');
-
     try {
       const client_pubkey = await getOrCreateClientPubkey();
-
       const owned_departments = role === 'sm' ? ['SM', ...ownedDepts] : ownedDepts;
 
       const claimR = await fetch(`http://${host.host}:${host.port}/api/pairing/claim`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          pin,
-          display_name: displayName,
+          pin: submitPin,
+          display_name: submitName,
           owned_departments,
           watched_departments: watchedDepts,
           client_pubkey,
@@ -87,7 +122,7 @@ export function PairingView({ host, onPaired }: Props) {
         host: host.host,
         port: host.port,
         token: claimResp.token,
-        display_name: displayName,
+        display_name: submitName,
         device_id: claimResp.device.device_id,
         paired_at: Date.now(),
         show_id: claimResp.show_id ?? undefined,
@@ -96,16 +131,44 @@ export function PairingView({ host, onPaired }: Props) {
         watched_departments: watchedDepts,
       };
 
-      // Expose token for test helpers to read from localStorage
+      // Legacy: expose token for test helpers
       localStorage.setItem('showx_pair_token', claimResp.token);
 
-      await saveSession(session);
+      // Save full session for next-launch restore
+      saveSession(session);
+      await saveAuthSession(session);
+
       setPairedDevice({ device_id: claimResp.device.device_id, token: claimResp.token });
       onPaired(session);
     } catch {
       setError('Network error');
       setPhase('idle');
     }
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (phase !== 'idle') return;
+    await doSubmit(pin, displayName);
+  }
+
+  if (phase === 'validating') {
+    return (
+      <div
+        data-testid="pairing-validating"
+        style={{
+          background: tokens.color.bg,
+          color: tokens.color.ink_secondary,
+          fontFamily: tokens.font.ui,
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        Connecting…
+      </div>
+    );
   }
 
   if (pairedDevice) {

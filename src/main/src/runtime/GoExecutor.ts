@@ -7,6 +7,21 @@ import { dispatchCue } from '@showx/module-cuelist-core/dispatch/payloadDispatch
 import type { DispatchDeps } from '@showx/module-cuelist-core/dispatch/payloadDispatch.js';
 import type { Cue } from 'showx-shared';
 
+// ── DispatchRecord ─────────────────────────────────────────────────────────────
+
+export interface DispatchRecord {
+  ts: string;
+  cue_id: string;
+  cue_label: string;
+  transport_summary: string;
+  payloads_dispatched: number;
+  payloads_failed: Array<{ payload_id: string; error: string }>;
+  duration_ms: number;
+  fired_by: string;
+}
+
+const RING_SIZE = 100;
+
 // ── SyncBroker interface subset used by GoExecutor ────────────────────────────
 
 interface GoExecutorSyncBroker {
@@ -32,6 +47,23 @@ export interface GoExecutorDeps {
 export class GoExecutor {
   private channel: GoEventChannel | null = null;
   private unsubs: Array<() => void> = [];
+  private ring: DispatchRecord[] = [];
+  private appendListeners = new Set<(r: DispatchRecord) => void>();
+
+  getLog(): DispatchRecord[] {
+    return [...this.ring];
+  }
+
+  onAppend(cb: (r: DispatchRecord) => void): () => void {
+    this.appendListeners.add(cb);
+    return () => this.appendListeners.delete(cb);
+  }
+
+  private pushRecord(record: DispatchRecord): void {
+    if (this.ring.length >= RING_SIZE) this.ring.shift();
+    this.ring.push(record);
+    for (const cb of this.appendListeners) cb(record);
+  }
 
   constructor(private readonly deps: GoExecutorDeps) {}
 
@@ -41,12 +73,11 @@ export class GoExecutor {
     const { syncBroker, events, log } = this.deps;
     const abort = new AbortController();
 
-    // SHOWX_OSC_OUT=host:port — when set, register/override the integration OSC device + fallback rule.
-    // Allows testing against osc-ws-bridge without manually configuring devices in the show.
-    const oscOut = process.env['SHOWX_OSC_OUT'];
-    if (oscOut) {
-      this.injectOscDevice(doc, oscOut, log);
-    }
+    // Always inject an integration OSC fallback so a FRESH DEMO SHOW dispatches out of the box.
+    // Default target: 127.0.0.1:7000 (integration osc-ws-bridge). SHOWX_OSC_OUT=host:port overrides.
+    // Rule uses sort_key 99999 (lowest priority) — real show device/routing takes precedence.
+    const oscOut = process.env['SHOWX_OSC_OUT'] ?? '127.0.0.1:7000';
+    this.injectOscDevice(doc, oscOut, log);
 
     this.channel = new GoEventChannel({
       doc,
@@ -153,10 +184,33 @@ export class GoExecutor {
           duration_ms,
         });
       }
+
+      this.pushRecord({
+        ts: now,
+        cue_id: e.cue_id,
+        cue_label: e.cue_label,
+        transport_summary: buildTransportSummary(result.details),
+        payloads_dispatched: result.payloads_dispatched,
+        payloads_failed: result.payloads_failed,
+        duration_ms,
+        fired_by: e.fired_by ?? 'unknown',
+      });
     } catch (err) {
       log.warn('go-executor: dispatchCue threw', { cue_id: e.cue_id, error: String(err) });
+      this.pushRecord({
+        ts: now,
+        cue_id: e.cue_id,
+        cue_label: e.cue_label,
+        transport_summary: '—',
+        payloads_dispatched: 0,
+        payloads_failed: [{ payload_id: 'unknown', error: String(err) }],
+        duration_ms: Date.now() - t0,
+        fired_by: e.fired_by ?? 'unknown',
+      });
     }
   }
+
+  // ── Transport summary helper ───────────────────────────────────────────────
 
   private injectOscDevice(doc: Y.Doc, oscOut: string, log: Logger): void {
     const colonIdx = oscOut.lastIndexOf(':');
@@ -205,4 +259,19 @@ export class GoExecutor {
 
     log.info('go-executor: injected integration OSC device', { device_id: DEVICE_ID, host, port });
   }
+}
+
+// ── Helpers ────────────────────────────────────────────────────────────────────
+
+function buildTransportSummary(
+  details: Array<{ transport: string; result: string }>,
+): string {
+  const counts = new Map<string, number>();
+  for (const d of details) {
+    if (d.result !== 'skipped') {
+      counts.set(d.transport, (counts.get(d.transport) ?? 0) + 1);
+    }
+  }
+  if (counts.size === 0) return '—';
+  return [...counts.entries()].map(([t, n]) => `${t}×${n}`).join(' ');
 }

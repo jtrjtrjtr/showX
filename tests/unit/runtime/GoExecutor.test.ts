@@ -343,13 +343,13 @@ describe('GoExecutor', () => {
     expect(deps['abortSignal']).toBeInstanceOf(AbortSignal);
   });
 
-  it('injects integration OSC device when SHOWX_OSC_OUT is set', () => {
+  it('always injects default 127.0.0.1:7000 integration OSC device (no env var needed)', () => {
     const orig = process.env['SHOWX_OSC_OUT'];
-    process.env['SHOWX_OSC_OUT'] = '127.0.0.1:7000';
+    delete process.env['SHOWX_OSC_OUT'];
 
     try {
       const doc = makeDoc();
-      executor.attach('show-osc', doc);
+      executor.attach('show-osc-default', doc);
 
       const devicesMap = doc.getMap<Y.Map<unknown>>('devices');
       expect(devicesMap.has('integration_osc')).toBe(true);
@@ -369,9 +369,31 @@ describe('GoExecutor', () => {
     }
   });
 
-  it('does not duplicate fallback rule on second attach with SHOWX_OSC_OUT', () => {
+  it('SHOWX_OSC_OUT overrides default host:port for integration OSC device', () => {
     const orig = process.env['SHOWX_OSC_OUT'];
-    process.env['SHOWX_OSC_OUT'] = '127.0.0.1:7000';
+    process.env['SHOWX_OSC_OUT'] = '192.168.1.100:8765';
+
+    try {
+      const doc = makeDoc();
+      executor.attach('show-osc-override', doc);
+
+      const devicesMap = doc.getMap<Y.Map<unknown>>('devices');
+      expect(devicesMap.has('integration_osc')).toBe(true);
+      const dm = devicesMap.get('integration_osc')!;
+      expect(dm.get('host')).toBe('192.168.1.100');
+      expect(dm.get('port')).toBe(8765);
+    } finally {
+      if (orig === undefined) {
+        delete process.env['SHOWX_OSC_OUT'];
+      } else {
+        process.env['SHOWX_OSC_OUT'] = orig;
+      }
+    }
+  });
+
+  it('does not duplicate fallback rule on second attach', () => {
+    const orig = process.env['SHOWX_OSC_OUT'];
+    delete process.env['SHOWX_OSC_OUT'];
 
     try {
       const doc = makeDoc();

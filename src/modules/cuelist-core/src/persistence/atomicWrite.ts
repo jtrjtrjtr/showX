@@ -6,8 +6,12 @@ import path from 'node:path';
  * If writeFile throws, .tmp may remain but the original target is preserved.
  * The rename(2) call is atomic on POSIX — old or new present, never partial.
  */
+let tmpSeq = 0;
+
 export async function atomicWriteFile(target: string, data: Buffer | string): Promise<void> {
-  const tmp = `${target}.tmp`;
+  // Unique tmp per call — concurrent writers sharing `${target}.tmp` interleave
+  // (second open('w') truncates under the first writer) and rename corrupted bytes.
+  const tmp = `${target}.${process.pid}.${++tmpSeq}.tmp`;
   const fd = await fs.open(tmp, 'w');
   try {
     await fd.writeFile(data);
