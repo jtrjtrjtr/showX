@@ -44,15 +44,15 @@ export function PlaybackHeader({
         padding: `${tokens.space.xs}px ${tokens.space.l}px`,
         borderBottom: `1px solid ${tokens.color.border}`,
         background: tokens.color.panel,
-        fontSize: 11,
+        fontSize: 15,
         fontFamily: tokens.font.ui,
-        color: tokens.color.ink_secondary,
+        color: tokens.color.ink,
         flexShrink: 0,
-        minHeight: 28,
+        minHeight: 38,
       }}
     >
       <span style={{ display: 'flex', alignItems: 'center', gap: tokens.space.s }}>
-        <span style={{ textTransform: 'uppercase', letterSpacing: '0.06em', color: tokens.color.ink_disabled, fontSize: 9 }}>
+        <span style={{ textTransform: 'uppercase', letterSpacing: '0.06em', color: tokens.color.ink_secondary, fontSize: 11 }}>
           Last fired
         </span>
         {lastFiredLabel !== null && timeAgo !== null ? (
@@ -66,7 +66,7 @@ export function PlaybackHeader({
       </span>
 
       <span style={{ display: 'flex', alignItems: 'center', gap: tokens.space.s }}>
-        <span style={{ textTransform: 'uppercase', letterSpacing: '0.06em', color: tokens.color.ink_disabled, fontSize: 9 }}>
+        <span style={{ textTransform: 'uppercase', letterSpacing: '0.06em', color: tokens.color.ink_secondary, fontSize: 11 }}>
           Next
         </span>
         <span style={{ fontFamily: tokens.font.mono, color: tokens.color.ink }}>
@@ -75,10 +75,10 @@ export function PlaybackHeader({
       </span>
 
       <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: tokens.space.s }}>
-        <span style={{ textTransform: 'uppercase', letterSpacing: '0.06em', color: tokens.color.ink_disabled, fontSize: 9 }}>
+        <span style={{ textTransform: 'uppercase', letterSpacing: '0.06em', color: tokens.color.ink_secondary, fontSize: 11 }}>
           Elapsed
         </span>
-        <span style={{ fontFamily: tokens.font.mono, color: tokens.color.ink_secondary }}>
+        <span style={{ fontFamily: tokens.font.mono, color: tokens.color.ink, fontSize: 18, fontWeight: 700 }}>
           {elapsed ?? '—'}
         </span>
       </span>

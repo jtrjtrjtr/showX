@@ -28,7 +28,8 @@ function parseTcMmSs(s: string): number {
 function triggerDisplay(trigger: Trigger, cues: Cue[]): { glyph: string; text: string } {
   switch (trigger.kind) {
     case 'manual':
-      return { glyph: '⏵', text: 'GO' };
+      // glyph-only: the word "GO" inside rows reads as a fire button (Jindřich 2026-06-11)
+      return { glyph: '⏵', text: '' };
     case 'auto_follow': {
       const prev = cues.find((c) => c.id === trigger.prev_cue_id);
       const label = prev ? prev.label.substring(0, 10) : '?';

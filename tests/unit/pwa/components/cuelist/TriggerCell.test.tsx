@@ -48,7 +48,7 @@ describe('TriggerCell', () => {
     expect(screen.getByTestId('trigger-cell')).toBeInTheDocument();
   });
 
-  it('displays GO glyph + text for manual trigger', () => {
+  it('displays glyph-only for manual trigger', () => {
     render(
       <TriggerCell
         cue={makeCue({ trigger: { kind: 'manual' } })}
@@ -60,7 +60,7 @@ describe('TriggerCell', () => {
     );
     const btn = screen.getByRole('button');
     expect(btn).toHaveTextContent('⏵');
-    expect(btn).toHaveTextContent('GO');
+    expect(btn).toHaveTextContent('⏵');
   });
 
   it('displays auto_continue glyph and delay text', () => {

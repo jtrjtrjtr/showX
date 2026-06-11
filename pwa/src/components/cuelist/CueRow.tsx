@@ -46,6 +46,8 @@ export interface CueRowProps {
   onInlineCommit?: (field: InlineEditField, value: string) => void;
   onInlineCancel?: () => void;
   onInlineTab?: (field: InlineEditField, value: string) => void;
+  /** Standby+arm THIS cue (shown as STBY button on the selected row) */
+  onStandby?: () => void;
 }
 
 export function CueRow({
@@ -67,6 +69,7 @@ export function CueRow({
   onInlineCommit,
   onInlineCancel,
   onInlineTab,
+  onStandby,
 }: CueRowProps) {
   const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const longPressFiredRef = useRef(false);
@@ -158,7 +161,7 @@ export function CueRow({
       style={{
         position: 'relative',
         display: 'grid',
-        gridTemplateColumns: '8px 80px 48px 1fr auto auto auto auto auto',
+        gridTemplateColumns: '8px 48px minmax(180px, 300px) 1fr auto 80px auto',
         gap: tokens.space.m,
         alignItems: 'center',
         padding: `${tokens.space.m}px ${tokens.space.l}px`,
@@ -226,7 +229,7 @@ export function CueRow({
         ) : (
           <span
             style={{
-              fontSize: 12,
+              fontSize: 14,
               fontFamily: tokens.font.mono,
               color: tokens.color.ink_secondary,
               whiteSpace: 'nowrap',
@@ -237,7 +240,7 @@ export function CueRow({
         )}
       </div>
 
-      {/* Label + description + standby note */}
+      {/* Label — own column, single line */}
       <div style={{ minWidth: 0 }}>
         {inlineEditField === 'label' ? (
           <InlineEdit
@@ -250,7 +253,7 @@ export function CueRow({
           <div
             data-testid="cue-label"
             style={{
-              fontSize: 24,
+              fontSize: 22,
               fontWeight: 700,
               fontFamily: tokens.font.ui,
               color: isFiring ? tokens.color.bg : tokens.color.ink,
@@ -273,30 +276,32 @@ export function CueRow({
             )}
           </div>
         )}
-        <div style={{ minWidth: 0 }}>
-          <div style={{ fontSize: 16, color: tokens.color.ink, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{cue.description}</div>
-          {inlineEditField === 'standby_note' ? (
-            <InlineEdit
-              initialValue={cue.standby_note}
-              onCommit={(v) => onInlineCommit?.('standby_note', v)}
-              onCancel={() => onInlineCancel?.()}
-              onTab={(v) => onInlineTab?.('standby_note', v)}
-            />
-          ) : (
-            cue.standby_note && (
-              <div style={{ fontStyle: 'italic', color: tokens.color.ink_secondary, fontSize: 14 }}>
-                {cue.standby_note}
-              </div>
-            )
-          )}
-          <div
-            data-testid="payload-summary"
-            style={{ fontSize: 12, color: tokens.color.ink_secondary, marginTop: 2 }}
-          >
-            {cue.payloads.length > 0
-              ? `${cue.payloads.length} payload${cue.payloads.length > 1 ? 's' : ''} — ${cue.payloads.map((p) => ('cue_number' in p ? `cue ${(p as { cue_number: number }).cue_number}` : '')).filter(Boolean).join(', ')}`
-              : ''}
-          </div>
+      </div>
+
+      {/* Description + standby note + payload summary — fills the middle */}
+      <div style={{ minWidth: 0 }}>
+        <div style={{ fontSize: 15, color: tokens.color.ink, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{cue.description}</div>
+        {inlineEditField === 'standby_note' ? (
+          <InlineEdit
+            initialValue={cue.standby_note}
+            onCommit={(v) => onInlineCommit?.('standby_note', v)}
+            onCancel={() => onInlineCancel?.()}
+            onTab={(v) => onInlineTab?.('standby_note', v)}
+          />
+        ) : (
+          cue.standby_note && (
+            <div style={{ fontStyle: 'italic', color: tokens.color.ink_secondary, fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {cue.standby_note}
+            </div>
+          )
+        )}
+        <div
+          data-testid="payload-summary"
+          style={{ fontSize: 12, color: tokens.color.ink_secondary, marginTop: 2 }}
+        >
+          {cue.payloads.length > 0
+            ? `${cue.payloads.length} payload${cue.payloads.length > 1 ? 's' : ''} — ${cue.payloads.map((p) => ('cue_number' in p ? `cue ${(p as { cue_number: number }).cue_number}` : '')).filter(Boolean).join(', ')}`
+            : ''}
         </div>
       </div>
 
@@ -312,9 +317,9 @@ export function CueRow({
       <div
         data-testid="duration-cell"
         style={{
-          fontSize: 12,
+          fontSize: 15,
           fontFamily: tokens.font.mono,
-          color: tokens.color.ink_secondary,
+          color: tokens.color.ink,
           whiteSpace: 'nowrap',
           minWidth: 52,
           textAlign: 'right',
@@ -334,6 +339,26 @@ export function CueRow({
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.space.s, alignItems: 'flex-end' }}>
+        {isSelected && !isArmed && onStandby && (
+          <button
+            data-testid="row-standby-btn"
+            aria-label={`Standby cue ${cue.label}`}
+            onClick={(e) => { e.stopPropagation(); onStandby(); }}
+            style={{
+              padding: '4px 12px',
+              background: tokens.color.raised,
+              color: tokens.color.ink,
+              border: `1px solid ${tokens.color.teal}`,
+              borderRadius: tokens.radius.s,
+              fontSize: 12,
+              fontWeight: 700,
+              cursor: 'pointer',
+              fontFamily: tokens.font.ui,
+            }}
+          >
+            STBY
+          </button>
+        )}
         <CueTypeBadge trigger={cue.trigger} />
         <DepartmentChips departments={cue.department} />
         {mode === 'show' && (

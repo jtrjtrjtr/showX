@@ -47,7 +47,7 @@ function makeStation(id: string, cueId: string): StationAwareness {
 }
 
 describe('CueRow', () => {
-  it('renders cue label with large font size (24px)', () => {
+  it('renders cue label with large font size (22px)', () => {
     const cue = makeCue({ label: 'ACT 1 OPEN' });
     render(
       <CueRow
@@ -64,7 +64,7 @@ describe('CueRow', () => {
       />,
     );
     const label = screen.getByTestId('cue-label');
-    expect(label.style.fontSize).toBe('24px');
+    expect(label.style.fontSize).toBe('22px');
     expect(label.style.fontWeight).toBe('700');
   });
 

@@ -530,28 +530,26 @@ export function SMMasterView({ cuelistId }: SMMasterViewProps) {
               top: 0,
               zIndex: 10,
               display: 'grid',
-              gridTemplateColumns: '8px 80px 48px 1fr auto auto auto auto auto',
+              gridTemplateColumns: '8px 48px minmax(180px, 300px) 1fr auto 80px auto',
               gap: tokens.space.m,
               padding: `${tokens.space.xs}px ${tokens.space.l}px`,
               paddingLeft: tokens.space.xl,
               background: tokens.color.panel,
               borderBottom: `1px solid ${tokens.color.border}`,
-              fontSize: 10,
+              fontSize: 11,
               fontWeight: 700,
-              color: tokens.color.ink_disabled,
+              color: tokens.color.ink_secondary,
               fontFamily: tokens.font.ui,
               textTransform: 'uppercase',
               letterSpacing: '0.06em',
             }}
           >
             <span />
-            <span />
             <span>No.</span>
             <span>Cue</span>
+            <span>Description</span>
             <span>Trigger</span>
             <span style={{ textAlign: 'right' }}>Dur</span>
-            <span />
-            <span />
             <span />
           </div>
         )}
@@ -578,6 +576,10 @@ export function SMMasterView({ cuelistId }: SMMasterViewProps) {
                 now={now}
                 onSelect={() => setSelectedCueId(cue.id)}
                 onSetPlayhead={() => setPlayhead(cue.id)}
+                onStandby={() => {
+                  standby(cue.id);
+                  arm(cue.id);
+                }}
                 onEdit={() => setEditingCue(cue)}
                 onTriggerUpdate={(trigger) => {
                   updateFields(cue.id, { trigger }, String(conn.doc.clientID));
