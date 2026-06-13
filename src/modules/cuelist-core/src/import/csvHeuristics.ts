@@ -19,9 +19,12 @@ export function qlabToCues(
     const name = r['Name'] ?? '';
     const type = (r['Type'] ?? '').toLowerCase().trim();
     const dept = inferQlabDepartment(type);
-    const preWait = parseFloat(r['Pre-wait'] ?? '0') || 0;
-    const cont = (r['Continue'] ?? '').toLowerCase().trim();
     const notes = r['Notes'] ?? '';
+
+    // Pre Wait → this cue's pre_wait_ms (delay between trigger fire and action dispatch).
+    // Support both QLab column name variants: "Pre Wait" (space) and "Pre-wait" (hyphen).
+    const preWaitRaw = parseFloat(r['Pre Wait'] ?? r['Pre-wait'] ?? '0') || 0;
+    const preWaitMs = preWaitRaw > 0 ? Math.round(preWaitRaw * 1000) : 0;
 
     const payloads: CueSpec['payloads'] = [];
     if (type === 'audio') {
@@ -53,18 +56,25 @@ export function qlabToCues(
         args: [],
       });
     } else if (type === 'wait') {
-      const waitMs = Math.round(preWait * 1000);
+      // For QLab Wait cue type, the pre-wait column encodes the wait duration.
+      const waitMs = Math.round(preWaitRaw * 1000);
       payloads.push({ type: 'wait', tag: null, note: name, duration_ms: waitMs >= 0 ? waitMs : 0 });
     }
 
-    let trigger: CueSpec['cueOpts']['trigger'];
-    if (cont === 'auto-continue' || cont === 'continue' || cont === 'auto continue') {
-      // Continue field: use pre-wait as delay_ms when present, otherwise 0
-      trigger = { kind: 'auto_continue', delay_ms: preWait > 0 ? Math.round(preWait * 1000) : 0 };
-    } else if (preWait > 0) {
-      trigger = { kind: 'auto_continue', delay_ms: Math.round(preWait * 1000) };
-    } else {
-      trigger = { kind: 'manual' };
+    // Trigger: ShowX uses backward-pointing triggers — each cue declares how it
+    // fires relative to its predecessor. In QLab, the PREVIOUS row's Post Wait +
+    // Continue determines what triggers this cue.
+    let trigger: CueSpec['cueOpts']['trigger'] = { kind: 'manual' };
+    if (idx > 0) {
+      const prev = records[idx - 1];
+      const prevCont = (prev['Continue'] ?? '').toLowerCase().trim();
+      const prevPostWaitRaw = parseFloat(prev['Post Wait'] ?? prev['Post-wait'] ?? '0') || 0;
+
+      if (prevCont === 'auto-continue' || prevCont === 'continue' || prevCont === 'auto continue') {
+        trigger = { kind: 'auto_continue', delay_ms: Math.round(prevPostWaitRaw * 1000) };
+      }
+      // auto_follow requires prev_cue_id which is unavailable at parse time → manual fallback.
+      // Other Continue values (empty, "do not continue") → manual.
     }
 
     return {
@@ -75,6 +85,7 @@ export function qlabToCues(
         department: [dept],
         standby_note: notes.trim(),
         trigger,
+        pre_wait_ms: preWaitMs > 0 ? preWaitMs : undefined,
         created_by: opts.createdBy,
       },
       payloads,

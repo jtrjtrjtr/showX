@@ -183,16 +183,18 @@ describe('dispatchCue', () => {
     expect(ev.payloads_dispatched).toBe(1);
   });
 
-  it('webhook payload: not_implemented, does not crash', async () => {
+  it('webhook payload: dispatches via output.send, does not crash', async () => {
+    const sendFn = vi.fn().mockResolvedValue({ ok: true, transport: 'webhook', latencyMs: 0 });
     const doc = makeDoc();
     const clId = addCuelist(doc, 'Main');
-    const deps = makeDeps(doc, clId);
+    const deps = makeDeps(doc, clId, sendFn);
 
     const cue = makeCue('c1', [makeWebhookPayload()]);
     const r = await dispatchCue(cue, deps);
 
-    expect(r.payloads_failed).toHaveLength(1);
-    expect(r.payloads_failed[0].error).toBe('webhook_not_implemented');
+    expect(r.payloads_dispatched).toBe(1);
+    expect(r.payloads_failed).toHaveLength(0);
+    expect(sendFn).toHaveBeenCalledWith(expect.objectContaining({ transport: 'webhook', url: 'https://example.com' }));
   });
 
   it('no routing for osc device: payload fails, result accumulates error', async () => {
@@ -292,5 +294,172 @@ describe('dispatchCue', () => {
     await dispatchCue(cue, deps, new CycleDetector(), true); // _internal = true
     const completeEvents = published.filter((e) => e.type === 'cue-complete');
     expect(completeEvents).toHaveLength(0);
+  });
+});
+
+// ── Disarm (B004-007) ─────────────────────────────────────────────────────────
+
+describe('dispatchCue — disarmed cue', () => {
+  it('armed=false: skips all payload dispatch, returns ok=true with 0 dispatched', async () => {
+    const sendFn = vi.fn().mockResolvedValue({ ok: true });
+    const doc = makeDoc();
+    const clId = addCuelist(doc, 'Main');
+    setRouting(doc, makeOscRouting());
+    const deps = makeDeps(doc, clId, sendFn);
+
+    const cue = { ...makeCue('c1', [makeOscPayload('p1'), makeOscPayload('p2')]), armed: false };
+    const r = await dispatchCue(cue, deps);
+
+    expect(r.ok).toBe(true);
+    expect(r.payloads_dispatched).toBe(0);
+    expect(r.payloads_failed).toHaveLength(0);
+    expect(sendFn).not.toHaveBeenCalled();
+    expect(r.details).toHaveLength(1);
+    expect(r.details[0].result).toBe('skipped');
+    expect(r.details[0].error).toBe('[DISARMED]');
+  });
+
+  it('armed=false: emits cue-complete so chain advances', async () => {
+    const { bus, published } = makeMockBus();
+    const doc = makeDoc();
+    const clId = addCuelist(doc, 'Main');
+    const deps = makeDeps(doc, clId, vi.fn(), { bus, published });
+
+    const cue = { ...makeCue('c1', [makeOscPayload('p1')]), armed: false };
+    await dispatchCue(cue, deps);
+
+    const completes = published.filter((e) => e.type === 'cue-complete') as CueCompleteEvent[];
+    expect(completes).toHaveLength(1);
+    expect(completes[0].cue_id).toBe('c1');
+    expect(completes[0].success).toBe(true);
+    expect(completes[0].payloads_dispatched).toBe(0);
+  });
+
+  it('armed=false + _internal=true: cue-complete is NOT emitted', async () => {
+    const { bus, published } = makeMockBus();
+    const doc = makeDoc();
+    const clId = addCuelist(doc, 'Main');
+    const deps = makeDeps(doc, clId, vi.fn(), { bus, published });
+
+    const cue = { ...makeCue('c1', [makeOscPayload('p1')]), armed: false };
+    await dispatchCue(cue, deps, new CycleDetector(), true);
+
+    expect(published.filter((e) => e.type === 'cue-complete')).toHaveLength(0);
+  });
+
+  it('armed=true (explicit): dispatches normally', async () => {
+    const sendFn = vi.fn().mockResolvedValue({ ok: true });
+    const doc = makeDoc();
+    const clId = addCuelist(doc, 'Main');
+    setRouting(doc, makeOscRouting());
+    const deps = makeDeps(doc, clId, sendFn);
+
+    const cue = { ...makeCue('c1', [makeOscPayload('p1')]), armed: true };
+    const r = await dispatchCue(cue, deps);
+
+    expect(r.payloads_dispatched).toBe(1);
+    expect(sendFn).toHaveBeenCalledTimes(1);
+  });
+
+  it('armed undefined (lazy default): dispatches normally', async () => {
+    const sendFn = vi.fn().mockResolvedValue({ ok: true });
+    const doc = makeDoc();
+    const clId = addCuelist(doc, 'Main');
+    setRouting(doc, makeOscRouting());
+    const deps = makeDeps(doc, clId, sendFn);
+
+    const cue = makeCue('c1', [makeOscPayload('p1')]); // no armed field
+    const r = await dispatchCue(cue, deps);
+
+    expect(r.payloads_dispatched).toBe(1);
+    expect(sendFn).toHaveBeenCalledTimes(1);
+  });
+});
+
+// ── Audition mode (B004-008) ──────────────────────────────────────────────────
+
+describe('dispatchCue — audition mode', () => {
+  it('audition=true: output.send is NOT called; result is ok', async () => {
+    const sendFn = vi.fn().mockResolvedValue({ ok: true });
+    const doc = makeDoc();
+    const clId = addCuelist(doc, 'Main');
+    setRouting(doc, makeOscRouting());
+    const deps = { ...makeDeps(doc, clId, sendFn), audition: true as const };
+
+    const cue = makeCue('c1', [makeOscPayload('p1'), makeOscPayload('p2')]);
+    const r = await dispatchCue(cue, deps);
+
+    expect(sendFn).not.toHaveBeenCalled();
+    expect(r.ok).toBe(true);
+    expect(r.payloads_dispatched).toBe(2);
+    expect(r.payloads_failed).toHaveLength(0);
+  });
+
+  it('audition=true: all detail transport fields are prefixed [AUDITION]', async () => {
+    const doc = makeDoc();
+    const clId = addCuelist(doc, 'Main');
+    setRouting(doc, makeOscRouting());
+    const deps = { ...makeDeps(doc, clId), audition: true as const };
+
+    const cue = makeCue('c1', [makeOscPayload('p1'), makeOscPayload('p2')]);
+    const r = await dispatchCue(cue, deps);
+
+    expect(r.details).toHaveLength(2);
+    for (const d of r.details) {
+      expect(d.transport).toMatch(/^\[AUDITION\]/);
+    }
+  });
+
+  it('audition=true: cue-complete is NOT emitted', async () => {
+    const { bus, published } = makeMockBus();
+    const doc = makeDoc();
+    const clId = addCuelist(doc, 'Main');
+    setRouting(doc, makeOscRouting());
+    const deps = {
+      doc, show_id: 'show-1', cuelist_id: clId,
+      output: { send: vi.fn().mockResolvedValue({ ok: true }), claim: vi.fn(), release: vi.fn(), poolStatus: vi.fn() },
+      events: bus,
+      log: { trace: vi.fn(), debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn(), child: vi.fn() },
+      abortSignal: new AbortController().signal,
+      audition: true as const,
+    };
+
+    const cue = makeCue('c1', [makeOscPayload('p1')]);
+    await dispatchCue(cue, deps);
+
+    expect(published.filter((e) => e.type === 'cue-complete')).toHaveLength(0);
+  });
+
+  it('audition=true: webhook payload — output.send NOT called, result ok', async () => {
+    const sendFn = vi.fn().mockResolvedValue({ ok: true });
+    const doc = makeDoc();
+    const clId = addCuelist(doc, 'Main');
+    const deps = { ...makeDeps(doc, clId, sendFn), audition: true as const };
+
+    const cue = makeCue('c1', [makeWebhookPayload()]);
+    const r = await dispatchCue(cue, deps);
+
+    expect(sendFn).not.toHaveBeenCalled();
+    expect(r.ok).toBe(true);
+    expect(r.details[0].transport).toMatch(/^\[AUDITION\]/);
+  });
+
+  it('audition=true on disarmed cue: cue-complete still suppressed', async () => {
+    const { bus, published } = makeMockBus();
+    const doc = makeDoc();
+    const clId = addCuelist(doc, 'Main');
+    const deps = {
+      doc, show_id: 'show-1', cuelist_id: clId,
+      output: { send: vi.fn(), claim: vi.fn(), release: vi.fn(), poolStatus: vi.fn() },
+      events: bus,
+      log: { trace: vi.fn(), debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn(), child: vi.fn() },
+      abortSignal: new AbortController().signal,
+      audition: true as const,
+    };
+
+    const cue = { ...makeCue('c1', [makeOscPayload('p1')]), armed: false };
+    await dispatchCue(cue, deps);
+
+    expect(published.filter((e) => e.type === 'cue-complete')).toHaveLength(0);
   });
 });

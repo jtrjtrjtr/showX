@@ -13,6 +13,8 @@ export function summarizePayload(p: Payload): string {
       return `Eos/MA cue list ${p.cue_list}, cue ${p.cue_number} → ${p.device_id}`;
     case 'midi':
       return summarizeMidi(p);
+    case 'dmx':
+      return `DMX u${p.universe} ${p.channels.length}ch → ${p.device_id}`;
     case 'webhook':
       return `${p.method} ${p.url}`;
     case 'wait':

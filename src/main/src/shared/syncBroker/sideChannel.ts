@@ -35,8 +35,15 @@ export class SideChannel {
 
   publish(showId: string, msg: SideChannelMessage): void {
     const t = this.getOrCreate(showId);
-    t.recent.push(msg);
-    if (t.recent.length > MAX_RECENT) t.recent.shift();
+    if (msg.topic === 'clock.anchor') {
+      // Replace the last anchor in the replay buffer — stale anchors are useless to late joiners
+      const idx = t.recent.findIndex((m) => m.topic === 'clock.anchor');
+      if (idx >= 0) t.recent[idx] = msg;
+      else t.recent.push(msg);
+    } else {
+      t.recent.push(msg);
+      if (t.recent.length > MAX_RECENT) t.recent.shift();
+    }
     const payload = JSON.stringify({ ...msg, _ts: Date.now() });
     for (const sub of t.subscribers) {
       if (sub.readyState === 1 /* OPEN */) sub.send(payload);

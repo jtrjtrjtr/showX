@@ -3,6 +3,7 @@ import { OscPayloadEditor } from './OscPayloadEditor.js';
 import { MscPayloadEditor } from './MscPayloadEditor.js';
 import { LxRefPayloadEditor } from './LxRefPayloadEditor.js';
 import { MidiPayloadEditor } from './MidiPayloadEditor.js';
+import { DmxPayloadEditor } from './DmxPayloadEditor.js';
 import { WebhookPayloadEditor } from './WebhookPayloadEditor.js';
 import { WaitPayloadEditor } from './WaitPayloadEditor.js';
 import { GroupPayloadEditor } from './GroupPayloadEditor.js';
@@ -20,6 +21,7 @@ const TYPE_LABELS: Record<string, string> = {
   msc: 'MSC',
   lx_ref: 'LX Ref',
   midi: 'MIDI',
+  dmx: 'DMX',
   webhook: 'Webhook',
   wait: 'Wait',
   group: 'Group',
@@ -59,6 +61,9 @@ export function PayloadEditorSwitch({ payload, cuelistId, cueId, locked }: Paylo
       )}
       {payload.type === 'midi' && (
         <MidiPayloadEditor payload={payload} cuelistId={cuelistId} cueId={cueId} locked={locked} />
+      )}
+      {payload.type === 'dmx' && (
+        <DmxPayloadEditor payload={payload} cuelistId={cuelistId} cueId={cueId} locked={locked} />
       )}
       {payload.type === 'webhook' && (
         <WebhookPayloadEditor payload={payload} cuelistId={cuelistId} cueId={cueId} locked={locked} />

@@ -63,6 +63,10 @@ export function parseMidi(bytes: number[]): MidiMessage | null {
   if (status === 0xf0) {
     return { type: 'sysex', channel: 0, data1: 0, data2: 0, raw: bytes, receivedAt: now };
   }
+  if (status === 0xf1) {
+    // MIDI Time Code quarter-frame — emit as sysex so MTC decoder can receive it via raw bytes
+    return { type: 'sysex', channel: 0, data1: bytes[1] ?? 0, data2: 0, raw: bytes, receivedAt: now };
+  }
   return null;
 }
 

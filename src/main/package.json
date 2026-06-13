@@ -5,7 +5,7 @@
   "type": "module",
   "main": "dist/index.js",
   "scripts": {
-    "typecheck": "pnpm --filter showx-shared build && tsc --noEmit",
+    "typecheck": "pnpm --filter showx-shared build && pnpm --filter @showx/module-cuelist-core build && tsc --noEmit",
     "build": "tsc && cp dist/ui/preload.js dist/ui/preload.mjs",
     "dev": "SHOWX_DEV=1 electron .",
     "start": "electron ."

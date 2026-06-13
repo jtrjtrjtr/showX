@@ -10,7 +10,7 @@ import { PlayheadIndicator } from './PlayheadIndicator.js';
 import { TriggerCell } from './TriggerCell.js';
 import { InlineEdit } from './InlineEdit.js';
 
-export type InlineEditField = 'cue_number' | 'label' | 'duration_hint_ms' | 'standby_note';
+export type InlineEditField = 'cue_number' | 'label' | 'duration_hint_ms' | 'pre_wait_ms' | 'standby_note';
 
 function formatDuration(ms: number | null): string {
   if (ms === null) return '—';
@@ -58,6 +58,10 @@ export interface CueRowProps {
   isDragTarget?: boolean;
   /** Called on pointerdown of the drag handle (rehearsal only) */
   onDragHandlePointerDown?: (e: React.PointerEvent<HTMLDivElement>) => void;
+  /** Absolute ms timestamp when pre-wait expires; null = no active pre-wait for this cue. */
+  preWaitUntil?: number | null;
+  /** Called when operator toggles arm/disarm on this cue (rehearsal only). */
+  onArmToggle?: () => void;
 }
 
 export function CueRow({
@@ -85,6 +89,8 @@ export function CueRow({
   isDragging = false,
   isDragTarget = false,
   onDragHandlePointerDown,
+  preWaitUntil = null,
+  onArmToggle,
 }: CueRowProps) {
   const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const longPressFiredRef = useRef(false);
@@ -139,12 +145,29 @@ export function CueRow({
       ? 1 - remaining! / cue.duration_hint_ms
       : null;
 
+  // Pre-wait remaining: countdown from GO sent until dispatch
+  const preWaitRemaining =
+    preWaitUntil !== null && preWaitUntil !== undefined
+      ? preWaitUntil - now
+      : null;
+  const isPreWaiting = preWaitRemaining !== null && preWaitRemaining > 0;
+
+  // Seconds strings for inline edit initial values
+  const durationSecs = cue.duration_hint_ms !== null ? (cue.duration_hint_ms / 1000).toString() : '';
+  const preWaitSecs =
+    cue.pre_wait_ms && cue.pre_wait_ms > 0 ? (cue.pre_wait_ms / 1000).toString() : '';
+
+  const isDisarmed = !(cue.armed ?? true);
+
   let bg: string = tokens.color.bg;
   if (isFiring) bg = tokens.color.green;
   else if (isPlayhead) bg = tokens.color.playhead_bg;
 
-  const leftBorder =
-    isArmed || isCountingDown ? `4px solid ${tokens.color.red}` : undefined;
+  const leftBorder = isPreWaiting
+    ? `4px solid ${tokens.color.yellow}`
+    : isArmed || isCountingDown
+    ? `4px solid ${tokens.color.red}`
+    : undefined;
 
   const selectionShadow =
     isSelected && !isPlayhead
@@ -153,9 +176,6 @@ export function CueRow({
 
   const isCompound = cue.department.length > 1;
   const deptTag = cue.department.length === 1 ? cue.department[0] : undefined;
-
-  // Duration in seconds for inline edit initial value
-  const durationSecs = cue.duration_hint_ms !== null ? (cue.duration_hint_ms / 1000).toString() : '';
 
   const showAuthoringActions = mode === 'rehearsal' && (isSelected || isPlayhead);
 
@@ -208,7 +228,7 @@ export function CueRow({
         boxShadow: selectionShadow,
         cursor: 'pointer',
         transition: 'background 0.15s',
-        opacity: isDragging ? 0.4 : 1,
+        opacity: isDragging ? 0.4 : isDisarmed ? 0.55 : 1,
       }}
     >
       {/* 24px gutter zone — click to set playhead without affecting selection */}
@@ -256,6 +276,21 @@ export function CueRow({
         >
           ⠿
         </div>
+      )}
+
+      {/* Hatched overlay for disarmed cues */}
+      {isDisarmed && (
+        <div
+          aria-hidden="true"
+          data-testid="disarmed-hatch"
+          style={{
+            position: 'absolute',
+            inset: 0,
+            backgroundImage: 'repeating-linear-gradient(135deg, transparent, transparent 8px, rgba(255,255,255,0.04) 8px, rgba(255,255,255,0.04) 16px)',
+            pointerEvents: 'none',
+            zIndex: 1,
+          }}
+        />
       )}
 
       <PlayheadIndicator visible={isPlayhead} />
@@ -361,6 +396,20 @@ export function CueRow({
             </div>
           )
         )}
+        {/* Payload count badge — always visible so operators can spot cues with no actions */}
+        <div
+          data-testid="payload-count-badge"
+          style={{
+            fontSize: 11,
+            fontWeight: 600,
+            color: cue.payloads.length > 0 ? tokens.color.teal : tokens.color.ink_disabled,
+            marginTop: 2,
+          }}
+        >
+          {cue.payloads.length > 0
+            ? `${cue.payloads.length} payload${cue.payloads.length !== 1 ? 's' : ''}`
+            : 'no actions'}
+        </div>
         <div
           data-testid="payload-summary"
           style={{ fontSize: 12, color: tokens.color.ink_secondary, marginTop: 2 }}
@@ -379,32 +428,105 @@ export function CueRow({
         onUpdate={(trigger) => onTriggerUpdate?.(trigger)}
       />
 
-      {/* Duration cell — inline editable (input in seconds) */}
+      {/* Duration cell — inline editable (input in seconds); PRE badge below */}
       <div
         data-testid="duration-cell"
         style={{
-          fontSize: 15,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'flex-end',
+          gap: 2,
           fontFamily: tokens.font.mono,
-          color: tokens.color.ink,
           whiteSpace: 'nowrap',
           minWidth: 52,
-          textAlign: 'right',
         }}
       >
-        {inlineEditField === 'duration_hint_ms' ? (
+        <span style={{ fontSize: 15, color: tokens.color.ink }}>
+          {inlineEditField === 'duration_hint_ms' ? (
+            <InlineEdit
+              initialValue={durationSecs}
+              placeholder="secs"
+              onCommit={(v) => onInlineCommit?.('duration_hint_ms', v)}
+              onCancel={() => onInlineCancel?.()}
+              onTab={(v) => onInlineTab?.('duration_hint_ms', v)}
+            />
+          ) : (
+            formatDuration(cue.duration_hint_ms)
+          )}
+        </span>
+        {/* PRE badge — inline editable in REHEARSAL, read-only in SHOW */}
+        {inlineEditField === 'pre_wait_ms' && mode === 'rehearsal' ? (
           <InlineEdit
-            initialValue={durationSecs}
+            initialValue={preWaitSecs}
             placeholder="secs"
-            onCommit={(v) => onInlineCommit?.('duration_hint_ms', v)}
+            onCommit={(v) => onInlineCommit?.('pre_wait_ms', v)}
             onCancel={() => onInlineCancel?.()}
-            onTab={(v) => onInlineTab?.('duration_hint_ms', v)}
+            onTab={(v) => onInlineTab?.('pre_wait_ms', v)}
           />
-        ) : (
-          formatDuration(cue.duration_hint_ms)
-        )}
+        ) : cue.pre_wait_ms && cue.pre_wait_ms > 0 ? (
+          <span
+            data-testid="pre-wait-badge"
+            style={{
+              fontSize: 10,
+              fontWeight: 700,
+              color: tokens.color.yellow,
+              fontFamily: tokens.font.mono,
+            }}
+          >
+            PRE {formatDuration(cue.pre_wait_ms)}
+          </span>
+        ) : null}
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.space.s, alignItems: 'flex-end' }}>
+        {/* Edit glyph — always visible in rehearsal mode; primary discoverable entry-point for CueEditDialog */}
+        {mode === 'rehearsal' && onEdit && (
+          <button
+            data-testid="cue-edit-btn"
+            aria-label={`Edit cue ${cue.label}`}
+            title="Edit cue"
+            onClick={(e) => { e.stopPropagation(); onEdit(); }}
+            style={{
+              padding: '6px 10px',
+              background: 'none',
+              color: tokens.color.ink_secondary,
+              border: `1px solid ${tokens.color.border}`,
+              borderRadius: tokens.radius.s,
+              fontSize: 14,
+              cursor: 'pointer',
+              fontFamily: tokens.font.ui,
+              lineHeight: 1,
+              minWidth: 32,
+              minHeight: 32,
+            }}
+          >
+            ✎
+          </button>
+        )}
+        {/* Disarm toggle — always visible when disarmed or when selected in rehearsal */}
+        {onArmToggle && (isDisarmed || (mode === 'rehearsal' && (isSelected || isPlayhead))) && (
+          <button
+            data-testid="cue-arm-toggle"
+            aria-label={isDisarmed ? 'Arm cue' : 'Disarm cue'}
+            disabled={mode === 'show'}
+            onClick={(e) => { e.stopPropagation(); onArmToggle(); }}
+            style={{
+              padding: '3px 8px',
+              background: isDisarmed ? tokens.color.yellow : 'none',
+              color: isDisarmed ? tokens.color.bg : tokens.color.ink_secondary,
+              border: `1px solid ${isDisarmed ? tokens.color.yellow : tokens.color.border}`,
+              borderRadius: tokens.radius.s,
+              fontSize: 11,
+              fontWeight: 700,
+              cursor: mode === 'show' ? 'not-allowed' : 'pointer',
+              fontFamily: tokens.font.ui,
+              lineHeight: 1,
+              opacity: mode === 'show' ? 0.4 : 1,
+            }}
+          >
+            {isDisarmed ? 'ARM' : 'DISARM'}
+          </button>
+        )}
         {isSelected && !isArmed && onStandby && (
           <button
             data-testid="row-standby-btn"
@@ -490,6 +612,33 @@ export function CueRow({
         )}
       </div>
       <OperatorPresenceIndicators stations={stations} />
+
+      {/* Pre-wait indicator overlay — shown while cue is armed-waiting before dispatch */}
+      {isPreWaiting && preWaitRemaining !== null && (
+        <div
+          data-testid="pre-wait-indicator"
+          aria-live="polite"
+          aria-label={`Pre-wait: ${formatDuration(Math.max(0, preWaitRemaining))} remaining`}
+          style={{
+            position: 'absolute',
+            right: tokens.space.l,
+            top: '50%',
+            transform: 'translateY(-50%)',
+            fontSize: 11,
+            fontFamily: tokens.font.mono,
+            color: tokens.color.yellow,
+            fontWeight: 700,
+            pointerEvents: 'none',
+            zIndex: 3,
+            background: tokens.color.bg,
+            padding: '2px 6px',
+            borderRadius: tokens.radius.s,
+            border: `1px solid ${tokens.color.yellow}`,
+          }}
+        >
+          WAIT {formatDuration(Math.max(0, preWaitRemaining))}
+        </div>
+      )}
 
       {/* Live countdown overlay — shown when cue is running with a known duration */}
       {isCountingDown && remaining !== null && (

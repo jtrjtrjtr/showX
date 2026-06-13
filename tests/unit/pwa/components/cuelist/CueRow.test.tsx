@@ -944,4 +944,357 @@ describe('CueRow', () => {
     );
     expect(screen.queryByTestId('inline-edit-input')).toBeNull();
   });
+
+  // ── Pre-wait badge ─────────────────────────────────────────────────────────
+
+  it('PRE badge renders when pre_wait_ms > 0', () => {
+    const cue = makeCue({ pre_wait_ms: 2000 });
+    render(
+      <CueRow
+        cue={cue}
+        isPlayhead={false}
+        isSelected={false}
+        isArmed={false}
+        isFiring={false}
+        firedAt={null}
+        now={BASE_NOW}
+        onSelect={() => {}}
+        stations={[]}
+        mode="rehearsal"
+      />,
+    );
+    const badge = screen.getByTestId('pre-wait-badge');
+    expect(badge).toBeInTheDocument();
+    expect(badge.textContent).toMatch(/PRE/);
+    // 2000ms = 0:02.0
+    expect(badge.textContent).toMatch(/0:02\.0/);
+  });
+
+  it('PRE badge absent when pre_wait_ms is 0', () => {
+    const cue = makeCue({ pre_wait_ms: 0 });
+    render(
+      <CueRow
+        cue={cue}
+        isPlayhead={false}
+        isSelected={false}
+        isArmed={false}
+        isFiring={false}
+        firedAt={null}
+        now={BASE_NOW}
+        onSelect={() => {}}
+        stations={[]}
+        mode="rehearsal"
+      />,
+    );
+    expect(screen.queryByTestId('pre-wait-badge')).toBeNull();
+  });
+
+  it('PRE badge absent when pre_wait_ms is undefined', () => {
+    const cue = makeCue();
+    render(
+      <CueRow
+        cue={cue}
+        isPlayhead={false}
+        isSelected={false}
+        isArmed={false}
+        isFiring={false}
+        firedAt={null}
+        now={BASE_NOW}
+        onSelect={() => {}}
+        stations={[]}
+        mode="rehearsal"
+      />,
+    );
+    expect(screen.queryByTestId('pre-wait-badge')).toBeNull();
+  });
+
+  it('PRE badge inline edit shows InlineEdit in rehearsal mode when inlineEditField = pre_wait_ms', () => {
+    const onCommit = vi.fn();
+    const cue = makeCue({ pre_wait_ms: 1500 });
+    render(
+      <CueRow
+        cue={cue}
+        isPlayhead={false}
+        isSelected={true}
+        isArmed={false}
+        isFiring={false}
+        firedAt={null}
+        now={BASE_NOW}
+        onSelect={() => {}}
+        stations={[]}
+        mode="rehearsal"
+        inlineEditField="pre_wait_ms"
+        onInlineCommit={onCommit}
+        onInlineCancel={vi.fn()}
+      />,
+    );
+    const input = screen.getByTestId('inline-edit-input') as HTMLInputElement;
+    expect(input).toBeInTheDocument();
+    // 1500ms = 1.5 seconds
+    expect(input.value).toBe('1.5');
+  });
+
+  it('PRE badge shown (not inline input) in show mode even when inlineEditField = pre_wait_ms', () => {
+    const cue = makeCue({ pre_wait_ms: 2000 });
+    render(
+      <CueRow
+        cue={cue}
+        isPlayhead={false}
+        isSelected={true}
+        isArmed={false}
+        isFiring={false}
+        firedAt={null}
+        now={BASE_NOW}
+        onSelect={() => {}}
+        stations={[]}
+        mode="show"
+        inlineEditField="pre_wait_ms"
+        onInlineCommit={vi.fn()}
+        onInlineCancel={vi.fn()}
+      />,
+    );
+    // In show mode, inline edit must not render
+    expect(screen.queryByTestId('inline-edit-input')).toBeNull();
+    // PRE badge should still be visible
+    expect(screen.getByTestId('pre-wait-badge')).toBeInTheDocument();
+  });
+
+  // ── Pre-wait waiting indicator ─────────────────────────────────────────────
+
+  it('pre-wait indicator renders with countdown when preWaitUntil > now', () => {
+    const cue = makeCue({ pre_wait_ms: 2000 });
+    const preWaitUntil = BASE_NOW + 1500; // 1.5s remaining
+    render(
+      <CueRow
+        cue={cue}
+        isPlayhead={false}
+        isSelected={false}
+        isArmed={false}
+        isFiring={false}
+        firedAt={null}
+        now={BASE_NOW}
+        preWaitUntil={preWaitUntil}
+        onSelect={() => {}}
+        stations={[]}
+        mode="rehearsal"
+      />,
+    );
+    const indicator = screen.getByTestId('pre-wait-indicator');
+    expect(indicator).toBeInTheDocument();
+    expect(indicator.textContent).toMatch(/WAIT/);
+    // 1500ms remaining → 0:01.5
+    expect(indicator.textContent).toMatch(/0:01\.5/);
+  });
+
+  it('pre-wait indicator absent when preWaitUntil is null', () => {
+    const cue = makeCue({ pre_wait_ms: 2000 });
+    render(
+      <CueRow
+        cue={cue}
+        isPlayhead={false}
+        isSelected={false}
+        isArmed={false}
+        isFiring={false}
+        firedAt={null}
+        now={BASE_NOW}
+        preWaitUntil={null}
+        onSelect={() => {}}
+        stations={[]}
+        mode="rehearsal"
+      />,
+    );
+    expect(screen.queryByTestId('pre-wait-indicator')).toBeNull();
+  });
+
+  it('pre-wait indicator absent when preWaitUntil has already elapsed', () => {
+    const cue = makeCue({ pre_wait_ms: 2000 });
+    const preWaitUntil = BASE_NOW - 100; // already elapsed
+    render(
+      <CueRow
+        cue={cue}
+        isPlayhead={false}
+        isSelected={false}
+        isArmed={false}
+        isFiring={false}
+        firedAt={null}
+        now={BASE_NOW}
+        preWaitUntil={preWaitUntil}
+        onSelect={() => {}}
+        stations={[]}
+        mode="rehearsal"
+      />,
+    );
+    expect(screen.queryByTestId('pre-wait-indicator')).toBeNull();
+  });
+
+  // ── Edit glyph button ─────────────────────────────────────────────────────────
+
+  it('cue-edit-btn is visible in rehearsal mode when onEdit provided', () => {
+    const cue = makeCue();
+    render(
+      <CueRow
+        cue={cue}
+        isPlayhead={false}
+        isSelected={false}
+        isArmed={false}
+        isFiring={false}
+        firedAt={null}
+        now={BASE_NOW}
+        onSelect={() => {}}
+        onEdit={vi.fn()}
+        stations={[]}
+        mode="rehearsal"
+      />,
+    );
+    expect(screen.getByTestId('cue-edit-btn')).toBeInTheDocument();
+  });
+
+  it('cue-edit-btn click calls onEdit', () => {
+    const onEdit = vi.fn();
+    const cue = makeCue();
+    render(
+      <CueRow
+        cue={cue}
+        isPlayhead={false}
+        isSelected={false}
+        isArmed={false}
+        isFiring={false}
+        firedAt={null}
+        now={BASE_NOW}
+        onSelect={() => {}}
+        onEdit={onEdit}
+        stations={[]}
+        mode="rehearsal"
+      />,
+    );
+    fireEvent.click(screen.getByTestId('cue-edit-btn'));
+    expect(onEdit).toHaveBeenCalledOnce();
+  });
+
+  it('cue-edit-btn click does NOT trigger onSelect', () => {
+    const onSelect = vi.fn();
+    const onEdit = vi.fn();
+    const cue = makeCue();
+    render(
+      <CueRow
+        cue={cue}
+        isPlayhead={false}
+        isSelected={false}
+        isArmed={false}
+        isFiring={false}
+        firedAt={null}
+        now={BASE_NOW}
+        onSelect={onSelect}
+        onEdit={onEdit}
+        stations={[]}
+        mode="rehearsal"
+      />,
+    );
+    fireEvent.click(screen.getByTestId('cue-edit-btn'));
+    expect(onEdit).toHaveBeenCalledOnce();
+    expect(onSelect).not.toHaveBeenCalled();
+  });
+
+  it('cue-edit-btn NOT rendered in show mode', () => {
+    const cue = makeCue();
+    render(
+      <CueRow
+        cue={cue}
+        isPlayhead={false}
+        isSelected={false}
+        isArmed={false}
+        isFiring={false}
+        firedAt={null}
+        now={BASE_NOW}
+        onSelect={() => {}}
+        onEdit={vi.fn()}
+        stations={[]}
+        mode="show"
+      />,
+    );
+    expect(screen.queryByTestId('cue-edit-btn')).toBeNull();
+  });
+
+  it('cue-edit-btn NOT rendered when onEdit not provided', () => {
+    const cue = makeCue();
+    render(
+      <CueRow
+        cue={cue}
+        isPlayhead={false}
+        isSelected={false}
+        isArmed={false}
+        isFiring={false}
+        firedAt={null}
+        now={BASE_NOW}
+        onSelect={() => {}}
+        stations={[]}
+        mode="rehearsal"
+      />,
+    );
+    expect(screen.queryByTestId('cue-edit-btn')).toBeNull();
+  });
+
+  // ── Payload count badge ───────────────────────────────────────────────────────
+
+  it('payload-count-badge shows "no actions" when 0 payloads', () => {
+    const cue = makeCue({ payloads: [] });
+    render(
+      <CueRow
+        cue={cue}
+        isPlayhead={false}
+        isSelected={false}
+        isArmed={false}
+        isFiring={false}
+        firedAt={null}
+        now={BASE_NOW}
+        onSelect={() => {}}
+        stations={[]}
+        mode="rehearsal"
+      />,
+    );
+    const badge = screen.getByTestId('payload-count-badge');
+    expect(badge).toBeInTheDocument();
+    expect(badge).toHaveTextContent('no actions');
+  });
+
+  it('payload-count-badge reflects count when payloads present', () => {
+    const osc = { id: 'p1', type: 'osc' as const, tag: null, note: '', device_id: '', address: '/', args: [] };
+    const midi = { id: 'p2', type: 'midi' as const, tag: null, note: '', device_id: '', message: { kind: 'note_on' as const, channel: 1, note: 60, velocity: 127 } };
+    const cue = makeCue({ payloads: [osc, midi] });
+    render(
+      <CueRow
+        cue={cue}
+        isPlayhead={false}
+        isSelected={false}
+        isArmed={false}
+        isFiring={false}
+        firedAt={null}
+        now={BASE_NOW}
+        onSelect={() => {}}
+        stations={[]}
+        mode="rehearsal"
+      />,
+    );
+    const badge = screen.getByTestId('payload-count-badge');
+    expect(badge).toHaveTextContent('2 payloads');
+  });
+
+  it('payload-count-badge always rendered (even in show mode)', () => {
+    const cue = makeCue({ payloads: [] });
+    render(
+      <CueRow
+        cue={cue}
+        isPlayhead={false}
+        isSelected={false}
+        isArmed={false}
+        isFiring={false}
+        firedAt={null}
+        now={BASE_NOW}
+        onSelect={() => {}}
+        stations={[]}
+        mode="show"
+      />,
+    );
+    expect(screen.getByTestId('payload-count-badge')).toBeInTheDocument();
+  });
 });

@@ -47,7 +47,11 @@ export function schedule(next: Cue, prevFire: FireEvent, doc: Y.Doc): ScheduledF
     }
 
     case 'timecode':
-      // Deferred to ShowX 0.2 — LTC/MTC infrastructure arrives in ShowX-4
+      // Timecode triggers are clock-driven (TriggerEngine.tickTimecode), not chain-scheduled.
+      return null;
+
+    case 'hotkey':
+      // Out-of-band: keyboard listener fires the cue directly; not part of the chain.
       return null;
   }
 }
@@ -61,6 +65,11 @@ function lookupCue(doc: Y.Doc, cuelistId: string, cueId: string): Cue | null {
 
 export function isAutoTriggered(cue: Cue): boolean {
   return cue.trigger.kind === 'auto_follow' || cue.trigger.kind === 'auto_continue';
+}
+
+/** Normalize a KeyboardEvent key value to a stable string for hotkey storage. */
+export function normalizeHotkeyKey(key: string): string {
+  return key === ' ' ? 'Space' : key;
 }
 
 export function getFollowSource(cue: Cue): string | null {

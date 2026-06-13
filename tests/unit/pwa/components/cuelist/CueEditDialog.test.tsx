@@ -73,6 +73,7 @@ describe('CueEditDialog', () => {
       description: 'New desc',
       standby_note: '',
       duration_hint_ms: null,
+      pre_wait_ms: 0,
     });
   });
 
@@ -197,5 +198,81 @@ describe('CueEditDialog', () => {
       </ConnectionContext.Provider>
     );
     expect(screen.queryByTestId('payload-frozen-notice')).toBeNull();
+  });
+
+  // ── Pre-wait field ─────────────────────────────────────────────────────────
+
+  it('shows pre-wait input field', () => {
+    const cue = makeCue({ label: 'Q1' });
+    render(<CueEditDialog cue={cue} onSave={vi.fn()} onCancel={vi.fn()} />);
+    expect(screen.getByTestId('cue-edit-prewait')).toBeInTheDocument();
+  });
+
+  it('pre-wait input pre-fills from cue.pre_wait_ms', () => {
+    const cue = makeCue({ label: 'Q1', pre_wait_ms: 2000 });
+    render(<CueEditDialog cue={cue} onSave={vi.fn()} onCancel={vi.fn()} />);
+    const input = screen.getByTestId('cue-edit-prewait') as HTMLInputElement;
+    expect(input.value).toBe('2.0');
+  });
+
+  it('pre-wait input empty when pre_wait_ms is 0', () => {
+    const cue = makeCue({ label: 'Q1', pre_wait_ms: 0 });
+    render(<CueEditDialog cue={cue} onSave={vi.fn()} onCancel={vi.fn()} />);
+    const input = screen.getByTestId('cue-edit-prewait') as HTMLInputElement;
+    expect(input.value).toBe('');
+  });
+
+  it('pre-wait included in save patch', () => {
+    const onSave = vi.fn();
+    const cue = makeCue({ label: 'Q1' });
+    render(<CueEditDialog cue={cue} onSave={onSave} onCancel={vi.fn()} />);
+    fireEvent.change(screen.getByTestId('cue-edit-prewait'), { target: { value: '1.5' } });
+    fireEvent.click(screen.getByTestId('cue-edit-save'));
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ pre_wait_ms: 1500 }));
+  });
+
+  it('pre-wait 0 when field is cleared', () => {
+    const onSave = vi.fn();
+    const cue = makeCue({ label: 'Q1', pre_wait_ms: 2000 });
+    render(<CueEditDialog cue={cue} onSave={onSave} onCancel={vi.fn()} />);
+    fireEvent.change(screen.getByTestId('cue-edit-prewait'), { target: { value: '' } });
+    fireEvent.click(screen.getByTestId('cue-edit-save'));
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ pre_wait_ms: 0 }));
+  });
+
+  it('pre-wait input disabled in SHOW mode (locked)', () => {
+    const cue = makeCue({ label: 'Q1', pre_wait_ms: 2000 });
+    render(<CueEditDialog cue={cue} onSave={vi.fn()} onCancel={vi.fn()} locked={true} />);
+    const input = screen.getByTestId('cue-edit-prewait') as HTMLInputElement;
+    expect(input.disabled).toBe(true);
+  });
+
+  it('pre-wait input enabled when not locked', () => {
+    const cue = makeCue({ label: 'Q1', pre_wait_ms: 2000 });
+    render(<CueEditDialog cue={cue} onSave={vi.fn()} onCancel={vi.fn()} locked={false} />);
+    const input = screen.getByTestId('cue-edit-prewait') as HTMLInputElement;
+    expect(input.disabled).toBe(false);
+  });
+
+  // ── Payloads section position ────────────────────────────────────────────────
+
+  it('Payloads section appears in DOM before duration field', () => {
+    const conn = makeTestConnection();
+    const cue = makeCue({ label: 'Q1' });
+    setupCueInDoc(conn, cue);
+    const { container } = render(
+      <ConnectionContext.Provider value={conn}>
+        <CueEditDialog cue={cue} cuelistId="cl1" locked={false} onSave={vi.fn()} onCancel={vi.fn()} />
+      </ConnectionContext.Provider>
+    );
+    const payloadsHeader = Array.from(container.querySelectorAll('*')).find(
+      (el) => el.textContent?.trim() === 'Payloads',
+    );
+    const durationInput = container.querySelector('[data-testid="cue-edit-duration"]');
+    expect(payloadsHeader).toBeTruthy();
+    expect(durationInput).toBeTruthy();
+    // Payloads header should precede duration input in DOM order
+    const pos = Node.DOCUMENT_POSITION_FOLLOWING;
+    expect(payloadsHeader!.compareDocumentPosition(durationInput!)).toBe(pos);
   });
 });

@@ -1,8 +1,8 @@
 {
   "enabled": true,
   "bundle_id": "ShowX-5",
-  "allowed_task_ids": ["B005-001"],
-  "rationale": "F2 'Time vrstva' open 2026-06-13. F1 (ShowX-4) impl 11/11 accepted, automated gate green; F1 eyes-on batched into F2 gate (B005-010) per Jindřich 'otestujeme více věcí najednou'. F2 wave 1 = B005-001 (master clock) only — nearly all F2 tasks depend on the clock, so cascade scope as 001 accepts (002/004/005/006/007 next, then 003, 008, 009, gate). LTC deferred to later bundle. Budget $30/phase; precise CLI-runner cost not metered in-repo.",
-  "updated_at": "2026-06-13T17:10:00Z",
+  "allowed_task_ids": ["B005-009"],
+  "rationale": "F2 wave 5 (2026-06-13 ~19:42): 001-008 all accepted; B005-008 countdown ACCEPTED → unlocked B005-009 (Pi kiosk recipe docs, last impl task). After 009 accepts, B005-010 E2E gate (architect-owned) batches F1+F2 eyes-on on one v0.4.0 DMG. Budget $30/phase.",
+  "updated_at": "2026-06-13T19:42:00Z",
   "updated_by": "architect"
 }

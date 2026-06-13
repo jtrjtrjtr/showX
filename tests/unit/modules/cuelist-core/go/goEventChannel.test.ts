@@ -4,7 +4,7 @@ import { GoEventChannel, assertNotForbiddenCrdtField, DesignViolationError } fro
 import type { GoRequest, GoChannelDeps } from '../../../../../src/modules/cuelist-core/src/go/goEventChannel.js';
 import { initShowDoc, getMeta } from '../../../../../src/modules/cuelist-core/src/document/show.js';
 import { addCuelist, getCuelist } from '../../../../../src/modules/cuelist-core/src/document/cuelist.js';
-import { addCue } from '../../../../../src/modules/cuelist-core/src/document/cue.js';
+import { addCue, setCueArmed } from '../../../../../src/modules/cuelist-core/src/document/cue.js';
 import type * as Y from 'yjs';
 
 // ── Mock helpers ──────────────────────────────────────────────────────────────
@@ -557,5 +557,186 @@ describe('GoEventChannel — gap envelope on ring overflow', () => {
     expect(gap.topic).toBe('go.dispatched');
     expect(gap.from_seq).toBe(0);
     expect(gap.to_seq).toBeGreaterThan(0);
+  });
+});
+
+// ── Disarm (B004-007) ─────────────────────────────────────────────────────────
+
+describe('GoEventChannel — disarmed cue', () => {
+  let ctx: ReturnType<typeof makeSetup>;
+
+  beforeEach(() => { ctx = makeSetup(); ctx.channel.start(); });
+
+  it('disarmed cue: cue-fire is still published (chain advances)', () => {
+    const cueId = ctx.addCueToList('Q-disarmed');
+    setCueArmed(ctx.doc, ctx.cuelistId, cueId, false, 'op1');
+    ctx.fireGoRequest({ cue_id: cueId });
+    const fires = ctx.published.filter((e) => e.type === 'cue-fire');
+    expect(fires).toHaveLength(1);
+    expect((fires[0] as { cue_id: string }).cue_id).toBe(cueId);
+  });
+
+  it('disarmed cue: cue-fire payloads is empty (suppresses dispatch)', () => {
+    const cueId = ctx.addCueToList('Q-disarmed');
+    setCueArmed(ctx.doc, ctx.cuelistId, cueId, false, 'op1');
+    ctx.fireGoRequest({ cue_id: cueId });
+    const fire = ctx.published.find((e) => e.type === 'cue-fire') as { payloads?: unknown[] } | undefined;
+    expect(fire?.payloads).toEqual([]);
+  });
+
+  it('armed cue: cue-fire payloads is not suppressed', () => {
+    const cueId = ctx.addCueToList('Q-armed');
+    // armed=true by default; no setCueArmed call
+    ctx.fireGoRequest({ cue_id: cueId });
+    const fire = ctx.published.find((e) => e.type === 'cue-fire') as { payloads?: unknown[] } | undefined;
+    // payloads is [] since no payloads were added to the cue, not because of disarm
+    expect(fire).toBeDefined();
+  });
+});
+
+// ── Audition / Preview GO (B004-008) ──────────────────────────────────────────
+
+describe('GoEventChannel — audition.request', () => {
+  function makeAuditionSetup() {
+    const dispatchAudition = vi.fn().mockResolvedValue({
+      topic: 'audition.result' as const,
+      request_id: 'req-1',
+      cue_id: '',
+      cuelist_id: '',
+      ok: true,
+      details: [{ payload_id: 'p1', transport: '[AUDITION] osc', result: 'ok' }],
+    });
+    const doc = initShowDoc({ title: 'Test Show', venue: null, date: null, created_by: 'op1' });
+    const showId = getMeta(doc).get('show_id') as string;
+    const cuelistId = getMeta(doc).get('active_cuelist_id') as string;
+    const { bus, published } = makeMockBus();
+    const log = makeMockLog();
+    const toStation: Array<{ station_id: string; envelope: object }> = [];
+    const topicHandlers = new Map<string, (msg: object) => void>();
+
+    const deps = {
+      doc,
+      events: bus,
+      log,
+      broadcast: vi.fn(),
+      publishToStation: (sid: string, env: object) => toStation.push({ station_id: sid, envelope: env }),
+      subscribe: (topic: string, handler: (msg: object) => void): (() => void) => {
+        topicHandlers.set(topic, handler);
+        return () => topicHandlers.delete(topic);
+      },
+      octx: {
+        operatorOwns: (opId: string, dept: string) => opId === 'op-sm' && dept === 'SM',
+        operatorOwned: (opId: string) => (opId === 'op-sm' ? ['SM'] : []),
+      },
+      dispatchAudition,
+    };
+
+    const channel = new GoEventChannel(deps);
+    channel.start();
+
+    function addCueToList(label: string): string {
+      return addCue(doc, cuelistId, { label, department: ['SM' as import('showx-shared').DepartmentTag], created_by: 'op1' });
+    }
+
+    function fireAuditionRequest(overrides: Partial<{ cue_id: string; operator_id: string; station_id: string }> = {}): void {
+      const handler = topicHandlers.get('audition.request');
+      handler?.({
+        topic: 'audition.request',
+        request_id: 'req-1',
+        cue_id: overrides.cue_id ?? 'cue-1',
+        cuelist_id: cuelistId,
+        station_id: overrides.station_id ?? 'station-1',
+        operator_id: overrides.operator_id ?? 'op-sm',
+      });
+    }
+
+    return { channel, doc, showId, cuelistId, bus, published, toStation, topicHandlers, log, dispatchAudition, addCueToList, fireAuditionRequest };
+  }
+
+  it('audition.request: cue-fire is NOT emitted on EventBus', async () => {
+    const ctx = makeAuditionSetup();
+    const cueId = ctx.addCueToList('Q-audition');
+    ctx.fireAuditionRequest({ cue_id: cueId });
+    // Give async handler a tick to resolve
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(ctx.published.filter((e) => e.type === 'cue-fire')).toHaveLength(0);
+  });
+
+  it('audition.request: dispatchAudition callback is called with cue_id', async () => {
+    const ctx = makeAuditionSetup();
+    const cueId = ctx.addCueToList('Q-audition');
+    ctx.fireAuditionRequest({ cue_id: cueId });
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(ctx.dispatchAudition).toHaveBeenCalledWith(cueId, ctx.cuelistId, expect.any(Array));
+  });
+
+  it('audition.request: audition.result published to requesting station', async () => {
+    const ctx = makeAuditionSetup();
+    const cueId = ctx.addCueToList('Q-audition');
+    ctx.fireAuditionRequest({ cue_id: cueId, station_id: 'station-sm' });
+    // Need extra ticks: dispatchAudition is async, its resolution + continuation each take a tick
+    await Promise.resolve();
+    await Promise.resolve();
+    await Promise.resolve();
+    const resultMsgs = ctx.toStation.filter((s) => s.station_id === 'station-sm');
+    expect(resultMsgs).toHaveLength(1);
+    const env = resultMsgs[0].envelope as { topic: string; payload: { ok: boolean } };
+    expect(env.topic).toBe('audition.result');
+    expect(env.payload.ok).toBe(true);
+  });
+
+  it('audition.request from non-SM operator: audition.result ok=false, no dispatch', async () => {
+    const ctx = makeAuditionSetup();
+    const cueId = ctx.addCueToList('Q-audition');
+    ctx.fireAuditionRequest({ cue_id: cueId, operator_id: 'op-lx' });
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(ctx.dispatchAudition).not.toHaveBeenCalled();
+    const resultMsgs = ctx.toStation.filter((s) =>
+      (s.envelope as { topic: string }).topic === 'audition.result',
+    );
+    expect(resultMsgs).toHaveLength(1);
+    const env = resultMsgs[0].envelope as { topic: string; payload: { ok: boolean } };
+    expect(env.payload.ok).toBe(false);
+  });
+
+  it('audition.request for unknown cue: audition.result ok=false returned to station', async () => {
+    const ctx = makeAuditionSetup();
+    ctx.fireAuditionRequest({ cue_id: 'nonexistent-cue' });
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(ctx.dispatchAudition).not.toHaveBeenCalled();
+    const resultMsgs = ctx.toStation.filter((s) =>
+      (s.envelope as { topic: string }).topic === 'audition.result',
+    );
+    expect(resultMsgs).toHaveLength(1);
+    const env = resultMsgs[0].envelope as { topic: string; payload: { ok: boolean } };
+    expect(env.payload.ok).toBe(false);
+  });
+
+  it('audition.request with no dispatchAudition injected: logs warning, no crash', async () => {
+    const { bus } = makeMockBus();
+    const log = makeMockLog();
+    const doc = initShowDoc({ title: 'T', venue: null, date: null, created_by: 'op1' });
+    const cuelistId = getMeta(doc).get('active_cuelist_id') as string;
+    const topicHandlers = new Map<string, (msg: object) => void>();
+    const channel = new GoEventChannel({
+      doc, events: bus, log,
+      broadcast: vi.fn(),
+      publishToStation: vi.fn(),
+      subscribe: (topic, handler) => { topicHandlers.set(topic, handler); return () => {}; },
+      // no dispatchAudition
+    });
+    channel.start();
+    const cueId = addCue(doc, cuelistId, { label: 'Q', department: ['SM' as import('showx-shared').DepartmentTag], created_by: 'op1' });
+    topicHandlers.get('audition.request')?.({
+      topic: 'audition.request', request_id: 'r1', cue_id: cueId,
+      cuelist_id: cuelistId, station_id: 's1', operator_id: 'op-sm',
+    });
+    await Promise.resolve();
+    await Promise.resolve();
+    expect((log.warn as ReturnType<typeof vi.fn>).mock.calls.length).toBeGreaterThan(0);
   });
 });

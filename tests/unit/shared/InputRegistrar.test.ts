@@ -1,7 +1,9 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { InputRegistrarImpl } from '../../../src/main/src/shared/InputRegistrar.js';
 import { Logger } from '../../../src/main/src/shared/Logger.js';
+import { WebhookInListener, type WebhookInMessage, type AssetServerLike } from '../../../src/main/src/shared/input/webhookIn.js';
 import type { OscMessage, MidiMessage } from '../../../src/main/src/shared/input/types.js';
+import type { Request, Response } from 'express';
 
 const logSink = new Logger({ output: { write: () => true } as unknown as NodeJS.WritableStream });
 
@@ -54,11 +56,59 @@ function makeMidiMsg(type: MidiMessage['type'] = 'noteOn', channel = 0): MidiMes
   return { type, channel, data1: 60, data2: 100, raw: [0x90, 60, 100], receivedAt: Date.now() };
 }
 
+// ── Mock WebhookInListener ────────────────────────────────────────────────────
+
+class MockWebhookListener {
+  private _hookHandlers = new Map<string, Set<(msg: WebhookInMessage) => void>>();
+  public started = false;
+  public stopped = false;
+
+  constructor(_assets: AssetServerLike, _logger: Logger) {}
+
+  start(): void { this.started = true; }
+  stop(): void { this.stopped = true; this._hookHandlers.clear(); }
+
+  addHandler(hookId: string, fn: (msg: WebhookInMessage) => void): void {
+    let s = this._hookHandlers.get(hookId);
+    if (!s) { s = new Set(); this._hookHandlers.set(hookId, s); }
+    s.add(fn);
+  }
+
+  removeHandler(hookId: string, fn: (msg: WebhookInMessage) => void): void {
+    const s = this._hookHandlers.get(hookId);
+    if (!s) return;
+    s.delete(fn);
+    if (s.size === 0) this._hookHandlers.delete(hookId);
+  }
+
+  get handlerCount(): number {
+    let total = 0;
+    for (const s of this._hookHandlers.values()) total += s.size;
+    return total;
+  }
+
+  hookIds(): string[] { return Array.from(this._hookHandlers.keys()); }
+  hookHandlerCount(hookId: string): number { return this._hookHandlers.get(hookId)?.size ?? 0; }
+
+  inject(hookId: string, msg: WebhookInMessage): void {
+    const s = this._hookHandlers.get(hookId);
+    if (!s) return;
+    for (const h of s) h(msg);
+  }
+}
+
+function makeMockAssets(): AssetServerLike {
+  return {
+    registerApiRoute: vi.fn(() => ({ id: 'r1', unsubscribe: vi.fn() })),
+  };
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function makeRegistrar() {
+function makeRegistrar(assets?: AssetServerLike) {
   const oscListeners = new Map<number, MockOscListener>();
   const midiListeners = new Map<string, MockMidiListener>();
+  const webhookListeners: MockWebhookListener[] = [];
 
   const oscFactory = vi.fn((port: number, log: Logger) => {
     const l = new MockOscListener(port, log);
@@ -72,8 +122,14 @@ function makeRegistrar() {
     return l as unknown as InstanceType<typeof import('../../../src/main/src/shared/input/midiIn.js').MidiPortListener>;
   });
 
-  const registrar = new InputRegistrarImpl(logSink, oscFactory, midiFactory);
-  return { registrar, oscListeners, midiListeners };
+  const webhookFactory = vi.fn((a: AssetServerLike, log: Logger) => {
+    const l = new MockWebhookListener(a, log);
+    webhookListeners.push(l);
+    return l as unknown as WebhookInListener;
+  });
+
+  const registrar = new InputRegistrarImpl(logSink, oscFactory, midiFactory, assets, webhookFactory);
+  return { registrar, oscListeners, midiListeners, webhookListeners };
 }
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
@@ -284,5 +340,104 @@ describe('InputRegistrarImpl — MIDI', () => {
 
     await sub2.unsubscribe();
     expect(midiListeners.get('IAC')!.stopped).toBe(true);
+  });
+});
+
+describe('InputRegistrarImpl — Webhook', () => {
+  let registrar: InputRegistrarImpl;
+  let webhookListeners: MockWebhookListener[];
+
+  afterEach(async () => {
+    await registrar?.shutdown();
+  });
+
+  it('subscribeWebhook throws when no AssetServer configured', async () => {
+    ({ registrar } = makeRegistrar());
+    await expect(registrar.subscribeWebhook({ hookId: 'abc' }, () => {}))
+      .rejects.toThrow('no AssetServer configured');
+  });
+
+  it('subscribeWebhook creates listener on first call and starts it', async () => {
+    ({ registrar, webhookListeners } = makeRegistrar(makeMockAssets()));
+    await registrar.init();
+
+    await registrar.subscribeWebhook({ hookId: 'abc' }, () => {});
+
+    expect(webhookListeners).toHaveLength(1);
+    expect(webhookListeners[0]!.started).toBe(true);
+  });
+
+  it('two subscriptions to different hookIds share one WebhookInListener', async () => {
+    ({ registrar, webhookListeners } = makeRegistrar(makeMockAssets()));
+
+    await registrar.subscribeWebhook({ hookId: 'abc' }, () => {});
+    await registrar.subscribeWebhook({ hookId: 'xyz' }, () => {});
+
+    expect(webhookListeners).toHaveLength(1);
+  });
+
+  it('registered hookId fires bound handler', async () => {
+    ({ registrar, webhookListeners } = makeRegistrar(makeMockAssets()));
+
+    const fired: WebhookInMessage[] = [];
+    await registrar.subscribeWebhook({ hookId: 'abc' }, (msg) => fired.push(msg));
+
+    const msg: WebhookInMessage = { hookId: 'abc', method: 'POST', path: '/api/hook/abc', headers: {}, body: {}, receivedAt: Date.now() };
+    webhookListeners[0]!.inject('abc', msg);
+
+    expect(fired).toHaveLength(1);
+    expect(fired[0]!.hookId).toBe('abc');
+  });
+
+  it('unknown hookId receives no dispatch (isolated)', async () => {
+    ({ registrar, webhookListeners } = makeRegistrar(makeMockAssets()));
+
+    const fired: WebhookInMessage[] = [];
+    await registrar.subscribeWebhook({ hookId: 'abc' }, (msg) => fired.push(msg));
+
+    const msg: WebhookInMessage = { hookId: 'other', method: 'POST', path: '/api/hook/other', headers: {}, body: {}, receivedAt: Date.now() };
+    webhookListeners[0]!.inject('other', msg);
+
+    expect(fired).toHaveLength(0);
+  });
+
+  it('unsubscribe last handler stops listener', async () => {
+    ({ registrar, webhookListeners } = makeRegistrar(makeMockAssets()));
+
+    const sub = await registrar.subscribeWebhook({ hookId: 'abc' }, () => {});
+    expect(webhookListeners[0]!.stopped).toBe(false);
+
+    await sub.unsubscribe();
+    expect(webhookListeners[0]!.stopped).toBe(true);
+  });
+
+  it('unsubscribe first of two — listener still up', async () => {
+    ({ registrar, webhookListeners } = makeRegistrar(makeMockAssets()));
+
+    const sub1 = await registrar.subscribeWebhook({ hookId: 'abc' }, () => {});
+    await registrar.subscribeWebhook({ hookId: 'xyz' }, () => {});
+
+    await sub1.unsubscribe();
+    expect(webhookListeners[0]!.stopped).toBe(false);
+  });
+
+  it('listActiveListeners includes webhook-in entries', async () => {
+    ({ registrar, webhookListeners } = makeRegistrar(makeMockAssets()));
+
+    await registrar.subscribeWebhook({ hookId: 'abc' }, () => {});
+    await registrar.subscribeWebhook({ hookId: 'xyz' }, () => {});
+
+    const active = registrar.listActiveListeners();
+    const webhookEntries = active.filter(e => e.key.kind === 'webhook-in');
+    expect(webhookEntries).toHaveLength(2);
+    const ids = webhookEntries.map(e => (e.key as { kind: 'webhook-in'; hookId: string }).hookId).sort();
+    expect(ids).toEqual(['abc', 'xyz']);
+  });
+
+  it('shutdown() stops webhook listener', async () => {
+    ({ registrar, webhookListeners } = makeRegistrar(makeMockAssets()));
+    await registrar.subscribeWebhook({ hookId: 'abc' }, () => {});
+    await registrar.shutdown();
+    expect(webhookListeners[0]!.stopped).toBe(true);
   });
 });

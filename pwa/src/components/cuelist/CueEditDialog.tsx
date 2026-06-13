@@ -25,6 +25,9 @@ export function CueEditDialog({ cue, onSave, onCancel, cuelistId, locked = false
   const [description, setDescription] = useState(cue.description);
   const [standbyNote, setStandbyNote] = useState(cue.standby_note);
   const [durationSecs, setDurationSecs] = useState(() => durationMsToSecs(cue.duration_hint_ms));
+  const [preWaitSecs, setPreWaitSecs] = useState(() =>
+    cue.pre_wait_ms && cue.pre_wait_ms > 0 ? (cue.pre_wait_ms / 1000).toFixed(1) : '',
+  );
   const [labelError, setLabelError] = useState(false);
   const labelRef = useRef<HTMLInputElement>(null);
 
@@ -42,8 +45,11 @@ export function CueEditDialog({ cue, onSave, onCancel, cuelistId, locked = false
     const rawDur = durationSecs.trim();
     const duration_hint_ms =
       rawDur === '' ? null : Math.max(0, Math.round(parseFloat(rawDur) * 1000));
-    onSave({ label: label.trim(), description, standby_note: standbyNote, duration_hint_ms });
-  }, [label, description, standbyNote, durationSecs, onSave]);
+    const rawPre = preWaitSecs.trim();
+    const pre_wait_ms =
+      rawPre === '' ? 0 : Math.max(0, Math.round(parseFloat(rawPre) * 1000));
+    onSave({ label: label.trim(), description, standby_note: standbyNote, duration_hint_ms, pre_wait_ms });
+  }, [label, description, standbyNote, durationSecs, preWaitSecs, onSave]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -137,18 +143,6 @@ export function CueEditDialog({ cue, onSave, onCancel, cuelistId, locked = false
           />
         </Field>
 
-        <Field label="Duration (seconds)">
-          <input
-            data-testid="cue-edit-duration"
-            type="text"
-            inputMode="decimal"
-            value={durationSecs}
-            onChange={(e) => setDurationSecs(e.target.value)}
-            placeholder="e.g. 5.0 (leave empty for none)"
-            style={inputStyle(false)}
-          />
-        </Field>
-
         {cuelistId && (
           <div>
             <div
@@ -181,6 +175,32 @@ export function CueEditDialog({ cue, onSave, onCancel, cuelistId, locked = false
             <PayloadList cue={cue} cuelistId={cuelistId} locked={locked} />
           </div>
         )}
+
+        <Field label="Duration (seconds)">
+          <input
+            data-testid="cue-edit-duration"
+            type="text"
+            inputMode="decimal"
+            value={durationSecs}
+            onChange={(e) => setDurationSecs(e.target.value)}
+            placeholder="e.g. 5.0 (leave empty for none)"
+            style={inputStyle(false)}
+          />
+        </Field>
+
+        <Field label="Pre-wait (seconds)">
+          <input
+            data-testid="cue-edit-prewait"
+            type="text"
+            inputMode="decimal"
+            value={preWaitSecs}
+            onChange={(e) => setPreWaitSecs(e.target.value)}
+            placeholder="e.g. 2.0 (leave empty for none)"
+            style={inputStyle(false)}
+            disabled={locked}
+            aria-label="Pre-wait in seconds"
+          />
+        </Field>
 
         <div style={{ display: 'flex', gap: tokens.space.m, justifyContent: 'flex-end', marginTop: tokens.space.s }}>
           <button

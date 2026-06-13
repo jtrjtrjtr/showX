@@ -9,6 +9,9 @@ import type {
   CuelistGoEvent,
   SystemErrorEvent,
   Trigger,
+  MasterClock,
+  ClockState,
+  FrameRate,
 } from 'showx-shared';
 import { TriggerEngine } from '../../../../../src/modules/cuelist-core/src/trigger/triggerEngine.js';
 import { initShowDoc, getMeta } from '../../../../../src/modules/cuelist-core/src/document/show.js';
@@ -156,6 +159,58 @@ function makeSetup(): TestContext {
   return { doc, cuelistId, bus, published, engine, ac, log, add, fireCue, completeCue, goEvents, errorEvents };
 }
 
+// ── Fake clock helper ─────────────────────────────────────────────────────────
+
+interface FakeClock extends MasterClock {
+  /** Advance internal frame counter without emitting onChange (simulates free-run). */
+  _setFrames(n: number): void;
+}
+
+function makeFakeClock(initialRate: FrameRate = 25): FakeClock {
+  let totalFrames = 0;
+  let rate: FrameRate = initialRate;
+  let running = false;
+  const handlers = new Set<(state: ClockState) => void>();
+
+  function getState(): ClockState {
+    return { rate, dropFrame: false, totalFrames, running, source: 'internal' };
+  }
+
+  function emit(): void {
+    const s = getState();
+    for (const h of handlers) h(s);
+  }
+
+  const clock: FakeClock = {
+    start() { running = true; emit(); },
+    stop() { running = false; emit(); },
+    locate(target: number | import('showx-shared').Timecode) {
+      totalFrames = typeof target === 'number' ? target : 0;
+      emit();
+    },
+    setRate(r: FrameRate, _df: boolean) { rate = r; emit(); },
+    setSource(_s: import('showx-shared').ClockSource) { emit(); },
+    getState,
+    onChange(h: (state: ClockState) => void): Subscription {
+      handlers.add(h);
+      return { id: String(Math.random()), unsubscribe() { handlers.delete(h); } };
+    },
+    _setFrames(n: number) { totalFrames = n; },
+  };
+
+  return clock;
+}
+
+/** Setup context with an injected fake clock. */
+function makeClockSetup(rate: FrameRate = 25) {
+  const ctx = makeSetup();
+  const clock = makeFakeClock(rate);
+  // Rebuild engine with clock injected
+  ctx.engine.stop();
+  const engine = new TriggerEngine({ doc: ctx.doc, events: ctx.bus, log: ctx.log, abortSignal: ctx.ac.signal, clock });
+  return { ...ctx, engine, clock };
+}
+
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
 beforeEach(() => vi.useFakeTimers());
@@ -281,29 +336,168 @@ describe('TriggerEngine — auto_follow prev_cue_id mismatch', () => {
   });
 });
 
-// 8. Timecode trigger → not scheduled, no cuelist-go
-describe('TriggerEngine — timecode (MVP deferred)', () => {
-  it('does not emit cuelist-go for timecode trigger', () => {
+// 8. Timecode trigger (chain path) — no cuelist-go from chain, fired by clock
+describe('TriggerEngine — timecode chain path', () => {
+  it('does not emit cuelist-go from the chain when next cue is timecode (clock fires it)', () => {
+    // Without a clock, timecode cues are simply inert — no cuelist-go from the chain.
     const { engine, add, fireCue, goEvents } = makeSetup();
     const q0 = add('Q0');
-    add('Q1', { kind: 'timecode', time_ms: 5000, source: 'ltc' });
+    add('Q1', { kind: 'timecode', time_ms: 5000, source: 'internal' });
     engine.start();
     fireCue(q0);
     vi.runAllTimers();
     expect(goEvents()).toHaveLength(0);
   });
+});
 
-  it('logs info "timecode trigger deferred to 0.2" when next cue is timecode-triggered', () => {
-    const { engine, add, fireCue, log } = makeSetup();
-    const q0 = add('Q0');
-    const q1 = add('Q1', { kind: 'timecode', time_ms: 5000, source: 'ltc' });
+// ── Timecode clock-driven tests ───────────────────────────────────────────────
+
+// TC-1. Cue at 5s fires when clock crosses it running forward
+describe('TriggerEngine — timecode fires when clock crosses trigger time', () => {
+  it('emits cuelist-go when clock advances past time_ms', () => {
+    const { engine, add, clock, goEvents } = makeClockSetup();
+    const q0 = add('Q0', { kind: 'timecode', time_ms: 5000, source: 'internal' });
     engine.start();
-    fireCue(q0);
-    vi.runAllTimers();
-    expect(log.info).toHaveBeenCalledWith('timecode trigger deferred to 0.2', {
-      cuelist_id: expect.any(String),
-      cue_id: q1,
-    });
+    clock.start();           // running=true, frames=0 → arms Q0 (5000ms ahead)
+    clock._setFrames(125);   // 125 frames × (1000/25) ms/frame = 5000ms at 25fps
+    vi.advanceTimersByTime(50); // fire 40ms tick
+    expect(goEvents()).toHaveLength(1);
+    expect(goEvents()[0].next_cue_id).toBe(q0);
+  });
+
+  it('emits cuelist-go with by_operator_id === "timecode"', () => {
+    const { engine, add, clock, goEvents } = makeClockSetup();
+    add('Q0', { kind: 'timecode', time_ms: 5000, source: 'internal' });
+    engine.start();
+    clock.start();
+    clock._setFrames(125); // 5000ms
+    vi.advanceTimersByTime(50);
+    expect(goEvents()).toHaveLength(1);
+    expect(goEvents()[0].by_operator_id).toBe('timecode');
+  });
+});
+
+// TC-2. Stopped clock → no fire
+describe('TriggerEngine — timecode does NOT fire when clock is stopped', () => {
+  it('does not emit cuelist-go when clock is not running', () => {
+    const { engine, add, clock, goEvents } = makeClockSetup();
+    add('Q0', { kind: 'timecode', time_ms: 5000, source: 'internal' });
+    engine.start();
+    // Clock never started — no interval, so no ticks
+    clock._setFrames(200);
+    vi.advanceTimersByTime(200);
+    expect(goEvents()).toHaveLength(0);
+  });
+
+  it('does not fire after clock.stop()', () => {
+    const { engine, add, clock, goEvents } = makeClockSetup();
+    add('Q0', { kind: 'timecode', time_ms: 5000, source: 'internal' });
+    engine.start();
+    clock.start();
+    clock.stop(); // stops before any frames advance
+    clock._setFrames(200);
+    vi.advanceTimersByTime(200);
+    expect(goEvents()).toHaveLength(0);
+  });
+});
+
+// TC-3. Locate backward re-arms; running forward fires again
+describe('TriggerEngine — timecode re-arms after locate-before', () => {
+  it('re-arms and fires again after locate backward before the cue', () => {
+    const { engine, add, clock, goEvents } = makeClockSetup();
+    add('Q0', { kind: 'timecode', time_ms: 5000, source: 'internal' });
+    engine.start();
+    clock.start(); // frames=0, running
+
+    // Advance past the 5s cue
+    clock._setFrames(175); // 7000ms
+    vi.advanceTimersByTime(50); // fires; Q0 fires at 5000ms (in range 0..7000)
+    expect(goEvents()).toHaveLength(1);
+
+    // Locate back to 2s (50 frames) → re-arms Q0
+    clock.locate(50); // locate emits onChange: currentMs=2000ms, re-arms Q0
+    // Advance past 5s again
+    clock._setFrames(150); // 6000ms
+    vi.advanceTimersByTime(50);
+    expect(goEvents()).toHaveLength(2); // fired again
+  });
+});
+
+// TC-4. Locate forward past cue does NOT fire skipped cues
+describe('TriggerEngine — timecode does NOT fire on locate forward (jump)', () => {
+  it('does not fire a cue that was jumped over by a locate', () => {
+    const { engine, add, clock, goEvents } = makeClockSetup();
+    const qAt5s = add('Q0', { kind: 'timecode', time_ms: 5000, source: 'internal' });
+    add('Q1', { kind: 'timecode', time_ms: 10000, source: 'internal' });
+    engine.start();
+    clock.start(); // frames=0
+
+    // Locate forward to 7s (175 frames), skipping Q0 at 5s
+    clock.locate(175); // onChange: currentMs=7000ms, re-arm only cues > 7000ms → Q1 only
+
+    // Advance to 11s (275 frames)
+    clock._setFrames(275);
+    vi.advanceTimersByTime(50);
+
+    const evts = goEvents();
+    // Only Q1 (at 10s) should have fired; Q0 (at 5s) was skipped
+    expect(evts).toHaveLength(1);
+    expect(evts[0].next_cue_id).not.toBe(qAt5s);
+  });
+});
+
+// TC-5. LTC-source cues are inert
+describe('TriggerEngine — timecode ltc source inert', () => {
+  it('does not fire ltc-source timecode cues', () => {
+    const { engine, add, clock, goEvents } = makeClockSetup();
+    add('Q0', { kind: 'timecode', time_ms: 5000, source: 'ltc' });
+    engine.start();
+    clock.start();
+    clock._setFrames(200); // well past 5s
+    vi.advanceTimersByTime(50);
+    expect(goEvents()).toHaveLength(0);
+  });
+
+  it('logs ltc source not available for ltc-source cues', () => {
+    const { engine, add, clock, log } = makeClockSetup();
+    add('Q0', { kind: 'timecode', time_ms: 5000, source: 'ltc' });
+    engine.start();
+    clock.start(); // triggers onChange → rearmTimecode → logs ltc warning
+    expect(log.info).toHaveBeenCalledWith('timecode: ltc source not available', expect.objectContaining({ cue_id: expect.any(String) }));
+  });
+});
+
+// TC-6. Ordering: multiple timecode cues at/near same time fire in cuelist order
+describe('TriggerEngine — timecode ordering deterministic', () => {
+  it('fires multiple timecode cues in cuelist sort_key order', () => {
+    const { engine, add, clock, goEvents } = makeClockSetup();
+    const q1 = add('Q1', { kind: 'timecode', time_ms: 5000, source: 'internal' });
+    const q2 = add('Q2', { kind: 'timecode', time_ms: 5000, source: 'internal' });
+    const q3 = add('Q3', { kind: 'timecode', time_ms: 5000, source: 'internal' });
+    engine.start();
+    clock.start();
+    clock._setFrames(125); // 5000ms
+    vi.advanceTimersByTime(50);
+    const evts = goEvents();
+    expect(evts).toHaveLength(3);
+    expect(evts[0].next_cue_id).toBe(q1);
+    expect(evts[1].next_cue_id).toBe(q2);
+    expect(evts[2].next_cue_id).toBe(q3);
+  });
+});
+
+// TC-7. Fire once per pass — does not double-fire without re-arm
+describe('TriggerEngine — timecode fires once per pass', () => {
+  it('fires a timecode cue only once per forward pass', () => {
+    const { engine, add, clock, goEvents } = makeClockSetup();
+    add('Q0', { kind: 'timecode', time_ms: 5000, source: 'internal' });
+    engine.start();
+    clock.start();
+    clock._setFrames(125); // 5000ms
+    vi.advanceTimersByTime(50); // fires once
+    clock._setFrames(200);      // advance more
+    vi.advanceTimersByTime(50); // another tick — cue already removed from armed, no re-fire
+    expect(goEvents()).toHaveLength(1);
   });
 });
 

@@ -224,4 +224,100 @@ describe('TriggerCell', () => {
     );
     expect(screen.getByLabelText('Locked')).toBeInTheDocument();
   });
+
+  it('displays hotkey glyph and key text for hotkey trigger', () => {
+    render(
+      <TriggerCell
+        cue={makeCue({ trigger: { kind: 'hotkey', key: 'F5' } })}
+        cues={makeCues()}
+        mode="rehearsal"
+        editable={true}
+        onUpdate={vi.fn()}
+      />,
+    );
+    const btn = screen.getByRole('button');
+    expect(btn).toHaveTextContent('⌨');
+    expect(btn).toHaveTextContent('F5');
+  });
+
+  it('switching to hotkey shows key capture input', () => {
+    render(
+      <TriggerCell
+        cue={makeCue({ trigger: { kind: 'manual' } })}
+        cues={makeCues()}
+        mode="rehearsal"
+        editable={true}
+        onUpdate={vi.fn()}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button'));
+    fireEvent.change(screen.getByLabelText('Trigger kind'), { target: { value: 'hotkey' } });
+    expect(screen.getByLabelText('Hotkey capture')).toBeInTheDocument();
+  });
+
+  it('pressing a key in the hotkey capture input captures the key', () => {
+    render(
+      <TriggerCell
+        cue={makeCue({ trigger: { kind: 'manual' } })}
+        cues={makeCues()}
+        mode="rehearsal"
+        editable={true}
+        onUpdate={vi.fn()}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button'));
+    fireEvent.change(screen.getByLabelText('Trigger kind'), { target: { value: 'hotkey' } });
+    const captureInput = screen.getByLabelText('Hotkey capture') as HTMLInputElement;
+    fireEvent.keyDown(captureInput, { key: 'F5' });
+    expect(captureInput.value).toBe('F5');
+  });
+
+  it('pressing Space in hotkey capture stores "Space"', () => {
+    render(
+      <TriggerCell
+        cue={makeCue({ trigger: { kind: 'manual' } })}
+        cues={makeCues()}
+        mode="rehearsal"
+        editable={true}
+        onUpdate={vi.fn()}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button'));
+    fireEvent.change(screen.getByLabelText('Trigger kind'), { target: { value: 'hotkey' } });
+    const captureInput = screen.getByLabelText('Hotkey capture');
+    fireEvent.keyDown(captureInput, { key: ' ' });
+    expect((captureInput as HTMLInputElement).value).toBe('Space');
+  });
+
+  it('saving with hotkey kind calls onUpdate with hotkey trigger', () => {
+    const onUpdate = vi.fn();
+    render(
+      <TriggerCell
+        cue={makeCue({ trigger: { kind: 'manual' } })}
+        cues={makeCues()}
+        mode="rehearsal"
+        editable={true}
+        onUpdate={onUpdate}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button'));
+    fireEvent.change(screen.getByLabelText('Trigger kind'), { target: { value: 'hotkey' } });
+    fireEvent.keyDown(screen.getByLabelText('Hotkey capture'), { key: 'g' });
+    fireEvent.click(screen.getByTestId('trigger-cell-save'));
+    expect(onUpdate).toHaveBeenCalledWith({ kind: 'hotkey', key: 'g' });
+  });
+
+  it('opening a hotkey trigger pre-populates the key', () => {
+    render(
+      <TriggerCell
+        cue={makeCue({ trigger: { kind: 'hotkey', key: 'F1' } })}
+        cues={makeCues()}
+        mode="rehearsal"
+        editable={true}
+        onUpdate={vi.fn()}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button'));
+    expect((screen.getByLabelText('Hotkey capture') as HTMLInputElement).value).toBe('F1');
+  });
 });

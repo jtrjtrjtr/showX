@@ -45,6 +45,32 @@ export interface GoRequest {
   override: boolean;
 }
 
+export interface AuditionRequest {
+  topic: 'audition.request';
+  request_id: string;
+  cue_id: string;
+  cuelist_id: string;
+  station_id: string;
+  operator_id: string;
+}
+
+export interface AuditionResult {
+  topic: 'audition.result';
+  request_id: string;
+  cue_id: string;
+  cuelist_id: string;
+  ok: boolean;
+  details: Array<{ payload_id: string; transport: string; result: string; error?: string }>;
+}
+
+export interface GoPreWait {
+  topic: 'go.prewait';
+  cue_id: string;
+  cuelist_id: string;
+  /** Absolute ms timestamp when the pre-wait expires and dispatch occurs. */
+  waiting_until_ts: number;
+}
+
 export interface GoDispatched {
   topic: 'go.dispatched';
   request_id: string;
@@ -118,6 +144,16 @@ export interface GoChannelDeps {
   subscribe: (topic: string, handler: (msg: object) => void) => () => void;
   /** Optional operator context for authority checks (ShowX-3 MVP: caller provides from awareness). */
   octx?: OperatorContext;
+  /**
+   * Optional audition dispatch callback injected by GoExecutor.
+   * When provided, audition.request is handled by running the full dispatch pipeline
+   * with no real transport sends. Results are returned as AuditionResult.
+   */
+  dispatchAudition?: (
+    cueId: string,
+    cuelist_id: string,
+    payloads: import('showx-shared').Payload[],
+  ) => Promise<AuditionResult>;
 }
 
 // ── Envelope helper ───────────────────────────────────────────────────────────
@@ -145,6 +181,7 @@ export class GoEventChannel {
     'mode.transition': RingBuffer<ModeTransition & { _seq: number }>;
   };
   private unsubs: Array<() => void> = [];
+  private pendingPreWaits = new Map<string, ReturnType<typeof setTimeout>>();
 
   constructor(private deps: GoChannelDeps, opts?: { idempotencyLruSize?: number; ringCapacity?: number }) {
     this.idem = new IdempotencyStore(opts?.idempotencyLruSize ?? 1000);
@@ -162,6 +199,9 @@ export class GoEventChannel {
       this.deps.subscribe('go.request', (msg) => this.onGoRequest(msg as GoRequest)),
       this.deps.subscribe('arm.request', (msg) => this.onArmRequest(msg as ArmRequest)),
       this.deps.subscribe('resume', (msg) => this.onResume(msg as ResumeRequest)),
+      this.deps.subscribe('audition.request', (msg) => {
+        void this.onAuditionRequest(msg as AuditionRequest);
+      }),
     );
     const cc = this.deps.events.subscribe('cue-complete', (e: CueCompleteEvent) =>
       this.onCueComplete(e as CueCompleteExtended),
@@ -175,6 +215,7 @@ export class GoEventChannel {
   stop(): void {
     for (const u of this.unsubs) u();
     this.unsubs = [];
+    this.cancelAllPreWaits();
   }
 
   // ── Handlers ───────────────────────────────────────────────────────────────
@@ -218,27 +259,131 @@ export class GoEventChannel {
       return;
     }
 
+    // Cancel any pending pre_wait for this cuelist (SM skipped ahead or fired new GO)
+    this.cancelPreWaitForCuelist(req.cuelist_id);
+
     this.idem.mark(show_id, req.request_id, { request: req });
 
     const cueMap = this.lookupCueMap(req.cuelist_id, req.cue_id);
     const payloads = cueMap ? (cueMap.get('payloads') as Y.Array<Y.Map<unknown>>).toArray().map((p) => p.toJSON()) : [];
     const departments = cueMap ? ((cueMap.get('department') as string[]) ?? []) : [];
     const cueLabel = cueMap ? ((cueMap.get('label') as string) ?? '') : '';
+    const preWaitMs = ((cueMap?.get('pre_wait_ms') as number | undefined) ?? 0);
+    const armed = ((cueMap?.get('armed') as boolean | undefined) ?? true);
 
-    this.deps.events.publish({
-      type: 'cue-fire',
-      seq: this.seq.peek(),
-      ts: Date.now(),
-      source: 'cuelist-core',
-      show_id,
-      cuelist_id: req.cuelist_id,
+    const publishCueFire = (): void => {
+      this.pendingPreWaits.delete(req.cuelist_id);
+      this.deps.events.publish({
+        type: 'cue-fire',
+        seq: this.seq.peek(),
+        ts: Date.now(),
+        source: 'cuelist-core',
+        show_id,
+        cuelist_id: req.cuelist_id,
+        cue_id: req.cue_id,
+        cue_label: cueLabel,
+        departments: departments as import('showx-shared').DepartmentTag[],
+        // Disarmed cues: suppress payloads so GoExecutor dispatches nothing
+        payloads: (armed ? payloads : []) as import('showx-shared').Payload[],
+        fired_by: req.operator_id,
+        trigger_mode: 'manual',
+      });
+    };
+
+    if (preWaitMs > 0) {
+      // Broadcast observable pre-wait start so stations can show "WAITING Ns" indicator
+      const preWaitMsg: GoPreWait = {
+        topic: 'go.prewait',
+        cue_id: req.cue_id,
+        cuelist_id: req.cuelist_id,
+        waiting_until_ts: Date.now() + preWaitMs,
+      };
+      this.deps.broadcast(envelope('go.prewait', this.seq.peek(), preWaitMsg));
+      const timer = setTimeout(publishCueFire, preWaitMs);
+      this.pendingPreWaits.set(req.cuelist_id, timer);
+    } else {
+      publishCueFire();
+    }
+  }
+
+  private async onAuditionRequest(req: AuditionRequest): Promise<void> {
+    if (!this.deps.dispatchAudition) {
+      this.deps.log.warn('audition.request received but dispatchAudition not injected — ignoring', { cue_id: req.cue_id });
+      return;
+    }
+
+    const cuelist = this.lookupCuelistJson(req.cuelist_id);
+    if (!cuelist) {
+      const errorResult: AuditionResult = {
+        topic: 'audition.result',
+        request_id: req.request_id,
+        cue_id: req.cue_id,
+        cuelist_id: req.cuelist_id,
+        ok: false,
+        details: [{ payload_id: req.cue_id, transport: 'unknown', result: 'error', error: `cuelist ${req.cuelist_id} not found` }],
+      };
+      this.deps.publishToStation(req.station_id, envelope('audition.result', 0, errorResult));
+      return;
+    }
+
+    const cueExists = cuelist.cues.some((c) => c.id === req.cue_id);
+    if (!cueExists) {
+      const errorResult: AuditionResult = {
+        topic: 'audition.result',
+        request_id: req.request_id,
+        cue_id: req.cue_id,
+        cuelist_id: req.cuelist_id,
+        ok: false,
+        details: [{ payload_id: req.cue_id, transport: 'unknown', result: 'error', error: `cue ${req.cue_id} not found` }],
+      };
+      this.deps.publishToStation(req.station_id, envelope('audition.result', 0, errorResult));
+      return;
+    }
+
+    // SM authority required — audition is safe by definition but still SM-only
+    const goReq: GoRequest = {
+      topic: 'go.request',
+      request_id: req.request_id,
       cue_id: req.cue_id,
-      cue_label: cueLabel,
-      departments: departments as import('showx-shared').DepartmentTag[],
-      payloads: payloads as import('showx-shared').Payload[],
-      fired_by: req.operator_id,
-      trigger_mode: 'manual',
-    });
+      cuelist_id: req.cuelist_id,
+      station_id: req.station_id,
+      operator_id: req.operator_id,
+      client_ts: new Date().toISOString(),
+      override: false,
+    };
+    const auth = authorise(goReq, cuelist, this.deps.octx);
+    if (!auth.ok) {
+      const errorResult: AuditionResult = {
+        topic: 'audition.result',
+        request_id: req.request_id,
+        cue_id: req.cue_id,
+        cuelist_id: req.cuelist_id,
+        ok: false,
+        details: [{ payload_id: req.cue_id, transport: 'unknown', result: 'error', error: `auth: ${auth.reason}` }],
+      };
+      this.deps.publishToStation(req.station_id, envelope('audition.result', 0, errorResult));
+      return;
+    }
+
+    const cueMap = this.lookupCueMap(req.cuelist_id, req.cue_id);
+    const payloads = cueMap
+      ? (cueMap.get('payloads') as Y.Array<Y.Map<unknown>>).toArray().map((p) => p.toJSON() as import('showx-shared').Payload)
+      : [];
+
+    try {
+      const result = await this.deps.dispatchAudition(req.cue_id, req.cuelist_id, payloads);
+      this.deps.publishToStation(req.station_id, envelope('audition.result', 0, result));
+    } catch (err) {
+      const errorResult: AuditionResult = {
+        topic: 'audition.result',
+        request_id: req.request_id,
+        cue_id: req.cue_id,
+        cuelist_id: req.cuelist_id,
+        ok: false,
+        details: [{ payload_id: req.cue_id, transport: 'unknown', result: 'error', error: String(err) }],
+      };
+      this.deps.publishToStation(req.station_id, envelope('audition.result', 0, errorResult));
+    }
   }
 
   private onCueComplete(e: CueCompleteExtended): void {
@@ -280,6 +425,7 @@ export class GoEventChannel {
   }
 
   private onModeChange(e: ShowModeChangeEvent): void {
+    this.cancelAllPreWaits();
     const payload: ModeTransition = {
       topic: 'mode.transition',
       show_id: e.show_id,
@@ -323,6 +469,19 @@ export class GoEventChannel {
         this.deps.publishToStation(req.station_id, envelope(topic, _seq, payload));
       }
     }
+  }
+
+  private cancelPreWaitForCuelist(cuelistId: string): void {
+    const timer = this.pendingPreWaits.get(cuelistId);
+    if (timer !== undefined) {
+      clearTimeout(timer);
+      this.pendingPreWaits.delete(cuelistId);
+    }
+  }
+
+  private cancelAllPreWaits(): void {
+    for (const timer of this.pendingPreWaits.values()) clearTimeout(timer);
+    this.pendingPreWaits.clear();
   }
 
   private sendRejected(req: GoRequest, reason: GoRejected['reason'], detail?: string): void {

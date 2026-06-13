@@ -8,6 +8,7 @@ import type { DepartmentTag } from 'showx-shared';
 import { SMMasterView } from './cuelist/SMMasterView.js';
 import { OperatorView } from './cuelist/OperatorView.js';
 import { GenericOperatorView } from './cuelist/variants/GenericOperatorView.js';
+import { CountdownView } from './cuelist/CountdownView.js';
 import { DiscoveryView } from './DiscoveryView.js';
 import { PairingView } from './PairingView.js';
 import { tokens } from './cuelist/tokens.js';
@@ -66,7 +67,7 @@ function buildConnectOpts(session: PairedSession): ConnectOpts {
     operator_id: session.operator_id ?? session.device_id,
     station_id: session.station_id ?? session.device_id,
     display_name: session.display_name,
-    role: session.role === 'sm' ? 'sm' : 'operator',
+    role: session.role === 'sm' ? 'sm' : session.role === 'countdown' ? 'operator' : 'operator',
     owned_departments: (session.owned_departments ?? []) as DepartmentTag[],
     watched_departments: (session.watched_departments ?? []) as DepartmentTag[],
     presence_color: session.presence_color ?? '#6b7280',
@@ -186,6 +187,10 @@ function StationContent({ session }: StationContentProps) {
 
   if (role === 'sm') {
     return <SMMasterView cuelistId={cuelistId} />;
+  }
+
+  if (role === 'countdown') {
+    return <CountdownView cuelistId={cuelistId} />;
   }
 
   if (role === 'operator') {

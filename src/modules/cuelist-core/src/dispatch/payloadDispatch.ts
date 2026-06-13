@@ -1,10 +1,11 @@
-import type { Cue, Payload } from 'showx-shared';
+import type { Cue, Payload, OutputDispatcher, TransportMessage, Transport, DispatchResult } from 'showx-shared';
 import { validatePayload } from '../document/payload.js';
 import { CycleDetector } from './cycleDetect.js';
 import { dispatchOsc } from './transports/osc.js';
 import { dispatchMsc } from './transports/msc.js';
 import { dispatchLxRef } from './transports/lxRef.js';
 import { dispatchMidi } from './transports/midi.js';
+import { dispatchDmx } from './transports/dmx.js';
 import { dispatchWebhook } from './transports/webhook.js';
 import { dispatchWait } from './transports/wait.js';
 import { dispatchGroup } from './transports/group.js';
@@ -13,6 +14,20 @@ import type { RoutingEntry } from './resolveRouting.js';
 import { buildDispatchRoutingTable } from './resolveRouting.js';
 
 export type { DispatchDeps } from './types.js';
+
+/** No-op OutputDispatcher used in audition mode — records nothing, sends nothing. */
+function makeAuditionOutput(): OutputDispatcher {
+  return {
+    send: async (msg: TransportMessage): Promise<DispatchResult> => ({
+      ok: true,
+      transport: msg.transport as Transport,
+      latencyMs: 0,
+    }),
+    claim: async () => ({ id: 'audition-nop', slug: 'audition-nop', destination: { transport: 'osc' as const } }),
+    release: async () => {},
+    poolStatus: () => ({ oscConnections: [], midiOutputs: [], dmxUniverses: [] }),
+  };
+}
 
 export interface CueDispatchResult {
   ok: boolean;
@@ -33,6 +48,8 @@ const MAX_GROUP_DEPTH = 4;
  * Dispatch all payloads for a cue in declaration order.
  * Emits `cue-complete` on EventBus when done (top-level call only).
  * Group sub-dispatches pass _internal=true to suppress nested events.
+ * When deps.audition=true: full route-resolve pipeline runs but no real transport bytes leave;
+ * details are prefixed [AUDITION] and cue-complete is suppressed.
  */
 export async function dispatchCue(
   cue: Cue,
@@ -41,6 +58,37 @@ export async function dispatchCue(
   _internal = false,
 ): Promise<CueDispatchResult> {
   const t0 = Date.now();
+  // Audition: substitute no-op output so routing/validation runs but nothing is sent
+  const effectiveDeps: DispatchDeps = deps.audition ? { ...deps, output: makeAuditionOutput() } : deps;
+
+  // QLab disarm: skip payload dispatch but complete chain normally
+  if (!(cue.armed ?? true)) {
+    const duration_ms = Date.now() - t0;
+    if (!_internal && !deps.audition) {
+      deps.events.publish({
+        type: 'cue-complete',
+        seq: 0,
+        ts: Date.now(),
+        source: 'cuelist-core',
+        show_id: deps.show_id,
+        cuelist_id: deps.cuelist_id,
+        cue_id: cue.id,
+        duration_ms,
+        success: true,
+        errors: [],
+        payloads_dispatched: 0,
+        payloads_failed: [],
+      });
+    }
+    return {
+      ok: true,
+      payloads_dispatched: 0,
+      payloads_failed: [],
+      duration_ms,
+      details: [{ payload_id: cue.id, transport: 'disarmed', result: 'skipped', error: '[DISARMED]' }],
+    };
+  }
+
   const details: CueDispatchResult['details'] = [];
   const failed: CueDispatchResult['payloads_failed'] = [];
   let ok_count = 0;
@@ -92,10 +140,10 @@ export async function dispatchCue(
   cycleCtx.enter(cue.id);
 
   try {
-    const routing = buildDispatchRoutingTable(deps.doc);
+    const routing = buildDispatchRoutingTable(effectiveDeps.doc);
 
     for (const p of cue.payloads) {
-      if (deps.abortSignal.aborted) {
+      if (effectiveDeps.abortSignal.aborted) {
         details.push({ payload_id: p.id, transport: p.type, result: 'skipped', error: 'aborted' });
         continue;
       }
@@ -106,12 +154,12 @@ export async function dispatchCue(
         const msg = err instanceof Error ? err.message : String(err);
         details.push({ payload_id: p.id, transport: p.type, result: 'error', error: msg });
         failed.push({ payload_id: p.id, error: msg });
-        deps.log.warn('payload validation failed before dispatch', { payload_id: p.id, cue_id: cue.id, error: msg });
+        effectiveDeps.log.warn('payload validation failed before dispatch', { payload_id: p.id, cue_id: cue.id, error: msg });
         continue;
       }
 
       try {
-        const r = await dispatchOne(p, deps, routing, cycleCtx);
+        const r = await dispatchOne(p, effectiveDeps, routing, cycleCtx);
         if (r.ok) {
           details.push({ payload_id: p.id, transport: p.type, result: 'ok' });
           ok_count++;
@@ -123,11 +171,18 @@ export async function dispatchCue(
         const msg = err instanceof Error ? err.message : String(err);
         details.push({ payload_id: p.id, transport: p.type, result: 'error', error: msg });
         failed.push({ payload_id: p.id, error: msg });
-        deps.log.warn('payload dispatch threw', { payload_id: p.id, cue_id: cue.id, error: msg });
+        effectiveDeps.log.warn('payload dispatch threw', { payload_id: p.id, cue_id: cue.id, error: msg });
       }
     }
   } finally {
     cycleCtx.exit();
+  }
+
+  // Audition: prefix every detail entry so Dispatch Log is visually distinct
+  if (deps.audition) {
+    for (const d of details) {
+      d.transport = `[AUDITION] ${d.transport}`;
+    }
   }
 
   const duration_ms = Date.now() - t0;
@@ -139,7 +194,9 @@ export async function dispatchCue(
     details,
   };
 
-  if (!_internal) {
+  // Audition: suppress cue-complete so GoEventChannel does NOT broadcast go.dispatched
+  // and the playhead/auto-chain are not advanced.
+  if (!_internal && !deps.audition) {
     deps.events.publish({
       type: 'cue-complete',
       seq: 0,
@@ -174,6 +231,8 @@ async function dispatchOne(
       return dispatchLxRef(payload, routing, deps);
     case 'midi':
       return dispatchMidi(payload, routing, deps);
+    case 'dmx':
+      return dispatchDmx(payload, routing, deps);
     case 'webhook':
       return dispatchWebhook(payload, deps);
     case 'wait':

@@ -24,6 +24,8 @@ function makeDefaultPayload(type: PayloadType): PayloadInput {
       return { type: 'lx_ref', tag: null, note: '', device_id: '', cue_list: 1, cue_number: 1 };
     case 'midi':
       return { type: 'midi', tag: null, note: '', device_id: '', message: { kind: 'note_on', channel: 1, note: 60, velocity: 127 } };
+    case 'dmx':
+      return { type: 'dmx', tag: null, note: '', device_id: '', universe: 0, channels: [{ channel: 1, value: 0 }] };
     case 'webhook':
       return { type: 'webhook', tag: null, note: '', url: 'https://', method: 'POST', headers: {}, body: null, timeout_ms: 5000 };
     case 'wait':
@@ -38,6 +40,7 @@ const TYPE_BADGE_COLORS: Record<string, string> = {
   msc: '#7C5BCF',
   lx_ref: tokens.color.yellow,
   midi: '#E97B3B',
+  dmx: '#C04CA0',
   webhook: '#4A88C7',
   wait: tokens.color.gray_700,
   group: tokens.color.green,
@@ -70,8 +73,13 @@ export function PayloadList({ cue, cuelistId, locked }: PayloadListProps) {
       </div>
 
       {cue.payloads.length === 0 && (
-        <div style={{ fontSize: 13, color: tokens.color.gray_700, marginBottom: tokens.space.m }}>
-          No payloads — add one below.
+        <div data-testid="payload-empty-state" style={{ marginBottom: tokens.space.m }}>
+          <div style={{ fontSize: 13, color: tokens.color.gray_700 }}>No payloads yet.</div>
+          {!locked && (
+            <div style={{ fontSize: 12, color: tokens.color.ink_disabled, marginTop: tokens.space.xs }}>
+              OSC, MIDI, DMX, MSC… — add an action this cue sends.
+            </div>
+          )}
         </div>
       )}
 

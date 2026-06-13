@@ -24,18 +24,48 @@ describe('qlabToCues', () => {
     expect(specs[0].payloads[0]).toMatchObject({ type: 'osc', tag: 'VIDEO' });
   });
 
-  it('pre-wait > 0 → auto_continue trigger with correct delay_ms', () => {
+  it('Pre-wait column sets pre_wait_ms; trigger stays manual when no preceding row', () => {
     const records = [{ Number: 'Q1', Name: '', Type: 'Audio', Notes: '', 'Pre-wait': '1.5', Continue: '' }];
     const warnings: CsvWarning[] = [];
     const specs = qlabToCues(records, baseOpts, warnings);
-    expect(specs[0].cueOpts.trigger).toEqual({ kind: 'auto_continue', delay_ms: 1500 });
+    expect(specs[0].cueOpts.pre_wait_ms).toBe(1500);
+    expect(specs[0].cueOpts.trigger).toEqual({ kind: 'manual' });
   });
 
-  it('Continue=auto-continue → auto_continue trigger with delay_ms=0', () => {
-    const records = [{ Number: 'Q2', Name: '', Type: 'Audio', Notes: '', 'Pre-wait': '0', Continue: 'Auto-continue' }];
+  it('Continue=auto-continue on row N sets auto_continue trigger on row N+1', () => {
+    const records = [
+      { Number: 'Q1', Name: '', Type: 'Audio', Notes: '', 'Pre-wait': '0', Continue: 'Auto-continue' },
+      { Number: 'Q2', Name: '', Type: 'Audio', Notes: '', 'Pre-wait': '0', Continue: '' },
+    ];
     const warnings: CsvWarning[] = [];
     const specs = qlabToCues(records, baseOpts, warnings);
-    expect(specs[0].cueOpts.trigger).toEqual({ kind: 'auto_continue', delay_ms: 0 });
+    expect(specs[0].cueOpts.trigger).toEqual({ kind: 'manual' });
+    expect(specs[1].cueOpts.trigger).toEqual({ kind: 'auto_continue', delay_ms: 0 });
+  });
+
+  it('Pre Wait + Post Wait + Continue=Auto → pre_wait_ms on cue; next cue auto_continue delay_ms', () => {
+    // Task spec test plan: Pre Wait 2.0, Post Wait 1.5, Continue=Auto → pre_wait_ms=2000; next cue auto_continue 1500
+    const records = [
+      { Number: 'Q1', Name: '', Type: 'Audio', Notes: '', 'Pre Wait': '2.0', 'Post Wait': '1.5', Continue: 'Auto-continue' },
+      { Number: 'Q2', Name: '', Type: 'Audio', Notes: '', 'Pre Wait': '0', 'Post Wait': '0', Continue: '' },
+    ];
+    const warnings: CsvWarning[] = [];
+    const specs = qlabToCues(records, baseOpts, warnings);
+    expect(specs[0].cueOpts.pre_wait_ms).toBe(2000);
+    expect(specs[0].cueOpts.trigger).toEqual({ kind: 'manual' });
+    expect(specs[1].cueOpts.trigger).toEqual({ kind: 'auto_continue', delay_ms: 1500 });
+    expect(specs[1].cueOpts.pre_wait_ms).toBeUndefined();
+  });
+
+  it('Pre Wait only → pre_wait_ms set, no spurious trigger on next cue', () => {
+    const records = [
+      { Number: 'Q1', Name: '', Type: 'Audio', Notes: '', 'Pre Wait': '2', 'Post Wait': '', Continue: '' },
+      { Number: 'Q2', Name: '', Type: 'Audio', Notes: '', 'Pre Wait': '0', 'Post Wait': '', Continue: '' },
+    ];
+    const warnings: CsvWarning[] = [];
+    const specs = qlabToCues(records, baseOpts, warnings);
+    expect(specs[0].cueOpts.pre_wait_ms).toBe(2000);
+    expect(specs[1].cueOpts.trigger).toEqual({ kind: 'manual' });
   });
 
   it('no pre-wait + no Continue → manual trigger', () => {

@@ -1,7 +1,9 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import type { Cue } from 'showx-shared';
+import type { AuditionResult } from '../../lib/sideChannel.js';
 import { useCuelist } from '../../hooks/useCuelist.js';
 import type { CueFieldPatch } from '../../hooks/useCuelist.js';
+import { useClock } from '../../hooks/useClock.js';
 import { AddCueButton } from './AddCueButton.js';
 import { CueEditDialog } from './CueEditDialog.js';
 import { useMode } from '../../hooks/useMode.js';
@@ -20,6 +22,68 @@ import { GoButton, HOLD_GO_THRESHOLD_MS } from './GoButton.js';
 import { TransportBar } from './TransportBar.js';
 import { GoConfirmDialog } from './GoConfirmDialog.js';
 import { HelpOverlay } from './HelpOverlay.js';
+
+// ── AuditionBar ───────────────────────────────────────────────────────────────
+// Dry-run control: SM fires the selected/armed cue with no real output.
+// Shows the last audition result inline (transport summary + ok/error).
+
+interface AuditionBarProps {
+  targetCueId: string | null;
+  targetCueLabel: string | null;
+  onAudition: (cueId: string) => void;
+  lastResult: AuditionResult | null;
+}
+
+function AuditionBar({ targetCueId, targetCueLabel, onAudition, lastResult }: AuditionBarProps) {
+  const disabled = !targetCueId;
+  return (
+    <div
+      data-testid="audition-bar"
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: tokens.space.m,
+        marginTop: tokens.space.s,
+      }}
+    >
+      <button
+        data-testid="audition-btn"
+        disabled={disabled}
+        onClick={() => { if (targetCueId) onAudition(targetCueId); }}
+        aria-label={targetCueId ? `Audition — dry-run ${targetCueLabel ?? targetCueId}` : 'Audition — select a cue first'}
+        style={{
+          padding: `${tokens.space.xs}px ${tokens.space.m}px`,
+          background: disabled ? tokens.color.raised : tokens.color.panel,
+          color: disabled ? tokens.color.ink_disabled : tokens.color.teal,
+          border: `1px solid ${disabled ? tokens.color.border : tokens.color.teal}`,
+          borderRadius: tokens.radius.s,
+          fontSize: 12,
+          fontWeight: 700,
+          cursor: disabled ? 'not-allowed' : 'pointer',
+          fontFamily: tokens.font.ui,
+          letterSpacing: '0.04em',
+          flexShrink: 0,
+        }}
+      >
+        AUDITION{targetCueLabel ? ` · ${targetCueLabel}` : ''}
+      </button>
+      {lastResult && (
+        <span
+          data-testid="audition-result"
+          aria-live="polite"
+          style={{
+            fontSize: 11,
+            color: lastResult.ok ? tokens.color.teal : tokens.color.red,
+            fontFamily: tokens.font.ui,
+          }}
+        >
+          {lastResult.ok ? '✓' : '✗'}{' '}
+          {lastResult.details.map((d) => d.transport).join(', ') || '—'}
+        </span>
+      )}
+    </div>
+  );
+}
 
 interface SMMasterViewProps {
   cuelistId: string;
@@ -53,12 +117,13 @@ function EmptyState({ onAdd }: { onAdd?: () => void }) {
 
 export function SMMasterView({ cuelistId }: SMMasterViewProps) {
   const conn = useConnection();
-  const { cuelist, cues, updateFields, addCue, insertCueAfter, removeCue, reorderCues } = useCuelist(cuelistId);
+  const { cuelist, cues, updateFields, addCue, insertCueAfter, removeCue, reorderCues, setArmed } = useCuelist(cuelistId);
   const { mode, transition } = useMode();
   const stations = useStations();
-  const { go, standby, lastDispatched, lastHistoric, firstGoAt } = useGoChannel(cuelistId);
+  const { go, standby, audition, lastDispatched, lastHistoric, firstGoAt, preWait, lastAuditioned } = useGoChannel(cuelistId);
   const { playheadCueId, armedCueId, setPlayhead, advance, retreat, arm, unarm, smOnline } =
     usePlayhead(cuelistId);
+  const clock = useClock();
 
   // Declare this station as SM in awareness so all stations can identify the authority
   useEffect(() => {
@@ -146,7 +211,7 @@ export function SMMasterView({ cuelistId }: SMMasterViewProps) {
   const isDragActiveRef = useRef(false);
   const dragLongPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const INLINE_TAB_ORDER: InlineEditField[] = ['cue_number', 'label', 'duration_hint_ms', 'standby_note'];
+  const INLINE_TAB_ORDER: InlineEditField[] = ['cue_number', 'label', 'duration_hint_ms', 'pre_wait_ms', 'standby_note'];
 
   const handleInlineCommit = useCallback((field: InlineEditField, value: string, cueId: string) => {
     try {
@@ -159,6 +224,9 @@ export function SMMasterView({ cuelistId }: SMMasterViewProps) {
       } else if (field === 'duration_hint_ms') {
         const secs = parseFloat(value);
         patch.duration_hint_ms = isNaN(secs) ? null : Math.round(secs * 1000);
+      } else if (field === 'pre_wait_ms') {
+        const secs = parseFloat(value);
+        patch.pre_wait_ms = isNaN(secs) ? 0 : Math.max(0, Math.round(secs * 1000));
       } else if (field === 'standby_note') {
         patch.standby_note = value;
       }
@@ -446,6 +514,51 @@ export function SMMasterView({ cuelistId }: SMMasterViewProps) {
     standby(prev.id);
   }, [setPlayhead, arm, standby]);
 
+  // ── Hotkey listener — fire cue bound to trigger.key on keydown (SM authority gated) ──
+  const goRef = useRef(go);
+  useEffect(() => { goRef.current = go; }, [go]);
+
+  useEffect(() => {
+    const onHotkey = (e: KeyboardEvent) => {
+      const el = e.target as HTMLElement;
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName)) return;
+      if (el.isContentEditable) return;
+
+      const pressedKey = e.key === ' ' ? 'Space' : e.key;
+      const matches = cuesRef.current.filter(
+        (c) => c.trigger.kind === 'hotkey' && c.trigger.key === pressedKey,
+      );
+      if (matches.length === 0) return;
+
+      if (matches.length > 1) {
+        console.warn(
+          `ShowX hotkey conflict: ${matches.length} cues bound to "${pressedKey}"; firing first in cuelist order.`,
+        );
+      }
+
+      const target = matches[0];
+      if (!target || goInertRef.current) return;
+
+      e.preventDefault();
+      goRef.current(target.id);
+
+      goInertRef.current = true;
+      setGoInert(true);
+      if (goInertTimerRef.current) clearTimeout(goInertTimerRef.current);
+      goInertTimerRef.current = setTimeout(() => {
+        goInertRef.current = false;
+        setGoInert(false);
+      }, 300);
+
+      setFiredConfirmLabel(target.label);
+      if (firedConfirmTimerRef.current) clearTimeout(firedConfirmTimerRef.current);
+      firedConfirmTimerRef.current = setTimeout(() => setFiredConfirmLabel(null), 3000);
+    };
+
+    window.addEventListener('keydown', onHotkey);
+    return () => window.removeEventListener('keydown', onHotkey);
+  }, []); // stable refs — no deps needed
+
   // ── +N follow count: cues auto-chained after armed cue ────────────────────
   const followCount = useMemo(() => {
     if (!armedCueId) return 0;
@@ -453,7 +566,7 @@ export function SMMasterView({ cuelistId }: SMMasterViewProps) {
     if (idx < 0) return 0;
     let count = 0;
     for (let i = idx + 1; i < cues.length; i++) {
-      if (cues[i].trigger.kind === 'manual') break;
+      if (cues[i].trigger.kind === 'manual' || cues[i].trigger.kind === 'hotkey') break;
       count++;
       if (count >= 9) break;
     }
@@ -492,6 +605,9 @@ export function SMMasterView({ cuelistId }: SMMasterViewProps) {
       KeyO: () => {
         if (mode === 'rehearsal' && selectedCueId) setInlineEdit({ cueId: selectedCueId, field: 'standby_note' });
       },
+      KeyW: () => {
+        if (mode === 'rehearsal' && selectedCueId) setInlineEdit({ cueId: selectedCueId, field: 'pre_wait_ms' });
+      },
       ArrowUp: () => retreat(),
       ArrowDown: () => advance(),
       Escape: () => {
@@ -518,6 +634,7 @@ export function SMMasterView({ cuelistId }: SMMasterViewProps) {
 
   const playheadCue = playheadCueId ? (cues.find((c) => c.id === playheadCueId) ?? null) : null;
   const lastFiredAt = lastDispatched ? new Date(lastDispatched.dispatched_at).getTime() : null;
+  const preWaitCue = preWait ? (cues.find((c) => c.id === preWait.cue_id) ?? null) : null;
   // Strip the :seq counter suffix before display
   const displayReason = rejectedReason ? rejectedReason.replace(/:\d+$/, '') : null;
 
@@ -628,13 +745,16 @@ export function SMMasterView({ cuelistId }: SMMasterViewProps) {
         </button>
       </header>
 
-      {/* Playback status strip */}
+      {/* Playback status strip — TC display embedded via clock prop */}
       <PlaybackHeader
         lastFiredLabel={lastDispatched ? (cues.find((c) => c.id === lastDispatched.cue_id)?.label ?? lastDispatched.cue_id) : null}
         lastFiredAt={lastFiredAt}
         playheadCueLabel={playheadCue?.label ?? null}
         firstGoAt={firstGoAt}
         now={now}
+        preWaitingCueLabel={preWaitCue?.label ?? null}
+        preWaitUntil={preWait?.waiting_until ?? null}
+        clock={clock}
       />
 
       <main
@@ -685,6 +805,8 @@ export function SMMasterView({ cuelistId }: SMMasterViewProps) {
                 : null;
             const rowInlineField =
               inlineEdit?.cueId === cue.id ? inlineEdit.field : null;
+            const cuePreWaitUntil =
+              preWait?.cue_id === cue.id ? preWait.waiting_until : null;
             // Don't render a cue that's in pending-delete state (optimistic hide)
             if (pendingDelete?.cueId === cue.id) return null;
             return (
@@ -698,6 +820,7 @@ export function SMMasterView({ cuelistId }: SMMasterViewProps) {
                 isFiring={firedAt !== null && now - firedAt < 2000}
                 firedAt={firedAt}
                 now={now}
+                preWaitUntil={cuePreWaitUntil}
                 onSelect={() => setSelectedCueId(cue.id)}
                 onSetPlayhead={() => setPlayhead(cue.id)}
                 onStandby={() => {
@@ -719,6 +842,7 @@ export function SMMasterView({ cuelistId }: SMMasterViewProps) {
                 isDragging={draggingCueId === cue.id}
                 isDragTarget={dragOverCueId === cue.id}
                 onDragHandlePointerDown={mode === 'rehearsal' ? handleDragHandlePointerDown(cue.id) : undefined}
+                onArmToggle={mode === 'rehearsal' ? () => setArmed(cue.id, !(cue.armed ?? true)) : undefined}
               />
             );
           })
@@ -895,6 +1019,15 @@ export function SMMasterView({ cuelistId }: SMMasterViewProps) {
             externalHoldFraction={spaceHoldFraction > 0 ? spaceHoldFraction : undefined}
           />
         </div>
+        {/* Audition row — dry-run the selected (or armed) cue; SM only */}
+        <AuditionBar
+          targetCueId={selectedCueId ?? armedCueId}
+          targetCueLabel={
+            (selectedCueId ? cues.find((c) => c.id === selectedCueId)?.label : armedCue?.label) ?? null
+          }
+          onAudition={(cueId) => audition(cueId)}
+          lastResult={lastAuditioned}
+        />
       </div>
 
       {showHelp && <HelpOverlay onClose={() => setShowHelp(false)} />}

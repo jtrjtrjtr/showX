@@ -1,5 +1,5 @@
 import type * as Y from 'yjs';
-import type { EventBus, Logger } from 'showx-shared';
+import type { EventBus, Logger, MasterClock } from 'showx-shared';
 
 export interface ScheduledFire {
   cuelist_id: string;
@@ -22,4 +22,6 @@ export interface TriggerEngineDeps {
   events: EventBus;
   log: Logger;
   abortSignal: AbortSignal;
+  /** Master clock for timecode trigger firing. Optional — timecode cues are inert when absent. */
+  clock?: MasterClock;
 }

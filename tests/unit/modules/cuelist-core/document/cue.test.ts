@@ -17,9 +17,12 @@ import {
   setCueStandbyNote,
   setCueNotes,
   updateCueFields,
+  setCueArmed,
 } from '../../../../../src/modules/cuelist-core/src/document/cue.js';
 import { ValidationError } from '../../../../../src/modules/cuelist-core/src/document/payload.js';
 import { InvariantError } from '../../../../../src/modules/cuelist-core/src/cue/invariants.js';
+import { LockedError } from '../../../../../src/modules/cuelist-core/src/mode/lockGuards.js';
+import { setMode } from '../../../../../src/modules/cuelist-core/src/document/show.js';
 
 function makeDocWithCuelist() {
   const doc = initShowDoc({ title: 'Test', venue: null, date: null, created_by: 'op1' });
@@ -268,5 +271,57 @@ describe('updateCueFields', () => {
     expect(() =>
       updateCueFields(doc, cuelistId, id, { duration_hint_ms: -1 }, 'op1'),
     ).toThrow(ValidationError);
+  });
+});
+
+// ── setCueArmed (B004-007) ────────────────────────────────────────────────────
+
+describe('setCueArmed', () => {
+  it('new cue has armed=true by default', () => {
+    const { doc, cuelistId } = makeDocWithCuelist();
+    const id = addCue(doc, cuelistId, { label: 'Q1', department: ['LX'], created_by: 'op1' });
+    const cue = getCues(getCuelist(doc, cuelistId)!).toArray().find((c) => c.get('id') === id)!;
+    expect(cue.get('armed')).toBe(true);
+  });
+
+  it('setCueArmed(false) disarms cue and updates modified fields', async () => {
+    const { doc, cuelistId } = makeDocWithCuelist();
+    const id = addCue(doc, cuelistId, { label: 'Q1', department: ['LX'], created_by: 'op1' });
+    const cue = getCues(getCuelist(doc, cuelistId)!).toArray().find((c) => c.get('id') === id)!;
+    const prevModifiedAt = cue.get('modified_at') as string;
+    await new Promise((r) => setTimeout(r, 2));
+
+    setCueArmed(doc, cuelistId, id, false, 'op2');
+
+    expect(cue.get('armed')).toBe(false);
+    expect(cue.get('modified_by')).toBe('op2');
+    expect(cue.get('modified_at') as string).not.toBe(prevModifiedAt);
+  });
+
+  it('setCueArmed(true) re-arms a disarmed cue', () => {
+    const { doc, cuelistId } = makeDocWithCuelist();
+    const id = addCue(doc, cuelistId, { label: 'Q1', department: ['LX'], created_by: 'op1' });
+    setCueArmed(doc, cuelistId, id, false, 'op1');
+    setCueArmed(doc, cuelistId, id, true, 'op1');
+    const cue = getCues(getCuelist(doc, cuelistId)!).toArray().find((c) => c.get('id') === id)!;
+    expect(cue.get('armed')).toBe(true);
+  });
+
+  it('setCueArmed throws LockedError in SHOW mode (structural lock)', () => {
+    const { doc, cuelistId } = makeDocWithCuelist();
+    const id = addCue(doc, cuelistId, { label: 'Q1', department: ['LX'], created_by: 'op1' });
+    setMode(doc, 'show');
+    expect(() => setCueArmed(doc, cuelistId, id, false, 'op1')).toThrow(LockedError);
+  });
+
+  it('cue without armed field: toJSON() armed is undefined, lazy ?? true reads as true', () => {
+    // Simulate a legacy cue that was never assigned armed
+    const m = integrate(makeCueMap({ label: 'Q1', department: ['LX'], created_by: 'op1' }));
+    // Manually delete 'armed' to simulate a legacy cue
+    m.delete('armed');
+    const json = m.toJSON() as { armed?: boolean };
+    expect(json.armed).toBeUndefined();
+    // Consumer uses: cue.armed ?? true → true
+    expect(json.armed ?? true).toBe(true);
   });
 });

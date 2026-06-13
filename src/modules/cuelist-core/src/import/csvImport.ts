@@ -2,7 +2,7 @@ import * as Y from 'yjs';
 import type { DepartmentTag, Trigger } from 'showx-shared';
 import { detectDialect, type Dialect } from './csvDialects.js';
 import { qlabToCues, eosToCues, genericToCues } from './csvHeuristics.js';
-import { addCue, removeCue } from '../document/cue.js';
+import { addCue, removeCue, setCuePreWait } from '../document/cue.js';
 import { addPayload } from '../document/payload.js';
 import { makeCompoundCue } from '../cue/compoundCue.js';
 import { getCuelist, getCues } from '../document/cuelist.js';
@@ -43,6 +43,7 @@ export interface CueSpec {
     department: string[];
     standby_note: string;
     trigger: Trigger;
+    pre_wait_ms?: number;
     created_by: string;
   };
   payloads: Array<Record<string, unknown>>;
@@ -189,7 +190,7 @@ export async function importCsv(
         continue;
       }
       if (dept.length > 1) {
-        makeCompoundCue(doc, cuelistId, {
+        const cueId = makeCompoundCue(doc, cuelistId, {
           label: spec.cueOpts.label,
           description: spec.cueOpts.description,
           departments: dept,
@@ -198,6 +199,9 @@ export async function importCsv(
           payloads: spec.payloads as Parameters<typeof makeCompoundCue>[2]['payloads'],
           created_by: spec.cueOpts.created_by,
         });
+        if (spec.cueOpts.pre_wait_ms) {
+          setCuePreWait(doc, cuelistId, cueId, spec.cueOpts.pre_wait_ms, spec.cueOpts.created_by);
+        }
       } else {
         const cueId = addCue(doc, cuelistId, {
           label: spec.cueOpts.label,
@@ -207,6 +211,9 @@ export async function importCsv(
           trigger: spec.cueOpts.trigger,
           created_by: spec.cueOpts.created_by,
         });
+        if (spec.cueOpts.pre_wait_ms) {
+          setCuePreWait(doc, cuelistId, cueId, spec.cueOpts.pre_wait_ms, spec.cueOpts.created_by);
+        }
         for (const p of spec.payloads) {
           addPayload(
             doc,

@@ -8,6 +8,7 @@ import {
   insertCueAfter as engineInsertCueAfter,
   removeCue as engineRemoveCue,
   reorderCues as engineReorderCues,
+  setCueArmed as engineSetCueArmed,
   type CueFieldPatch,
   type MakeCueOpts,
 } from '../../../src/modules/cuelist-core/src/document/cue.js';
@@ -37,6 +38,7 @@ export interface CuelistSnapshot extends RawSnapshot {
   insertCueAfter: (afterCueId: string | null, opts: AddCueOpts) => string;
   removeCue: (cueId: string) => void;
   reorderCues: (newOrder: string[]) => void;
+  setArmed: (cueId: string, armed: boolean) => void;
 }
 
 function findCuelistMap(doc: Y.Doc, cuelistId: string): Y.Map<unknown> | undefined {
@@ -114,5 +116,12 @@ export function useCuelist(cuelistId: string): CuelistSnapshot {
     [conn.doc, cuelistId],
   );
 
-  return { ...raw, updateFields, addCue, insertCueAfter, removeCue, reorderCues };
+  const setArmed = useCallback(
+    (cueId: string, armed: boolean): void => {
+      engineSetCueArmed(conn.doc, cuelistId, cueId, armed, createdBy);
+    },
+    [conn.doc, cuelistId, createdBy],
+  );
+
+  return { ...raw, updateFields, addCue, insertCueAfter, removeCue, reorderCues, setArmed };
 }

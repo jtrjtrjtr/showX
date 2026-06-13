@@ -12,7 +12,7 @@ export class InvariantError extends Error {
 
 // Forward-compat types are allowed via unknown_* prefix (data_model.md §11.1).
 const KNOWN_PAYLOAD_TYPES = new Set([
-  'osc', 'msc', 'lx_ref', 'midi', 'webhook', 'wait', 'group',
+  'osc', 'msc', 'lx_ref', 'midi', 'dmx', 'webhook', 'wait', 'group',
 ]);
 
 /**

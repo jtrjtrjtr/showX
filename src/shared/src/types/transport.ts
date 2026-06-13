@@ -56,9 +56,10 @@ export interface DmxSacnMessage {
 export interface WebhookMessage {
   transport: 'webhook';
   url: string;
-  method: 'POST' | 'PUT' | 'GET';
+  method: 'GET' | 'POST' | 'PUT' | 'DELETE';
   headers?: Record<string, string>;
   body?: string | Record<string, unknown>;
+  timeout_ms?: number;
 }
 
 export type TransportMessage =

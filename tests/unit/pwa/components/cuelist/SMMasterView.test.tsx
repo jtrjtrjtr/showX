@@ -27,7 +27,7 @@ function addCue(
   cuelistId: string,
   id: string,
   label: string,
-  opts: { dept?: string[]; description?: string; standbyNote?: string } = {},
+  opts: { dept?: string[]; description?: string; standbyNote?: string; trigger?: object } = {},
 ) {
   const cl = doc
     .getArray<Y.Map<unknown>>('cuelists')
@@ -39,7 +39,7 @@ function addCue(
   cue.set('description', opts.description ?? '');
   cue.set('department', opts.dept ?? ['SM']);
   cue.set('standby_note', opts.standbyNote ?? '');
-  cue.set('trigger', { kind: 'manual' });
+  cue.set('trigger', opts.trigger ?? { kind: 'manual' });
   cue.set('payloads', []);
   cue.set('notes', '');
   cue.set('script_line_ref', null);
@@ -614,6 +614,64 @@ describe('SMMasterView', () => {
       });
 
       expect(screen.queryByTestId('inline-edit-input')).toBeNull();
+    });
+  });
+
+  describe('hotkey triggers', () => {
+    it('pressing bound key fires the cue via sendGoRequest', async () => {
+      const conn = makeTestConnection();
+      addCuelist(conn.doc, 'cl1');
+      addCue(conn.doc, 'cl1', 'q1', 'Hotkey Cue', { trigger: { kind: 'hotkey', key: 'F5' } });
+      render(<Wrapper cuelistId="cl1" conn={conn} />);
+
+      await act(async () => {
+        fireEvent.keyDown(window, { key: 'F5' });
+      });
+
+      expect(conn.sideChannel.sendGoRequest).toHaveBeenCalledWith('cl1', 'q1', false);
+    });
+
+    it('pressing key while INPUT is focused does NOT fire', async () => {
+      const conn = makeTestConnection();
+      addCuelist(conn.doc, 'cl1');
+      addCue(conn.doc, 'cl1', 'q1', 'Hotkey Cue', { trigger: { kind: 'hotkey', key: 'F5' } });
+      render(<Wrapper cuelistId="cl1" conn={conn} />);
+
+      // Simulate focus inside an input (the search box is always present)
+      const searchBox = screen.getByRole('searchbox');
+      await act(async () => {
+        fireEvent.keyDown(searchBox, { key: 'F5' });
+      });
+
+      expect(conn.sideChannel.sendGoRequest).not.toHaveBeenCalled();
+    });
+
+    it('duplicate hotkey: fires the first cue in cuelist order', async () => {
+      const conn = makeTestConnection();
+      addCuelist(conn.doc, 'cl1');
+      addCue(conn.doc, 'cl1', 'q1', 'First Cue', { trigger: { kind: 'hotkey', key: 'F7' } });
+      addCue(conn.doc, 'cl1', 'q2', 'Second Cue', { trigger: { kind: 'hotkey', key: 'F7' } });
+      render(<Wrapper cuelistId="cl1" conn={conn} />);
+
+      await act(async () => {
+        fireEvent.keyDown(window, { key: 'F7' });
+      });
+
+      expect(conn.sideChannel.sendGoRequest).toHaveBeenCalledWith('cl1', 'q1', false);
+      expect(conn.sideChannel.sendGoRequest).toHaveBeenCalledTimes(1);
+    });
+
+    it('pressing unbound key does NOT fire any cue', async () => {
+      const conn = makeTestConnection();
+      addCuelist(conn.doc, 'cl1');
+      addCue(conn.doc, 'cl1', 'q1', 'Manual Cue', { trigger: { kind: 'manual' } });
+      render(<Wrapper cuelistId="cl1" conn={conn} />);
+
+      await act(async () => {
+        fireEvent.keyDown(window, { key: 'F9' });
+      });
+
+      expect(conn.sideChannel.sendGoRequest).not.toHaveBeenCalled();
     });
   });
 });

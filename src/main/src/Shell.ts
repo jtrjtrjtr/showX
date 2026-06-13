@@ -40,6 +40,8 @@ import { registerShellOpenExternal } from './ipc/shellOpenExternal.js';
 import { registerDispatchLogBridge } from './ipc/dispatchLogBridge.js';
 import { ActiveShowDoc, setActiveShowDoc } from './runtime/index.js';
 import { GoExecutor } from './runtime/GoExecutor.js';
+import { MasterClockImpl, ClockBroadcaster } from './shared/Clock.js';
+import type { MasterClock } from 'showx-shared';
 
 // ── Shell config store ──────────────────────────────────────────────────────
 
@@ -236,6 +238,8 @@ export class Shell {
   private pinManager!: PinManager;
   private pairing!: PairingStoreImpl;
   private output!: OutputDispatcher;
+  private clock!: MasterClock;
+  private clockBroadcaster: ClockBroadcaster | null = null;
   private input: InputRegistrarImpl | null = null;
   private modules: ModuleLoader | null = null;
   private activeShow: ActiveShowDoc | null = null;
@@ -305,6 +309,13 @@ export class Shell {
     this.sync = this.deps.sync ?? new SyncBroker({ log: this.logger });
     this.sync.attach(this.assets.httpServer());
 
+    // 8b. MasterClock — authoritative time source for all time emitters
+    this.clock = new MasterClockImpl(this.logger);
+    this.clockBroadcaster = new ClockBroadcaster(
+      this.clock,
+      (showId, msg) => this.sync.publishSideChannel(showId, msg),
+    );
+
     // 9. ActiveShowDoc singleton — init here so pairing claim can return show_id
     this.activeShow = new ActiveShowDoc(this.logger, this.sync);
     setActiveShowDoc(this.activeShow);
@@ -353,8 +364,10 @@ export class Shell {
         const doc = this.activeShow!.getDoc()!;
         const showId = this.activeShow!.getShowId()!;
         this.goExecutor!.attach(showId, doc);
+        this.clockBroadcaster!.start(showId);
       } else if (kind === 'closed') {
         this.goExecutor!.detach();
+        this.clockBroadcaster!.stop();
       }
     });
 
@@ -376,6 +389,7 @@ export class Shell {
       assets: this.assets as unknown as SharedServices['assets'],
       mdns: this.mdns,
       pairing: new PairingStoreAdapter(this.pairing),
+      clock: this.clock,
     };
     this.modules =
       this.deps.modules ??
@@ -459,6 +473,7 @@ export class Shell {
       assets: this.assets as unknown as SharedServices['assets'],
       mdns: this.mdns,
       pairing: new PairingStoreAdapter(this.pairing),
+      clock: this.clock,
     };
   }
 }

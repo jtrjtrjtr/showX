@@ -11,6 +11,12 @@ export interface DispatchDeps {
   events: EventBus;
   log: Logger;
   abortSignal: AbortSignal;
+  /**
+   * When true, the dispatch pipeline runs route resolution and validation but skips all
+   * real transport sends. Results are prefixed [AUDITION] in the Dispatch Log.
+   * No cue-complete event is emitted and the playhead/chain are not advanced.
+   */
+  audition?: boolean;
 }
 
 export interface SingleDispatchResult {

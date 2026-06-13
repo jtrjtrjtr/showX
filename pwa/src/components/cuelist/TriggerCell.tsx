@@ -45,6 +45,8 @@ function triggerDisplay(trigger: Trigger, cues: Cue[]): { glyph: string; text: s
       const ss = String(totalSecs % 60).padStart(2, '0');
       return { glyph: '⏱', text: `TC ${mm}:${ss}` };
     }
+    case 'hotkey':
+      return { glyph: '⌨', text: trigger.key };
   }
 }
 
@@ -81,6 +83,9 @@ export function TriggerCell({ cue, cues, mode, editable, onUpdate }: TriggerCell
   const [tcMmSs, setTcMmSs] = useState(
     cue.trigger.kind === 'timecode' ? formatTcMs(cue.trigger.time_ms) : '0:00',
   );
+  const [hotkeyCapture, setHotkeyCapture] = useState(
+    cue.trigger.kind === 'hotkey' ? cue.trigger.key : '',
+  );
 
   const containerRef = useRef<HTMLDivElement>(null);
   const { glyph, text } = triggerDisplay(cue.trigger, cues);
@@ -99,6 +104,8 @@ export function TriggerCell({ cue, cues, mode, editable, onUpdate }: TriggerCell
     }
     if (cue.trigger.kind === 'timecode') setTcMmSs(formatTcMs(cue.trigger.time_ms));
     else setTcMmSs('0:00');
+    if (cue.trigger.kind === 'hotkey') setHotkeyCapture(cue.trigger.key);
+    else setHotkeyCapture('');
     setOpen(true);
   }, [canEdit, cue, cues]);
 
@@ -132,10 +139,13 @@ export function TriggerCell({ cue, cues, mode, editable, onUpdate }: TriggerCell
         trigger = { kind: 'timecode', time_ms, source: 'internal' };
         break;
       }
+      case 'hotkey':
+        trigger = { kind: 'hotkey', key: hotkeyCapture || 'Unbound' };
+        break;
     }
     onUpdate(trigger);
     setOpen(false);
-  }, [kind, delaySecs, prevCueId, tcMmSs, onUpdate]);
+  }, [kind, delaySecs, prevCueId, tcMmSs, hotkeyCapture, onUpdate]);
 
   useEffect(() => {
     if (!open) return;
@@ -207,6 +217,7 @@ export function TriggerCell({ cue, cues, mode, editable, onUpdate }: TriggerCell
             <option value="manual">Manual (GO press)</option>
             <option value="auto_continue">Auto continue (+delay)</option>
             <option value="auto_follow">Auto follow (after prev)</option>
+            <option value="hotkey">Hotkey (key binding)</option>
             <option value="timecode" disabled>
               Timecode (ShowX 0.2)
             </option>
@@ -262,6 +273,31 @@ export function TriggerCell({ cue, cues, mode, editable, onUpdate }: TriggerCell
               <span style={{ fontSize: 11, color: tokens.color.yellow }}>
                 Timecode triggers ship in ShowX 0.2; saved but treated as manual until then.
               </span>
+            </label>
+          )}
+
+          {kind === 'hotkey' && (
+            <label style={labelBase}>
+              Key binding
+              <input
+                data-testid="hotkey-capture"
+                readOnly
+                aria-label="Hotkey capture"
+                placeholder="Click and press a key…"
+                value={hotkeyCapture}
+                onKeyDown={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  const key = e.key === ' ' ? 'Space' : e.key;
+                  setHotkeyCapture(key);
+                }}
+                style={{ ...inputBase, cursor: 'pointer', fontWeight: hotkeyCapture ? 700 : undefined }}
+              />
+              {hotkeyCapture && (
+                <span style={{ fontSize: 11, color: tokens.color.teal }}>
+                  Bound to: {hotkeyCapture}
+                </span>
+              )}
             </label>
           )}
 

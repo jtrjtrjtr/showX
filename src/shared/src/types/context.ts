@@ -13,6 +13,7 @@ import type {
   ModuleUIRegistrar,
 } from './services.js';
 import type { ModuleState, ModuleTier } from './module.js';
+import type { MasterClock } from './timecode.js';
 
 export interface ModuleContext {
   slug: string;
@@ -31,6 +32,7 @@ export interface ModuleContext {
   log: Logger;
   events: EventBus;
   ui: ModuleUIRegistrar;
+  clock: MasterClock;
 
   state(): ModuleState;
   abortSignal: AbortSignal;

@@ -36,6 +36,7 @@ export function makeCueMap(opts: MakeCueOpts): Y.Map<unknown> {
   m.set('notes', '');
   m.set('cue_number', null);
   m.set('payload_frozen_at', null);
+  m.set('armed', true);
   // sort_key determines display order — set by addCue / insertCueAfter / reorderCues
   m.set('sort_key', 0);
   m.set('created_at', now);
@@ -280,6 +281,39 @@ export function setCueDurationHint(
   });
 }
 
+export function setCuePreWait(
+  doc: Y.Doc,
+  cuelistId: string,
+  cueId: string,
+  preWaitMs: number,
+  modifiedBy: string,
+): void {
+  assertEditAllowed(doc, 'meta');
+  if (!Number.isFinite(preWaitMs) || preWaitMs < 0 || !Number.isInteger(preWaitMs)) {
+    throw new ValidationError('pre_wait_ms must be a non-negative integer', 'pre_wait_ms');
+  }
+  const cue = findCue(doc, cuelistId, cueId);
+  doc.transact(() => {
+    cue.set('pre_wait_ms', preWaitMs);
+    touchModified(cue, modifiedBy);
+  });
+}
+
+export function setCueArmed(
+  doc: Y.Doc,
+  cuelistId: string,
+  cueId: string,
+  armed: boolean,
+  modifiedBy: string,
+): void {
+  assertEditAllowed(doc, 'structure'); // disarm is structural — locked in SHOW (like trigger)
+  const cue = findCue(doc, cuelistId, cueId);
+  doc.transact(() => {
+    cue.set('armed', armed);
+    touchModified(cue, modifiedBy);
+  });
+}
+
 // ── Batch text-field update ────────────────────────────────────────────────────
 
 export interface CueFieldPatch {
@@ -290,6 +324,8 @@ export interface CueFieldPatch {
   duration_hint_ms?: number | null;
   /** QLab-style display number. Trimmed, max 8 chars. Null clears. No uniqueness constraint. */
   cue_number?: string | null;
+  /** QLab pre-wait: non-negative integer ms. Default 0. */
+  pre_wait_ms?: number;
 }
 
 /**
@@ -340,6 +376,12 @@ export function updateCueFields(
       throw new ValidationError('cue_number max 8 chars', 'cue_number');
     }
   }
+  if (patch.pre_wait_ms !== undefined) {
+    const pw = patch.pre_wait_ms;
+    if (!Number.isFinite(pw) || pw < 0 || !Number.isInteger(pw)) {
+      throw new ValidationError('pre_wait_ms must be a non-negative integer', 'pre_wait_ms');
+    }
+  }
   const cue = findCue(doc, cuelistId, cueId);
   doc.transact(() => {
     if (patch.label !== undefined) cue.set('label', patch.label);
@@ -350,6 +392,7 @@ export function updateCueFields(
     if (patch.cue_number !== undefined) {
       cue.set('cue_number', patch.cue_number !== null ? patch.cue_number.trim() : null);
     }
+    if (patch.pre_wait_ms !== undefined) cue.set('pre_wait_ms', patch.pre_wait_ms);
     touchModified(cue, modifiedBy);
   });
 }

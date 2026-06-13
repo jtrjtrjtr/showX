@@ -7,6 +7,7 @@ const PAYLOAD_TYPES: { type: PayloadType; label: string }[] = [
   { type: 'msc', label: 'MSC' },
   { type: 'lx_ref', label: 'LX Ref (Eos)' },
   { type: 'midi', label: 'MIDI' },
+  { type: 'dmx', label: 'DMX' },
   { type: 'webhook', label: 'Webhook' },
   { type: 'wait', label: 'Wait' },
   { type: 'group', label: 'Group' },

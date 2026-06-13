@@ -2,7 +2,7 @@
 // Canonical Payload discriminated union per data_model.md §5.1
 
 export type PayloadType =
-  | 'osc' | 'msc' | 'lx_ref' | 'midi' | 'webhook' | 'wait' | 'group';
+  | 'osc' | 'msc' | 'lx_ref' | 'midi' | 'dmx' | 'webhook' | 'wait' | 'group';
 
 export interface PayloadBase {
   id: string;
@@ -45,6 +45,18 @@ export interface MidiPayload extends PayloadBase {
     | { kind: 'raw'; bytes: number[] };
 }
 
+export interface DmxChannel {
+  channel: number;
+  value: number;
+}
+
+export interface DmxPayload extends PayloadBase {
+  type: 'dmx';
+  device_id: string;
+  universe: number;
+  channels: DmxChannel[];
+}
+
 export interface WebhookPayload extends PayloadBase {
   type: 'webhook';
   url: string;
@@ -70,6 +82,7 @@ export type Payload =
   | MscPayload
   | LxRefPayload
   | MidiPayload
+  | DmxPayload
   | WebhookPayload
   | WaitPayload
   | GroupPayload;

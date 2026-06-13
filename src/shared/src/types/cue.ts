@@ -5,13 +5,15 @@ import type { Payload, PayloadType } from './payload.js';
 import type { DepartmentTag } from './department.js';
 export type { DepartmentTag } from './department.js';
 
-export type TriggerKind = 'manual' | 'auto_follow' | 'auto_continue' | 'timecode';
+export type TriggerKind = 'manual' | 'auto_follow' | 'auto_continue' | 'timecode' | 'hotkey';
 
 export type Trigger =
   | { kind: 'manual' }
   | { kind: 'auto_follow'; prev_cue_id: string }
   | { kind: 'auto_continue'; delay_ms: number }
-  | { kind: 'timecode'; time_ms: number; source: 'ltc' | 'mtc' | 'internal' };
+  | { kind: 'timecode'; time_ms: number; source: 'ltc' | 'mtc' | 'internal' }
+  /** Absolute hotkey trigger: fires when the bound key is pressed. Not part of the auto-chain. */
+  | { kind: 'hotkey'; key: string };
 
 export interface Cue {
   id: string;
@@ -31,6 +33,10 @@ export interface Cue {
   modified_by: string;
   /** QLab-style display number (free-text, not ordering). Null = no number assigned. */
   cue_number?: string | null;
+  /** Delay between trigger and payload dispatch (QLab pre-wait). Default 0. */
+  pre_wait_ms?: number;
+  /** QLab-style disarm: if false, cue is skipped on GO (no dispatch) but chain advances. Lazy default true. */
+  armed?: boolean;
 }
 
 export interface CueCatalogEntry {

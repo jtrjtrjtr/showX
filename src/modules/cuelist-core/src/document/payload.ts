@@ -1,5 +1,5 @@
 import * as Y from 'yjs';
-import type { Cue, Payload, OscPayload, WebhookPayload, WaitPayload, MscPayload, LxRefPayload, MidiPayload, GroupPayload } from 'showx-shared';
+import type { Cue, Payload, OscPayload, WebhookPayload, WaitPayload, MscPayload, LxRefPayload, MidiPayload, DmxPayload, GroupPayload } from 'showx-shared';
 import { uuidv7 } from './uuid.js';
 import { getCuelist, getCues } from './cuelist.js';
 import { assertEditAllowed } from '../mode/lockGuards.js';
@@ -82,6 +82,30 @@ export function validatePayload(payload: Partial<Omit<Payload, 'id'>>): void {
         const ch = (msg as { channel: number }).channel;
         if (ch < 1 || ch > 16) {
           throw new ValidationError('midi channel must be 1..16', 'message.channel');
+        }
+      }
+      break;
+    }
+    case 'dmx': {
+      const p = payload as Partial<DmxPayload>;
+      const universe = p.universe;
+      if (universe === undefined || universe < 0) {
+        throw new ValidationError('dmx universe must be ≥ 0', 'universe');
+      }
+      const channels = p.channels;
+      if (!channels || channels.length === 0) {
+        throw new ValidationError('dmx channels must be non-empty', 'channels');
+      }
+      if (channels.length > 512) {
+        throw new ValidationError('dmx channels must have ≤ 512 entries', 'channels');
+      }
+      for (let i = 0; i < channels.length; i++) {
+        const ch = channels[i]!;
+        if (ch.channel < 1 || ch.channel > 512) {
+          throw new ValidationError(`dmx channel[${i}].channel must be 1..512`, 'channels');
+        }
+        if (ch.value < 0 || ch.value > 255) {
+          throw new ValidationError(`dmx channel[${i}].value must be 0..255`, 'channels');
         }
       }
       break;

@@ -165,13 +165,15 @@ describe('OutputDispatcher', () => {
     expect(artnet.send).not.toHaveBeenCalled();
   });
 
-  it('webhook send returns not_implemented', async () => {
+  it('webhook send delegates to WebhookOut and returns result', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, status: 200 }));
     const { dispatcher } = makeDispatcher();
     const result = await dispatcher.send({
-      transport: 'webhook', url: 'http://example.com', method: 'POST', body: '{}',
+      transport: 'webhook', url: 'https://example.com', method: 'POST', body: '{}', timeout_ms: 5_000,
     });
-    expect(result.ok).toBe(false);
-    expect(result.error).toBe('not_implemented');
+    expect(result.ok).toBe(true);
+    expect(result.transport).toBe('webhook');
+    vi.unstubAllGlobals();
   });
 
   it('poolStatus() reflects current state across pools', async () => {

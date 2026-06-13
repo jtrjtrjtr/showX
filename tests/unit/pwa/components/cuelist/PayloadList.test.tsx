@@ -71,7 +71,8 @@ describe('PayloadList', () => {
     const cue = makeCue({ payloads: [] });
     setupCueInDoc(conn, cue);
     render(<Wrapper cue={cue} locked={false} conn={conn} />);
-    expect(screen.getByText(/No payloads/i)).toBeInTheDocument();
+    expect(screen.getByTestId('payload-empty-state')).toBeInTheDocument();
+    expect(screen.getByText(/No payloads yet/i)).toBeInTheDocument();
   });
 
   it('shows + Add payload button when not locked', () => {
@@ -82,7 +83,7 @@ describe('PayloadList', () => {
     expect(screen.getByRole('button', { name: /\+ add payload/i })).toBeInTheDocument();
   });
 
-  it('add payload menu lists 7 types', async () => {
+  it('add payload menu lists 8 types including DMX', async () => {
     const conn = makeTestConnection();
     const cue = makeCue({ payloads: [] });
     setupCueInDoc(conn, cue);
@@ -93,7 +94,8 @@ describe('PayloadList', () => {
     });
 
     const menuItems = screen.getAllByRole('menuitem');
-    expect(menuItems).toHaveLength(7);
+    expect(menuItems).toHaveLength(8);
+    expect(screen.getByRole('menuitem', { name: 'DMX' })).toBeInTheDocument();
   });
 
   it('adding OSC payload via menu creates payload in Y.Doc', async () => {
@@ -117,6 +119,30 @@ describe('PayloadList', () => {
     expect(payloads[0].get('type')).toBe('osc');
   });
 
+  it('adding DMX payload via menu creates dmx payload with universe 0 and 1 channel', async () => {
+    const conn = makeTestConnection();
+    const cue = makeCue({ payloads: [] });
+    setupCueInDoc(conn, cue);
+    render(<Wrapper cue={cue} locked={false} conn={conn} />);
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /\+ add payload/i }));
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('menuitem', { name: 'DMX' }));
+    });
+
+    const cl = conn.doc.getArray<Y.Map<unknown>>('cuelists').toArray().find((m) => m.get('id') === 'cl1')!;
+    const q1 = (cl.get('cues') as Y.Array<Y.Map<unknown>>).toArray().find((c) => c.get('id') === 'q1')!;
+    const payloads = (q1.get('payloads') as Y.Array<Y.Map<unknown>>).toArray();
+    expect(payloads).toHaveLength(1);
+    expect(payloads[0].get('type')).toBe('dmx');
+    expect(payloads[0].get('universe')).toBe(0);
+    const channels = payloads[0].get('channels') as Array<{ channel: number; value: number }>;
+    expect(channels).toHaveLength(1);
+    expect(channels[0]).toEqual({ channel: 1, value: 0 });
+  });
+
   it('renders payload type badge for each payload', () => {
     const osc: OscPayload = { id: 'p1', type: 'osc', tag: null, note: '', device_id: '', address: '/test', args: [] };
     const conn = makeTestConnection();
@@ -133,5 +159,31 @@ describe('PayloadList', () => {
     setupCueInDoc(conn, cue);
     render(<Wrapper cue={cue} locked={true} conn={conn} />);
     expect(screen.getByRole('button', { name: /\+ add payload/i })).toBeDisabled();
+  });
+
+  it('empty state shows hint text about payload types', () => {
+    const conn = makeTestConnection();
+    const cue = makeCue({ payloads: [] });
+    setupCueInDoc(conn, cue);
+    render(<Wrapper cue={cue} locked={false} conn={conn} />);
+    expect(screen.getByText(/OSC, MIDI, DMX, MSC/i)).toBeInTheDocument();
+  });
+
+  it('empty state hint not shown when locked', () => {
+    const conn = makeTestConnection();
+    const cue = makeCue({ payloads: [] });
+    setupCueInDoc(conn, cue);
+    render(<Wrapper cue={cue} locked={true} conn={conn} />);
+    expect(screen.queryByText(/OSC, MIDI, DMX, MSC/i)).toBeNull();
+  });
+
+  it('add payload button is reachable from empty state', () => {
+    const conn = makeTestConnection();
+    const cue = makeCue({ payloads: [] });
+    setupCueInDoc(conn, cue);
+    render(<Wrapper cue={cue} locked={false} conn={conn} />);
+    const addBtn = screen.getByRole('button', { name: /\+ add payload/i });
+    expect(addBtn).toBeInTheDocument();
+    expect(addBtn).not.toBeDisabled();
   });
 });

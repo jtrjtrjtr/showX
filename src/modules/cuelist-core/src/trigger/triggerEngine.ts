@@ -1,5 +1,5 @@
-import type { CueFireEvent, CueCompleteEvent, Cue } from 'showx-shared';
-import { getCuelist, getCues, getCuesSorted } from '../document/cuelist.js';
+import type { CueFireEvent, CueCompleteEvent, Cue, FrameRate } from 'showx-shared';
+import { getCuelist, getCues, getCuelists, getCuesSorted } from '../document/cuelist.js';
 import { schedule } from './scheduler.js';
 import type { ScheduledFire, TriggerEngineDeps } from './types.js';
 
@@ -9,6 +9,11 @@ export class TriggerEngine {
   private pending = new Map<string, ScheduledFire>();
   private chainDepth = new Map<string, number>();
   private unsubs: Array<() => void> = [];
+
+  /** cueId → cuelistId for all timecode cues armed to fire this pass. */
+  private armedTimecode = new Map<string, string>();
+  private clockInterval?: ReturnType<typeof setInterval>;
+  private lastClockMs = 0;
 
   constructor(private deps: TriggerEngineDeps) {}
 
@@ -22,11 +27,22 @@ export class TriggerEngine {
     );
     this.unsubs.push(() => fireSub.unsubscribe(), () => completeSub.unsubscribe());
     this.deps.abortSignal.addEventListener('abort', () => this.cancelAll());
+
+    if (this.deps.clock) {
+      const clockSub = this.deps.clock.onChange(state => this.onClockChange(state));
+      this.unsubs.push(() => clockSub.unsubscribe());
+      // Initialize armed set from current clock position
+      this.onClockChange(this.deps.clock.getState());
+    }
   }
 
   stop(): void {
     for (const u of this.unsubs) u();
     this.unsubs = [];
+    if (this.clockInterval !== undefined) {
+      clearInterval(this.clockInterval);
+      this.clockInterval = undefined;
+    }
     this.cancelAll();
   }
 
@@ -37,7 +53,7 @@ export class TriggerEngine {
     const cue = this.lookupCue(e.cuelist_id, e.cue_id);
     if (!cue) return;
 
-    if (cue.trigger.kind === 'manual') {
+    if (cue.trigger.kind === 'manual' || cue.trigger.kind === 'hotkey') {
       this.chainDepth.set(e.cuelist_id, 0);
     } else {
       const depth = (this.chainDepth.get(e.cuelist_id) ?? 0) + 1;
@@ -60,13 +76,6 @@ export class TriggerEngine {
 
     const next = this.findNextCue(e.cuelist_id, e.cue_id);
     if (!next) return;
-
-    if (next.trigger.kind === 'timecode') {
-      this.deps.log.info('timecode trigger deferred to 0.2', {
-        cuelist_id: e.cuelist_id,
-        cue_id: next.id,
-      });
-    }
 
     const fireEvent = { cuelist_id: e.cuelist_id, cue_id: e.cue_id, ts: e.ts };
     const scheduled = schedule(next, fireEvent, this.deps.doc);
@@ -127,6 +136,7 @@ export class TriggerEngine {
     }
     this.pending.clear();
     this.chainDepth.clear();
+    this.armedTimecode.clear();
   }
 
   private cancelAllForCuelist(cuelistId: string): void {
@@ -151,6 +161,107 @@ export class TriggerEngine {
     if (!cl) return null;
     const found = getCues(cl).toArray().find((m) => m.get('id') === cueId);
     return found ? (found.toJSON() as Cue) : null;
+  }
+
+  // ── Clock-driven timecode trigger ─────────────────────────────────────────
+
+  /**
+   * Called on every MasterClock state change (start/stop/locate/rate/source).
+   * Re-arms timecode cues from the new clock position and manages the polling interval.
+   */
+  private onClockChange(state: { totalFrames: number; rate: FrameRate; running: boolean }): void {
+    const currentMs = this.framesToMs(state.totalFrames, state.rate);
+    this.rearmTimecode(currentMs);
+    this.lastClockMs = currentMs;
+
+    if (state.running) {
+      if (this.clockInterval === undefined) {
+        this.clockInterval = setInterval(() => this.tickTimecode(), 40);
+      }
+    } else {
+      if (this.clockInterval !== undefined) {
+        clearInterval(this.clockInterval);
+        this.clockInterval = undefined;
+      }
+    }
+  }
+
+  /** Polling tick (~25fps) — fires any armed timecode cues the clock has crossed. */
+  private tickTimecode(): void {
+    if (!this.deps.clock) return;
+    const state = this.deps.clock.getState();
+    if (!state.running) {
+      clearInterval(this.clockInterval);
+      this.clockInterval = undefined;
+      return;
+    }
+    const currentMs = this.framesToMs(state.totalFrames, state.rate);
+    if (currentMs <= this.lastClockMs) return;
+    this.fireArmedTimecode(this.lastClockMs, currentMs);
+    this.lastClockMs = currentMs;
+  }
+
+  /**
+   * Fires all armed timecode cues whose time_ms falls in (fromMs, toMs].
+   * Fires in cuelist order then sort_key order within each cuelist.
+   */
+  private fireArmedTimecode(fromMs: number, toMs: number): void {
+    const toFire: Array<{ cuelistId: string; cueId: string }> = [];
+
+    for (const clMap of getCuelists(this.deps.doc).toArray()) {
+      const cuelistId = clMap.get('id') as string;
+      for (const cueMap of getCuesSorted(clMap)) {
+        const cueId = cueMap.get('id') as string;
+        if (!this.armedTimecode.has(cueId)) continue;
+        const cue = cueMap.toJSON() as Cue;
+        if (cue.trigger.kind !== 'timecode') continue;
+        if (cue.trigger.source === 'ltc') continue;
+        if (cue.trigger.time_ms > fromMs && cue.trigger.time_ms <= toMs) {
+          toFire.push({ cuelistId, cueId });
+        }
+      }
+    }
+
+    for (const { cuelistId, cueId } of toFire) {
+      this.armedTimecode.delete(cueId);
+      this.deps.events.publish({
+        type: 'cuelist-go',
+        seq: 0,
+        ts: Date.now(),
+        source: 'cuelist-core',
+        show_id: this.showId(),
+        cuelist_id: cuelistId,
+        next_cue_id: cueId,
+        by_operator_id: 'timecode',
+      });
+    }
+  }
+
+  /**
+   * Rebuilds the armed set: all non-ltc timecode cues with time_ms > currentMs.
+   * Called on every clock state change (start/stop/locate/rate/source).
+   */
+  private rearmTimecode(currentMs: number): void {
+    this.armedTimecode.clear();
+    for (const clMap of getCuelists(this.deps.doc).toArray()) {
+      const cuelistId = clMap.get('id') as string;
+      for (const cueMap of getCues(clMap).toArray()) {
+        const cue = cueMap.toJSON() as Cue;
+        if (cue.trigger.kind !== 'timecode') continue;
+        if (cue.trigger.source === 'ltc') {
+          this.deps.log.info('timecode: ltc source not available', { cue_id: cue.id, cuelist_id: cuelistId });
+          continue;
+        }
+        if (cue.trigger.time_ms > currentMs) {
+          this.armedTimecode.set(cue.id, cuelistId);
+        }
+      }
+    }
+  }
+
+  private framesToMs(totalFrames: number, rate: FrameRate): number {
+    const fps = rate === 29.97 ? 30000 / 1001 : rate;
+    return (totalFrames * 1000) / fps;
   }
 
   private showId(): string {

@@ -1,12 +1,10 @@
 import * as Y from 'yjs';
-import type { EventBus, Logger, CueFireEvent } from 'showx-shared';
-import type { SideChannelMessage, Subscription } from 'showx-shared';
-import type { OutputDispatcher } from 'showx-shared';
+import type { EventBus, Logger, CueFireEvent, SideChannelMessage, Subscription } from 'showx-shared';
+import type { Cue, OutputDispatcher, TransportMessage, Transport, DispatchResult } from 'showx-shared';
 import { GoEventChannel } from '@showx/module-cuelist-core/go/goEventChannel.js';
-import type { OperatorContext } from '@showx/module-cuelist-core/go/goEventChannel.js';
+import type { OperatorContext, AuditionResult } from '@showx/module-cuelist-core/go/goEventChannel.js';
 import { dispatchCue } from '@showx/module-cuelist-core/dispatch/payloadDispatch.js';
 import type { DispatchDeps } from '@showx/module-cuelist-core/dispatch/payloadDispatch.js';
-import type { Cue } from 'showx-shared';
 
 // ── DispatchRecord ─────────────────────────────────────────────────────────────
 
@@ -114,6 +112,42 @@ export class GoExecutor {
           if (msg['topic'] === topic) handler(msg);
         });
         return sub.unsubscribe;
+      },
+      // Audition: full dispatch pipeline with no-op output — no real sends, no chain advance
+      dispatchAudition: async (cueId, cuelistId, payloads): Promise<AuditionResult> => {
+        const now = new Date().toISOString();
+        const cue: Cue = {
+          id: cueId, label: cueId, description: '', department: [],
+          standby_note: '', script_line_ref: null, trigger: { kind: 'manual' },
+          payloads, duration_hint_ms: null, notes: '', payload_frozen_at: null,
+          created_at: now, created_by: 'audition', modified_at: now, modified_by: 'audition',
+        };
+        const auditDeps: DispatchDeps = {
+          doc, show_id: showId, cuelist_id: cuelistId,
+          output: makeNopOutput(),
+          events, log,
+          abortSignal: abort.signal,
+          audition: true,
+        };
+        const result = await dispatchCue(cue, auditDeps);
+        this.pushRecord({
+          ts: now,
+          cue_id: cueId,
+          cue_label: cueId,
+          transport_summary: buildTransportSummary(result.details),
+          payloads_dispatched: result.payloads_dispatched,
+          payloads_failed: result.payloads_failed,
+          duration_ms: result.duration_ms,
+          fired_by: 'audition',
+        });
+        return {
+          topic: 'audition.result',
+          request_id: '',
+          cue_id: cueId,
+          cuelist_id: cuelistId,
+          ok: result.ok,
+          details: result.details,
+        };
       },
     });
 
@@ -278,6 +312,19 @@ export class GoExecutor {
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
+
+function makeNopOutput(): OutputDispatcher {
+  return {
+    send: async (msg: TransportMessage): Promise<DispatchResult> => ({
+      ok: true,
+      transport: msg.transport as Transport,
+      latencyMs: 0,
+    }),
+    claim: async () => ({ id: 'nop', slug: 'nop', destination: { transport: 'osc' as const } }),
+    release: async () => {},
+    poolStatus: () => ({ oscConnections: [], midiOutputs: [], dmxUniverses: [] }),
+  };
+}
 
 function buildTransportSummary(
   details: Array<{ transport: string; result: string }>,

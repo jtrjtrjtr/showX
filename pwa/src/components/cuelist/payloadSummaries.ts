@@ -11,6 +11,8 @@ export function summarizePayload(p: Payload): string {
       return `MSC ${p.command}${p.cue_number ? ` ${p.cue_number}` : ''}`;
     case 'midi':
       return `MIDI ${p.message.kind}`;
+    case 'dmx':
+      return `DMX u${p.universe} ${p.channels.length}ch`;
     case 'webhook':
       return 'HTTP';
     case 'wait':

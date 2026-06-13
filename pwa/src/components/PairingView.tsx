@@ -43,7 +43,7 @@ export function PairingView({ host, onPaired }: Props) {
   const params = urlParams();
   const [pin, setPin] = useState(params.pin ?? '');
   const [displayName, setDisplayName] = useState(params.name ?? '');
-  const [role, setRole] = useState<'sm' | 'operator'>('operator');
+  const [role, setRole] = useState<'sm' | 'operator' | 'countdown'>('operator');
   const [ownedDepts, setOwnedDepts] = useState<string[]>([]);
   const [watchedDepts, setWatchedDepts] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -91,7 +91,7 @@ export function PairingView({ host, onPaired }: Props) {
     setPhase('claiming');
     try {
       const client_pubkey = await getOrCreateClientPubkey();
-      const owned_departments = role === 'sm' ? ['SM', ...ownedDepts] : ownedDepts;
+      const owned_departments = role === 'sm' ? ['SM', ...ownedDepts] : role === 'countdown' ? [] : ownedDepts;
 
       const claimR = await fetch(`http://${host.host}:${host.port}/api/pairing/claim`, {
         method: 'POST',
@@ -240,11 +240,12 @@ export function PairingView({ host, onPaired }: Props) {
           <select
             data-testid="role-select"
             value={role}
-            onChange={(e) => setRole(e.target.value as 'sm' | 'operator')}
+            onChange={(e) => setRole(e.target.value as 'sm' | 'operator' | 'countdown')}
             style={inputStyle}
           >
             <option value="sm">Stage Manager</option>
             <option value="operator">Operator</option>
+            <option value="countdown">Countdown display</option>
           </select>
         </div>
         <div>

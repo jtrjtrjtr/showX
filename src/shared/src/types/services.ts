@@ -127,7 +127,7 @@ export interface AwarenessHandler {
 }
 
 export interface SideChannelMessage {
-  topic: 'go' | 'presence' | 'preview';
+  topic: 'go' | 'presence' | 'preview' | 'clock.anchor';
   payload: Record<string, unknown>;
   origin?: string;
 }

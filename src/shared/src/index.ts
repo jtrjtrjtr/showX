@@ -7,3 +7,4 @@ export * from './types/department.js';
 export * from './types/cue.js';
 export * from './types/show.js';
 export * from './types/events.js';
+export * from './types/timecode.js';

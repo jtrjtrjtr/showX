@@ -13,7 +13,7 @@ export interface PairedSession {
   device_id: string;
   paired_at: number;
   // Station identity — populated at pairing time; optional for backward compat
-  role?: 'sm' | 'operator' | 'companion' | 'observer';
+  role?: 'sm' | 'operator' | 'countdown' | 'companion' | 'observer';
   show_id?: string;
   station_id?: string;
   operator_id?: string;

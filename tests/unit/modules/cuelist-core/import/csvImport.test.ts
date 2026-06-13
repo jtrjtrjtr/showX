@@ -78,23 +78,23 @@ describe('importCsv — QLab', () => {
     expect(cues[2].department).toContain('VIDEO'); // Q3 Video
   });
 
-  it('sets auto_continue trigger when pre-wait > 0 (test 13)', async () => {
+  it('sets pre_wait_ms when Pre-wait > 0 (test 13)', async () => {
     const { doc, cuelistId } = makeDocWithCuelist();
     const csv = loadFixture('qlab_export_minimal.csv');
     await importCsv(doc, cuelistId, csv, { createdBy: 'op1' });
     const cues = getCuesSortedJson(doc, cuelistId);
-    // Q2 has Pre-wait=0.5 → auto_continue with delay_ms=500
-    expect(cues[1].trigger.kind).toBe('auto_continue');
-    expect((cues[1].trigger as { kind: 'auto_continue'; delay_ms: number }).delay_ms).toBe(500);
+    // Q2 has Pre-wait=0.5 → pre_wait_ms=500; trigger is manual (Q1 has no Continue)
+    expect(cues[1].pre_wait_ms).toBe(500);
+    expect(cues[1].trigger.kind).toBe('manual');
   });
 
-  it('sets auto_continue trigger when Continue=Auto-continue (test 14)', async () => {
+  it('Continue=Auto-continue on row N sets auto_continue trigger on row N+1 (test 14)', async () => {
     const { doc, cuelistId } = makeDocWithCuelist();
-    // Q2 in fixture has Continue=Auto-continue + Pre-wait=0.5 → auto_continue
+    // Q2 has Continue=Auto-continue → Q3 gets auto_continue trigger
     const csv = loadFixture('qlab_export_minimal.csv');
     await importCsv(doc, cuelistId, csv, { createdBy: 'op1' });
     const cues = getCuesSortedJson(doc, cuelistId);
-    expect(cues[1].trigger.kind).toBe('auto_continue');
+    expect(cues[2].trigger.kind).toBe('auto_continue');
   });
 
   it('appends to existing cues (does not clear by default)', async () => {

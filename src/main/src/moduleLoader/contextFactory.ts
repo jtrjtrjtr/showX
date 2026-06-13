@@ -13,6 +13,7 @@ import type {
   Subscription,
   MenuItemSpec,
   ReactComponentModule,
+  MasterClock,
 } from 'showx-shared';
 import type { PathLayout } from '../shared/paths.js';
 import { PersistedStore } from '../shared/PersistedStore.js';
@@ -33,6 +34,7 @@ export interface SharedServices {
   assets: AssetServer;
   mdns: MdnsService;
   pairing: PairingStore;
+  clock: MasterClock;
 }
 
 function mapToModuleState(s: ModuleLifecycleState): ModuleState {
@@ -94,6 +96,7 @@ export function buildContext(
     log: shared.logger.child(slug),
     events: shared.events,
     ui: makeNullUIRegistrar(),
+    clock: shared.clock,
     state: () => mapToModuleState(getState()),
     abortSignal: abortController.signal,
   };

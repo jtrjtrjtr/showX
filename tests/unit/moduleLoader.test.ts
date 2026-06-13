@@ -68,6 +68,15 @@ async function makeFakeShared(): Promise<SharedServices> {
       revoke: async () => {},
       list: async () => [],
     },
+    clock: {
+      start: () => {},
+      stop: () => {},
+      locate: () => {},
+      setRate: () => {},
+      setSource: () => {},
+      getState: () => ({ rate: 25 as const, dropFrame: false, totalFrames: 0, running: false, source: 'internal' as const }),
+      onChange: () => ({ id: 'noop', unsubscribe: () => {} }),
+    },
   };
 }
 

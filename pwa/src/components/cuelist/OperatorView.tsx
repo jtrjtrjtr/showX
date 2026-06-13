@@ -9,6 +9,7 @@ import { GenericOperatorView } from './variants/GenericOperatorView.js';
 import { usePlayhead } from '../../hooks/usePlayhead.js';
 import { useConnection } from '../../lib/ConnectionProvider.js';
 import { tokens } from './tokens.js';
+import { TimecodeDisplay } from './TimecodeDisplay.js';
 
 export interface OperatorViewProps {
   cuelistId: string;
@@ -87,6 +88,19 @@ export function OperatorView({ cuelistId, owned, watched }: OperatorViewProps) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      <div
+        data-testid="operator-tc-header"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          padding: `${tokens.space.xs}px ${tokens.space.m}px`,
+          borderBottom: `1px solid ${tokens.color.border}`,
+          background: tokens.color.panel,
+          flexShrink: 0,
+        }}
+      >
+        <TimecodeDisplay size={32} />
+      </div>
       <PlayheadBanner cuelistId={cuelistId} />
       {renderVariant()}
     </div>

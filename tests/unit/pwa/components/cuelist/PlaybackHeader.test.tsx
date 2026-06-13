@@ -121,4 +121,71 @@ describe('PlaybackHeader', () => {
     const header = screen.getByTestId('playback-header');
     expect(header.textContent).toContain('—');
   });
+
+  // ── Pre-wait indicator ─────────────────────────────────────────────────────
+
+  it('shows WAITING indicator when preWaitingCueLabel set and preWaitUntil in future', () => {
+    render(
+      <PlaybackHeader
+        lastFiredLabel={null}
+        lastFiredAt={null}
+        playheadCueLabel={null}
+        firstGoAt={null}
+        now={BASE_NOW}
+        preWaitingCueLabel="Scene 1"
+        preWaitUntil={BASE_NOW + 1500}
+      />,
+    );
+    const indicator = screen.getByTestId('prewait-indicator');
+    expect(indicator).toBeInTheDocument();
+    expect(indicator.textContent).toMatch(/WAITING/);
+    expect(indicator.textContent).toMatch(/Scene 1/);
+    // 1500ms remaining → 0:01.5
+    expect(indicator.textContent).toMatch(/0:01\.5/);
+  });
+
+  it('no WAITING indicator when preWaitingCueLabel is null', () => {
+    render(
+      <PlaybackHeader
+        lastFiredLabel={null}
+        lastFiredAt={null}
+        playheadCueLabel={null}
+        firstGoAt={null}
+        now={BASE_NOW}
+        preWaitingCueLabel={null}
+        preWaitUntil={BASE_NOW + 1500}
+      />,
+    );
+    expect(screen.queryByTestId('prewait-indicator')).toBeNull();
+  });
+
+  it('no WAITING indicator when preWaitUntil has elapsed', () => {
+    render(
+      <PlaybackHeader
+        lastFiredLabel={null}
+        lastFiredAt={null}
+        playheadCueLabel={null}
+        firstGoAt={null}
+        now={BASE_NOW}
+        preWaitingCueLabel="Scene 1"
+        preWaitUntil={BASE_NOW - 100}
+      />,
+    );
+    expect(screen.queryByTestId('prewait-indicator')).toBeNull();
+  });
+
+  it('no WAITING indicator when preWaitUntil is null', () => {
+    render(
+      <PlaybackHeader
+        lastFiredLabel={null}
+        lastFiredAt={null}
+        playheadCueLabel={null}
+        firstGoAt={null}
+        now={BASE_NOW}
+        preWaitingCueLabel="Scene 1"
+        preWaitUntil={null}
+      />,
+    );
+    expect(screen.queryByTestId('prewait-indicator')).toBeNull();
+  });
 });

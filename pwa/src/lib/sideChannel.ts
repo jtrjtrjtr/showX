@@ -88,6 +88,13 @@ function makeEmitter<EventMap extends Record<string, unknown>>() {
   return { on, emit, removeAll };
 }
 
+export interface GoPreWait {
+  topic: 'go.prewait';
+  cue_id: string;
+  cuelist_id: string;
+  waiting_until_ts: number;
+}
+
 export interface GoDispatched {
   topic: 'go.dispatched';
   request_id: string;
@@ -127,14 +134,41 @@ export interface HeartbeatEvent {
   module_health: Record<string, string>;
 }
 
+export interface AuditionResult {
+  topic: 'audition.result';
+  request_id: string;
+  cue_id: string;
+  cuelist_id: string;
+  ok: boolean;
+  details: Array<{ payload_id: string; transport: string; result: string; error?: string }>;
+}
+
+export type FrameRate = 24 | 25 | 29.97 | 30;
+export type ClockSource = 'internal' | 'mtc' | 'ltc';
+
+export interface ClockAnchor {
+  topic: 'clock.anchor';
+  /** Shell's current total frame count at the moment of broadcast. */
+  totalFrames: number;
+  /** Shell-side performance.now() at broadcast — for staleness detection only, NOT for interpolation. */
+  at_wall_ms: number;
+  rate: FrameRate;
+  dropFrame: boolean;
+  running: boolean;
+  source: ClockSource;
+}
+
 export type SideChannelConnectionState = 'open' | 'close' | 'error';
 
 type SideChannelEventMap = {
   'go.dispatched': GoDispatched;
   'go.rejected': GoRejected;
+  'go.prewait': GoPreWait;
   'arm.broadcast': ArmBroadcast;
   'mode.transition': ModeTransition;
+  'audition.result': AuditionResult;
   heartbeat: HeartbeatEvent;
+  'clock.anchor': ClockAnchor;
   connection: SideChannelConnectionState;
 };
 
@@ -216,6 +250,9 @@ export class SideChannelClient {
       case 'go.rejected':
         this.emitter.emit('go.rejected', { topic: 'go.rejected', ...(env.payload as Omit<GoRejected, 'topic'>) });
         break;
+      case 'go.prewait':
+        this.emitter.emit('go.prewait', { topic: 'go.prewait', ...(env.payload as Omit<GoPreWait, 'topic'>) });
+        break;
       case 'arm.broadcast':
         this.emitter.emit('arm.broadcast', { topic: 'arm.broadcast', ...(env.payload as Omit<ArmBroadcast, 'topic'>) });
         break;
@@ -224,6 +261,12 @@ export class SideChannelClient {
         break;
       case 'heartbeat':
         this.emitter.emit('heartbeat', { topic: 'heartbeat', ...(env.payload as Omit<HeartbeatEvent, 'topic'>) });
+        break;
+      case 'audition.result':
+        this.emitter.emit('audition.result', { topic: 'audition.result', ...(env.payload as Omit<AuditionResult, 'topic'>) });
+        break;
+      case 'clock.anchor':
+        this.emitter.emit('clock.anchor', { topic: 'clock.anchor', ...(env.payload as Omit<ClockAnchor, 'topic'>) });
         break;
     }
   }
@@ -255,6 +298,21 @@ export class SideChannelClient {
         operator_id: this.opts.operatorId,
       }),
     );
+  }
+
+  sendAuditionRequest(cuelistId: string, cueId: string): string {
+    const requestId = globalThis.crypto.randomUUID();
+    this.ws?.send(
+      JSON.stringify({
+        topic: 'audition.request',
+        request_id: requestId,
+        cue_id: cueId,
+        cuelist_id: cuelistId,
+        station_id: this.opts.stationId,
+        operator_id: this.opts.operatorId,
+      }),
+    );
+    return requestId;
   }
 
   disconnect(): void {
