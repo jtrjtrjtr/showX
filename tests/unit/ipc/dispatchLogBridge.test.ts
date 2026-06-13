@@ -32,6 +32,7 @@ function makeRecord(overrides: Partial<DispatchRecord> = {}): DispatchRecord {
 
 function makeFakeExecutor(initialLog: DispatchRecord[] = []) {
   const listeners = new Set<(r: DispatchRecord) => void>();
+  const replyListeners = new Set<(u: { deviceId: string; status: string; updatedAt: number }) => void>();
   const log = [...initialLog];
 
   return {
@@ -40,9 +41,16 @@ function makeFakeExecutor(initialLog: DispatchRecord[] = []) {
       listeners.add(cb);
       return () => listeners.delete(cb);
     }),
+    onReplyStatus: vi.fn((cb: (u: { deviceId: string; status: string; updatedAt: number }) => void) => {
+      replyListeners.add(cb);
+      return () => replyListeners.delete(cb);
+    }),
     _fire: (r: DispatchRecord) => {
       log.push(r);
       for (const cb of listeners) cb(r);
+    },
+    _fireReply: (u: { deviceId: string; status: string; updatedAt: number }) => {
+      for (const cb of replyListeners) cb(u);
     },
   };
 }

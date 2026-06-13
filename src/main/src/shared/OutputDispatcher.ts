@@ -14,6 +14,7 @@ import { DmxPool } from './dispatcher/dmxOut.js';
 import { MscOut } from './dispatcher/mscOut.js';
 import { WebhookOut } from './dispatcher/webhookOut.js';
 import type { Logger } from './Logger.js';
+import type { HealthBus, DeviceHealthEntry } from './HealthBus.js';
 
 interface ActiveClaim {
   token: ClaimToken;
@@ -28,6 +29,7 @@ export interface OutputDispatcherOptions {
   dmxPool?: DmxPool;
   webhook?: WebhookOut;
   log?: Logger;
+  healthBus?: HealthBus;
 }
 
 /**
@@ -44,6 +46,7 @@ export class OutputDispatcher implements OutputDispatcherIface {
   private readonly msc: MscOut;
   private readonly webhook: WebhookOut;
   private readonly claims = new Map<string, ActiveClaim>();
+  private readonly healthBus?: HealthBus;
 
   constructor(
     private readonly slugSeed: string,
@@ -54,6 +57,7 @@ export class OutputDispatcher implements OutputDispatcherIface {
     this.dmx = opts.dmxPool ?? new DmxPool(undefined, opts.log);
     this.msc = new MscOut(this.midi);
     this.webhook = opts.webhook ?? new WebhookOut(opts.log);
+    this.healthBus = opts.healthBus;
   }
 
   async claim(dest: TransportDestination, ownerSlug: string = this.slugSeed): Promise<ClaimToken | ClaimConflict> {
@@ -117,37 +121,65 @@ export class OutputDispatcher implements OutputDispatcherIface {
     this.claims.delete(token.id);
   }
 
-  async send(msg: TransportMessage): Promise<DispatchResult> {
+  async send(msg: TransportMessage, deviceId?: string): Promise<DispatchResult> {
+    let result: DispatchResult;
     switch (msg.transport) {
       case 'osc': {
         const handle = this.osc.claim(msg.host, msg.port);
-        try { return await handle.send(msg); } finally { handle.release(); }
+        try { result = await handle.send(msg); } finally { handle.release(); }
+        break;
       }
       case 'midi': {
         const existing = this.findClaimForPort(msg.midiPortName);
-        if (existing?.sender) return existing.sender.send(msg);
-        const auto = this.midi.claim(msg.midiPortName, this.slugSeed);
-        if (!auto.ok) {
-          return { ok: false, transport: 'midi', latencyMs: 0, error: `port_owned_by_${auto.ownerSlug}` };
+        if (existing?.sender) {
+          result = await existing.sender.send(msg);
+        } else {
+          const auto = this.midi.claim(msg.midiPortName, this.slugSeed);
+          if (!auto.ok) {
+            result = { ok: false, transport: 'midi', latencyMs: 0, error: `port_owned_by_${auto.ownerSlug}` };
+            break;
+          }
+          try { result = await auto.send(msg); } finally { auto.release(); }
         }
-        try { return await auto.send(msg); } finally { auto.release(); }
+        break;
       }
       case 'msc':
-        return this.msc.send(msg, this.slugSeed);
+        result = await this.msc.send(msg, this.slugSeed);
+        break;
       case 'dmx-artnet':
       case 'dmx-sacn': {
         const proto = msg.transport === 'dmx-artnet' ? 'artnet' : 'sacn';
         const existing = this.findClaimForUniverse(proto, msg.universe);
-        if (existing?.sender) return existing.sender.send(msg);
-        const auto = this.dmx.claim(proto, msg.universe, this.slugSeed);
-        if (!auto.ok) {
-          return { ok: false, transport: msg.transport, latencyMs: 0, error: `universe_owned_by_${auto.ownerSlug}` };
+        if (existing?.sender) {
+          result = await existing.sender.send(msg);
+        } else {
+          const auto = this.dmx.claim(proto, msg.universe, this.slugSeed);
+          if (!auto.ok) {
+            result = { ok: false, transport: msg.transport, latencyMs: 0, error: `universe_owned_by_${auto.ownerSlug}` };
+            break;
+          }
+          try { result = await auto.send(msg); } finally { auto.release(); }
         }
-        try { return await auto.send(msg); } finally { auto.release(); }
+        break;
       }
       case 'webhook':
-        return this.webhook.send(msg);
+        result = await this.webhook.send(msg);
+        break;
     }
+
+    if (deviceId && this.healthBus) {
+      this.healthBus.report(
+        `device:${deviceId}`,
+        result!.ok ? 'healthy' : 'error',
+        result!.ok ? undefined : result!.error,
+      );
+    }
+
+    return result!;
+  }
+
+  getDeviceHealth(): Map<string, DeviceHealthEntry> {
+    return this.healthBus?.getDeviceHealth() ?? new Map();
   }
 
   poolStatus(): PoolStatus {

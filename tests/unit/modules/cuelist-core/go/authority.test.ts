@@ -33,6 +33,18 @@ const lxOctx: OperatorContext = {
   operatorOwned: (id) => (id === 'op-lx' ? ['LX'] : []),
 };
 
+const revokedSmOctx: OperatorContext = {
+  operatorOwns: (id, dept) => id === 'op-sm' && dept === 'SM',
+  operatorOwned: (id) => (id === 'op-sm' ? ['SM'] : []),
+  isRevoked: () => true,
+};
+
+const unknownOctx: OperatorContext = {
+  operatorOwns: () => false,
+  operatorOwned: () => [],
+  isRevoked: () => false,
+};
+
 describe('authorise — sm_called', () => {
   it('returns ok when operator is SM', () => {
     const result = authorise(makeReq({ operator_id: 'op-sm' }), makeCuelist('sm_called'), smOctx);
@@ -92,6 +104,35 @@ describe('authorise — per_dept', () => {
 
   it('returns not_owner when no octx provided', () => {
     const result = authorise(makeReq({ cue_id: 'cue-1' }), makeCuelist('per_dept', 'cue-1', ['LX']));
+    expect(result).toEqual({ ok: false, reason: 'not_owner' });
+  });
+});
+
+describe('authorise — revoked operator', () => {
+  it('rejects a revoked SM operator on sm_called cuelist', () => {
+    const result = authorise(makeReq({ operator_id: 'op-sm' }), makeCuelist('sm_called'), revokedSmOctx);
+    expect(result).toEqual({ ok: false, reason: 'revoked' });
+  });
+
+  it('rejects a revoked SM operator on per_dept cuelist', () => {
+    const result = authorise(makeReq({ operator_id: 'op-sm', cue_id: 'cue-1' }), makeCuelist('per_dept', 'cue-1', ['SM']), revokedSmOctx);
+    expect(result).toEqual({ ok: false, reason: 'revoked' });
+  });
+
+  it('rejects revoked operator on auto_cascade cuelist (revoke is a hard block)', () => {
+    const result = authorise(makeReq({ operator_id: 'op-sm' }), makeCuelist('auto_cascade'), revokedSmOctx);
+    expect(result).toEqual({ ok: false, reason: 'revoked' });
+  });
+});
+
+describe('authorise — unknown operator', () => {
+  it('rejects unknown operator on sm_called cuelist', () => {
+    const result = authorise(makeReq({ operator_id: 'op-unknown' }), makeCuelist('sm_called'), unknownOctx);
+    expect(result).toEqual({ ok: false, reason: 'not_sm' });
+  });
+
+  it('rejects unknown operator on per_dept cuelist', () => {
+    const result = authorise(makeReq({ operator_id: 'op-unknown', cue_id: 'cue-1' }), makeCuelist('per_dept', 'cue-1', ['LX']), unknownOctx);
     expect(result).toEqual({ ok: false, reason: 'not_owner' });
   });
 });

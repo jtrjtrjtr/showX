@@ -1,6 +1,110 @@
 import type { Cue } from 'showx-shared';
 import { tokens } from './tokens.js';
 
+// ── OperatorStandbyAlert ──────────────────────────────────────────────────────
+// Operator-side cue light: big glanceable standby + acknowledge button.
+
+export interface OperatorStandbyAlertProps {
+  cueLabel: string | null;
+  department: string;
+  acknowledged: boolean;
+  onAcknowledge: () => void;
+}
+
+export function OperatorStandbyAlert({
+  cueLabel,
+  department,
+  acknowledged,
+  onAcknowledge,
+}: OperatorStandbyAlertProps) {
+  if (acknowledged) {
+    return (
+      <div
+        role="status"
+        data-testid="operator-standby-ready"
+        aria-live="polite"
+        style={{
+          padding: `${tokens.space.l}px ${tokens.space.xl}px`,
+          background: '#0D2B22',
+          borderBottom: `2px solid ${tokens.color.green}`,
+          textAlign: 'center',
+          color: tokens.color.green,
+          fontWeight: 700,
+          fontSize: 24,
+          fontFamily: tokens.font.ui,
+          letterSpacing: '0.02em',
+        }}
+      >
+        READY — waiting for GO
+      </div>
+    );
+  }
+
+  return (
+    <div
+      role="alert"
+      data-testid="operator-standby-alert"
+      aria-live="assertive"
+      style={{
+        padding: `${tokens.space.l}px ${tokens.space.xl}px`,
+        background: '#2B1F06',
+        borderBottom: `2px solid ${tokens.color.yellow}`,
+        display: 'flex',
+        alignItems: 'center',
+        gap: tokens.space.xl,
+      }}
+    >
+      <div style={{ flex: 1 }}>
+        <div
+          style={{
+            fontSize: 11,
+            fontWeight: 700,
+            textTransform: 'uppercase',
+            letterSpacing: '0.06em',
+            color: tokens.color.yellow,
+            fontFamily: tokens.font.ui,
+            marginBottom: tokens.space.xs,
+          }}
+        >
+          {department} — STANDBY
+        </div>
+        <div
+          style={{
+            fontSize: 40,
+            fontWeight: 700,
+            color: tokens.color.ink,
+            fontFamily: tokens.font.ui,
+            lineHeight: 1.1,
+          }}
+        >
+          {cueLabel ?? '—'}
+        </div>
+      </div>
+      <button
+        data-testid="operator-ack-btn"
+        onClick={onAcknowledge}
+        aria-label={`Acknowledge standby for ${cueLabel ?? 'cue'}`}
+        style={{
+          padding: `${tokens.space.l}px ${tokens.space.xl}px`,
+          background: tokens.color.yellow,
+          color: '#1A1200',
+          border: 'none',
+          borderRadius: tokens.radius.m,
+          fontSize: 22,
+          fontWeight: 700,
+          cursor: 'pointer',
+          fontFamily: tokens.font.ui,
+          minWidth: 160,
+          letterSpacing: '0.04em',
+          flexShrink: 0,
+        }}
+      >
+        ACKNOWLEDGE
+      </button>
+    </div>
+  );
+}
+
 // Inject pulse keyframe once
 if (typeof document !== 'undefined') {
   const styleId = 'showx-standby-keyframes';

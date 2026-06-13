@@ -6,7 +6,7 @@ import type { IpcBridge } from './CuelistCorePanel.js';
 
 interface DeviceStatus {
   deviceId: string;
-  status: 'ok' | 'fail' | 'none';
+  status: 'ok' | 'confirmed' | 'fail' | 'none';
   updatedAt: number;
 }
 
@@ -16,6 +16,7 @@ interface TestResult {
 }
 
 const STATUS_TTL_MS = 60_000;
+const CONFIRMED_TTL_MS = 30_000;
 
 function StatusDot({ deviceId, statuses }: { deviceId: string; statuses: Map<string, DeviceStatus> }) {
   const s = statuses.get(deviceId);
@@ -23,12 +24,19 @@ function StatusDot({ deviceId, statuses }: { deviceId: string; statuses: Map<str
   let color: string = tokens.color.gray_300;
   let label = 'no recent dispatch';
 
-  if (s && now - s.updatedAt < STATUS_TTL_MS) {
-    if (s.status === 'ok') { color = tokens.color.teal; label = 'ok'; }
-    else if (s.status === 'fail') { color = tokens.color.red; label = 'fail'; }
+  if (s) {
+    if (s.status === 'confirmed' && now - s.updatedAt < CONFIRMED_TTL_MS) {
+      color = '#22c55e';  // bright green — distinct from teal 'ok'
+      label = 'confirmed';
+    } else if (s.status === 'ok' && now - s.updatedAt < STATUS_TTL_MS) {
+      color = tokens.color.teal;
+      label = 'ok';
+    } else if (s.status === 'fail' && now - s.updatedAt < STATUS_TTL_MS) {
+      color = tokens.color.red;
+      label = 'fail';
+    }
   }
 
-  // TODO: wire to OutputDispatcher.onDeviceStatus when B001-007 adds onDeviceStatus API
   return (
     <span
       aria-label={`device status: ${label}`}
@@ -85,6 +93,23 @@ export function DevicesTable({ ipc, mode }: DevicesTableProps) {
 
   useEffect(() => {
     void loadDevices();
+
+    void ipc.invoke<Array<{ slug: string; status: string; updatedAt: number }>>('health:snapshot')
+      .then((snaps) => {
+        if (!Array.isArray(snaps)) return;
+        setStatuses((prev) => {
+          const next = new Map(prev);
+          for (const s of snaps) {
+            if (typeof s?.slug !== 'string' || !s.slug.startsWith('device:')) continue;
+            const deviceId = s.slug.slice('device:'.length);
+            const status = s.status === 'healthy' ? 'ok' : s.status === 'error' ? 'fail' : 'none';
+            next.set(deviceId, { deviceId, status: status as DeviceStatus['status'], updatedAt: s.updatedAt });
+          }
+          return next;
+        });
+      })
+      .catch(() => { /* non-fatal */ });
+
     const offUpdated = ipc.on('cuelist-core/devices-changed', (list) => {
       setDevices((list as Device[]) ?? []);
     });
@@ -96,7 +121,25 @@ export function DevicesTable({ ipc, mode }: DevicesTableProps) {
         return next;
       });
     });
-    return () => { offUpdated(); offStatus(); };
+    const offHealth = ipc.on('health:change', (snaps) => {
+      const healthSnaps = snaps as Array<{ slug: string; status: string; updatedAt: number }>;
+      if (!Array.isArray(healthSnaps)) return;
+      setStatuses((prev) => {
+        const now = Date.now();
+        const next = new Map(prev);
+        for (const s of healthSnaps) {
+          if (!s.slug.startsWith('device:')) continue;
+          const deviceId = s.slug.slice('device:'.length);
+          const existing = prev.get(deviceId);
+          // Don't overwrite an active confirmed state — let it decay naturally
+          if (existing?.status === 'confirmed' && now - existing.updatedAt < CONFIRMED_TTL_MS) continue;
+          const status = s.status === 'healthy' ? 'ok' : s.status === 'error' ? 'fail' : 'none';
+          next.set(deviceId, { deviceId, status: status as DeviceStatus['status'], updatedAt: s.updatedAt });
+        }
+        return next;
+      });
+    });
+    return () => { offUpdated(); offStatus(); offHealth(); };
   }, [ipc, loadDevices]);
 
   const handleAdd = () => {

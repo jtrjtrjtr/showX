@@ -6,7 +6,9 @@ set -euo pipefail
 # Usage: ./scripts/verify-release.sh [version]
 
 VERSION="${1:-0.1.0}"
-DIST_DIR="releases/$VERSION"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+DIST_DIR="$ROOT_DIR/releases/$VERSION"
 DMG="$DIST_DIR/ShowX-${VERSION}.dmg"
 HASH_FILE="$DIST_DIR/ShowX-${VERSION}.dmg.sha256"
 

@@ -19,6 +19,7 @@ type FormState = {
   tag_pattern: string;
   device_id: string;
   target_device_id: string;
+  backup_device_id: string;
   notes: string;
 };
 
@@ -28,6 +29,9 @@ function validate(form: FormState, devices: Device[]): Record<string, string> {
     errors.target_device_id = 'Required';
   } else if (!devices.find((d) => d.device_id === form.target_device_id)) {
     errors.target_device_id = 'Device not found';
+  }
+  if (form.backup_device_id && !devices.find((d) => d.device_id === form.backup_device_id)) {
+    errors.backup_device_id = 'Device not found';
   }
   if (form.payload_type && !PAYLOAD_TYPES.includes(form.payload_type as RulePayloadType)) {
     errors.payload_type = 'Invalid payload type';
@@ -93,6 +97,7 @@ export function RoutingRuleEditDialog({
     tag_pattern: '',
     device_id: '',
     target_device_id: '',
+    backup_device_id: '',
     notes: '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -104,6 +109,7 @@ export function RoutingRuleEditDialog({
         tag_pattern: initial?.match?.tag_pattern ?? '',
         device_id: initial?.match?.device_id ?? '',
         target_device_id: initial?.target_device_id ?? '',
+        backup_device_id: initial?.backup_device_id ?? '',
         notes: initial?.notes ?? '',
       });
       setErrors({});
@@ -129,6 +135,7 @@ export function RoutingRuleEditDialog({
     onSave({
       match,
       target_device_id: form.target_device_id,
+      ...(form.backup_device_id ? { backup_device_id: form.backup_device_id } : {}),
       notes: form.notes || undefined,
     });
   };
@@ -206,7 +213,7 @@ export function RoutingRuleEditDialog({
           </select>
         </Field>
 
-        <Field label="Target Device" error={errors.target_device_id}>
+        <Field label="Target Device (primary)" error={errors.target_device_id}>
           <select
             style={inputStyle}
             value={form.target_device_id}
@@ -214,6 +221,20 @@ export function RoutingRuleEditDialog({
             aria-label="Target device"
           >
             <option value="">Select target device…</option>
+            {devices.map((d) => (
+              <option key={d.device_id} value={d.device_id}>{d.label} ({d.device_id})</option>
+            ))}
+          </select>
+        </Field>
+
+        <Field label="Backup Device (failover, optional)" error={errors.backup_device_id}>
+          <select
+            style={inputStyle}
+            value={form.backup_device_id}
+            onChange={(e) => set('backup_device_id', e.target.value)}
+            aria-label="Backup device"
+          >
+            <option value="">None (no failover)</option>
             {devices.map((d) => (
               <option key={d.device_id} value={d.device_id}>{d.label} ({d.device_id})</option>
             ))}

@@ -142,6 +142,14 @@ function makeLogger() {
   return { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn(), child: vi.fn(function (this: unknown) { return this; }) };
 }
 
+// ── Pairing stub ─────────────────────────────────────────────────────────────
+
+function makeFakePairing(devices: Array<{ device_id: string; owned_departments: string[]; revoked_at?: number }> = []) {
+  return {
+    getDevice: (id: string) => devices.find((d) => d.device_id === id) ?? null,
+  };
+}
+
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
 describe('GoExecutor integration (real GoEventChannel)', () => {
@@ -176,6 +184,7 @@ describe('GoExecutor integration (real GoEventChannel)', () => {
       events: events as unknown as ConstructorParameters<typeof GoExecutor>[0]['events'],
       output: fakeOutput as unknown as ConstructorParameters<typeof GoExecutor>[0]['output'],
       log: log as unknown as ConstructorParameters<typeof GoExecutor>[0]['log'],
+      pairing: makeFakePairing([{ device_id: 'op-sm', owned_departments: ['SM'] }]),
     });
 
     const doc = makeDocWithCuelist(SHOW_ID, CUELIST_ID, CUE_ID);
@@ -224,6 +233,7 @@ describe('GoExecutor integration (real GoEventChannel)', () => {
       events: events as unknown as ConstructorParameters<typeof GoExecutor>[0]['events'],
       output: fakeOutput as unknown as ConstructorParameters<typeof GoExecutor>[0]['output'],
       log: log as unknown as ConstructorParameters<typeof GoExecutor>[0]['log'],
+      pairing: makeFakePairing([{ device_id: 'op-sm', owned_departments: ['SM'] }]),
     });
 
     const doc = makeDocWithCuelist(SHOW_ID, CUELIST_ID, CUE_ID);

@@ -17,6 +17,8 @@ export interface Device {
   midi_port?: string;
   dmx_universe?: number;
   notes?: string;
+  expects_reply?: boolean;  // opt-in: ShowX listens for OSC reply from this device (osc only)
+  reply_port?: number;      // local UDP port ShowX listens on for replies (required when expects_reply=true)
 }
 
 export interface ActorCtx {
@@ -78,6 +80,17 @@ export function validateDevice(init: Device): void {
   }
   if (init.dmx_universe !== undefined && init.transport !== 'dmx') {
     throw new ValidationError('dmx_universe is only valid for transport=dmx', 'dmx_universe');
+  }
+  if (init.expects_reply === true && init.transport !== 'osc') {
+    throw new ValidationError('expects_reply is only valid for transport=osc', 'expects_reply');
+  }
+  if (init.reply_port !== undefined) {
+    if (!init.expects_reply) {
+      throw new ValidationError('reply_port requires expects_reply=true', 'reply_port');
+    }
+    if (init.reply_port < 1 || init.reply_port > 65535) {
+      throw new ValidationError('reply_port must be 1..65535', 'reply_port');
+    }
   }
 }
 

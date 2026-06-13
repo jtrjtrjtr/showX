@@ -8,6 +8,12 @@ import type {
 import type { EventBus } from './EventBus.js';
 import type { Logger } from './Logger.js';
 
+export interface DeviceHealthEntry {
+  status: HealthStatus;
+  last_ok_at?: number;
+  last_error?: string;
+}
+
 type SlugHandler = (snap: HealthSnapshot) => void;
 type AggregateHandler = (status: HealthStatus) => void;
 
@@ -15,6 +21,7 @@ export class HealthBus implements HealthBusIface {
   private snapshots = new Map<string, HealthSnapshot>();
   private slugHandlers = new Map<string, Array<{ id: string; fn: SlugHandler }>>();
   private aggregateHandlers: Array<{ id: string; fn: AggregateHandler }> = [];
+  private deviceMeta = new Map<string, { last_ok_at?: number; last_error?: string }>();
 
   constructor(
     private readonly events?: EventBus,
@@ -29,6 +36,38 @@ export class HealthBus implements HealthBusIface {
     this.snapshots.set(slug, snap);
     this.fanout(slug, snap);
     this.events?.publish({ type: 'health-changed', slug, status, detail });
+
+    if (slug.startsWith('device:')) {
+      const deviceId = slug.slice('device:'.length);
+      const meta = this.deviceMeta.get(deviceId) ?? {};
+      if (status === 'healthy') {
+        meta.last_ok_at = this.now();
+        delete meta.last_error;
+      } else if (status === 'error') {
+        meta.last_error = detail;
+      }
+      this.deviceMeta.set(deviceId, meta);
+      const deviceStatus: 'healthy' | 'error' | 'unknown' =
+        status === 'healthy' ? 'healthy' : status === 'error' ? 'error' : 'unknown';
+      this.events?.publish({
+        type: 'device-status',
+        device_id: deviceId,
+        status: deviceStatus,
+        last_ok_at: meta.last_ok_at,
+        last_error: meta.last_error,
+      });
+    }
+  }
+
+  getDeviceHealth(): Map<string, DeviceHealthEntry> {
+    const result = new Map<string, DeviceHealthEntry>();
+    for (const [slug, snap] of this.snapshots) {
+      if (!slug.startsWith('device:')) continue;
+      const deviceId = slug.slice('device:'.length);
+      const meta = this.deviceMeta.get(deviceId) ?? {};
+      result.set(deviceId, { status: snap.status, ...meta });
+    }
+    return result;
   }
 
   observe(slug: string, fn: SlugHandler): Subscription {

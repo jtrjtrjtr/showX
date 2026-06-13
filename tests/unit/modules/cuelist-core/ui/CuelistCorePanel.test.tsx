@@ -55,6 +55,7 @@ describe('CuelistCorePanel — empty state (no recents)', () => {
     const invoke = vi.fn()
       .mockResolvedValueOnce(null)               // get-state
       .mockResolvedValueOnce([])                 // recent-shows-get
+      .mockResolvedValueOnce([])                 // pairing:listOperatorRecords
       .mockResolvedValueOnce({ path: demoPath }) // open-demo
       .mockResolvedValueOnce(undefined);         // open-show
     const ipc = createMockIpc({ invoke });
@@ -76,6 +77,7 @@ describe('CuelistCorePanel — empty state (no recents)', () => {
     const invoke = vi.fn()
       .mockResolvedValueOnce(null)              // get-state
       .mockResolvedValueOnce([])                // recent-shows-get
+      .mockResolvedValueOnce([])                // pairing:listOperatorRecords
       .mockResolvedValueOnce({ cancelled: true }); // open-file-picker
     const ipc = createMockIpc({ invoke });
     render(<CuelistCorePanel ipc={ipc} />);
@@ -93,6 +95,7 @@ describe('CuelistCorePanel — empty state (no recents)', () => {
     const invoke = vi.fn()
       .mockResolvedValueOnce(null)
       .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([])                // pairing:listOperatorRecords
       .mockResolvedValueOnce({ cancelled: true });
     const ipc = createMockIpc({ invoke });
     render(<CuelistCorePanel ipc={ipc} />);
@@ -117,7 +120,8 @@ describe('CuelistCorePanel — empty state (with recents)', () => {
   it('renders RecentShowsList when recent shows exist', async () => {
     const invoke = vi.fn()
       .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce([sampleRecent]);
+      .mockResolvedValueOnce([sampleRecent])
+      .mockResolvedValue([]);                // pairing:listOperatorRecords + any subsequent
     const ipc = createMockIpc({ invoke });
     render(<CuelistCorePanel ipc={ipc} />);
 
@@ -129,7 +133,8 @@ describe('CuelistCorePanel — empty state (with recents)', () => {
   it('shows recent show name in the list', async () => {
     const invoke = vi.fn()
       .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce([sampleRecent]);
+      .mockResolvedValueOnce([sampleRecent])
+      .mockResolvedValue([]);
     const ipc = createMockIpc({ invoke });
     render(<CuelistCorePanel ipc={ipc} />);
 
@@ -141,7 +146,8 @@ describe('CuelistCorePanel — empty state (with recents)', () => {
   it('renders "Select a recent show or start fresh" copy when recents exist', async () => {
     const invoke = vi.fn()
       .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce([sampleRecent]);
+      .mockResolvedValueOnce([sampleRecent])
+      .mockResolvedValue([]);
     const ipc = createMockIpc({ invoke });
     render(<CuelistCorePanel ipc={ipc} />);
 
@@ -153,7 +159,8 @@ describe('CuelistCorePanel — empty state (with recents)', () => {
   it('does NOT render FirstLaunchPicker when recent shows exist', async () => {
     const invoke = vi.fn()
       .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce([sampleRecent]);
+      .mockResolvedValueOnce([sampleRecent])
+      .mockResolvedValue([]);
     const ipc = createMockIpc({ invoke });
     render(<CuelistCorePanel ipc={ipc} />);
 
@@ -258,6 +265,84 @@ describe('CuelistCorePanel — mode toggle', () => {
       fireEvent.click(screen.getByRole('button', { name: /mode: rehearsal/i }));
     });
     expect(ipc.invoke).toHaveBeenCalledWith('cuelist-core/transition-mode', 'show');
+  });
+});
+
+describe('CuelistCorePanel — operators wiring', () => {
+  it('invokes pairing:listOperatorRecords on mount', async () => {
+    const invoke = vi.fn().mockResolvedValue(null);
+    const ipc = createMockIpc({ invoke });
+    render(<CuelistCorePanel ipc={ipc} />);
+
+    await waitFor(() => {
+      expect(invoke).toHaveBeenCalledWith('pairing:listOperatorRecords');
+    });
+  });
+
+  it('renders Paired Devices section when operators are returned from IPC', async () => {
+    const operator = {
+      device_id: 'dev-1',
+      display_name: 'Stage Manager',
+      owned_departments: ['SM'],
+      role: 'sm' as const,
+      status: 'active' as const,
+      last_seen_at: Date.now() - 5000,
+    };
+    const invoke = vi.fn().mockImplementation((channel: string) => {
+      if (channel === 'cuelist-core/get-state') {
+        return Promise.resolve({ open: true, mode: 'rehearsal', isSm: true, cueCount: 0 });
+      }
+      if (channel === 'pairing:listOperatorRecords') {
+        return Promise.resolve([operator]);
+      }
+      return Promise.resolve(null);
+    });
+    const ipc = createMockIpc({ invoke });
+    render(<CuelistCorePanel ipc={ipc} />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Paired Devices')).toBeTruthy();
+    });
+    expect(screen.getByText('Stage Manager')).toBeTruthy();
+  });
+
+  it('invokes pairing:revokeDevice + refreshes operators on Revoke click', async () => {
+    const operator = {
+      device_id: 'dev-1',
+      display_name: 'Stage Manager',
+      owned_departments: ['SM'],
+      role: 'sm' as const,
+      status: 'active' as const,
+      last_seen_at: Date.now() - 5000,
+    };
+    const invoke = vi.fn().mockImplementation((channel: string) => {
+      if (channel === 'cuelist-core/get-state') {
+        return Promise.resolve({ open: true, mode: 'rehearsal', isSm: true, cueCount: 0 });
+      }
+      if (channel === 'pairing:listOperatorRecords') {
+        return Promise.resolve([operator]);
+      }
+      if (channel === 'pairing:revokeDevice') {
+        return Promise.resolve({ ok: true });
+      }
+      return Promise.resolve(null);
+    });
+    const ipc = createMockIpc({ invoke });
+    render(<CuelistCorePanel ipc={ipc} />);
+
+    await waitFor(() => screen.getByRole('button', { name: /revoke/i }));
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /revoke/i }));
+    });
+
+    await waitFor(() => {
+      expect(invoke).toHaveBeenCalledWith('pairing:revokeDevice', 'dev-1');
+      const revokeCallCount = (invoke as ReturnType<typeof vi.fn>).mock.calls.filter(
+        (c: unknown[]) => c[0] === 'pairing:listOperatorRecords',
+      ).length;
+      expect(revokeCallCount).toBeGreaterThanOrEqual(2);
+    });
   });
 });
 

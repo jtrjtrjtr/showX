@@ -15,6 +15,9 @@ function makeMockSideChannel(): SideChannelClient {
     disconnect: vi.fn(),
     sendGoRequest: vi.fn(() => 'req-id'),
     sendArmRequest: vi.fn(),
+    sendStandbyRequest: vi.fn(),
+    sendAcknowledgeRequest: vi.fn(),
+    sendAuditionRequest: vi.fn(() => 'aud-id'),
   } as unknown as SideChannelClient;
 }
 

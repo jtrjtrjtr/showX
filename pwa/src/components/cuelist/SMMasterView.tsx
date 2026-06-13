@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import type { Cue } from 'showx-shared';
-import type { AuditionResult } from '../../lib/sideChannel.js';
+import type { AuditionResult, CueLightState } from '../../lib/sideChannel.js';
 import { useCuelist } from '../../hooks/useCuelist.js';
 import type { CueFieldPatch } from '../../hooks/useCuelist.js';
 import { useClock } from '../../hooks/useClock.js';
@@ -22,6 +22,9 @@ import { GoButton, HOLD_GO_THRESHOLD_MS } from './GoButton.js';
 import { TransportBar } from './TransportBar.js';
 import { GoConfirmDialog } from './GoConfirmDialog.js';
 import { HelpOverlay } from './HelpOverlay.js';
+import { PreShowCheck } from './PreShowCheck.js';
+import { ProposalBadge, ProposalQueue } from './ProposalQueue.js';
+import { pendingProposalCount } from '../../../../src/modules/cuelist-core/src/document/proposals.js';
 
 // ── AuditionBar ───────────────────────────────────────────────────────────────
 // Dry-run control: SM fires the selected/armed cue with no real output.
@@ -80,6 +83,119 @@ function AuditionBar({ targetCueId, targetCueLabel, onAudition, lastResult }: Au
           {lastResult.ok ? '✓' : '✗'}{' '}
           {lastResult.details.map((d) => d.transport).join(', ') || '—'}
         </span>
+      )}
+    </div>
+  );
+}
+
+// ── CueLightsPanel ────────────────────────────────────────────────────────────
+// SM-side cue light indicators: amber=standby-sent, green=acknowledged.
+
+interface CueLightsPanelProps {
+  cueId: string | null;
+  departments: string[];
+  deptState: Record<string, CueLightState>;
+  onStandby: (on: boolean) => void;
+}
+
+function CueLightsPanel({ cueId, departments, deptState, onStandby }: CueLightsPanelProps) {
+  if (!cueId || departments.length === 0) return null;
+  const hasAnyActive = departments.some((d) => (deptState[d] ?? 'idle') !== 'idle');
+  return (
+    <div
+      data-testid="cue-lights-panel"
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: tokens.space.s,
+        marginTop: tokens.space.s,
+        flexWrap: 'wrap',
+      }}
+    >
+      {departments.map((dept) => {
+        const state = deptState[dept] ?? 'idle';
+        const color =
+          state === 'acknowledged'
+            ? tokens.color.green
+            : state === 'standby'
+              ? tokens.color.yellow
+              : tokens.color.ink_disabled;
+        return (
+          <span
+            key={dept}
+            data-testid={`cue-light-dept-${dept}`}
+            aria-label={`${dept}: ${state}`}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 4,
+              padding: `2px ${tokens.space.s}px`,
+              borderRadius: tokens.radius.s,
+              border: `1px solid ${color}`,
+              color,
+              fontSize: 11,
+              fontWeight: 700,
+              fontFamily: tokens.font.ui,
+              letterSpacing: '0.04em',
+              background:
+                state === 'acknowledged'
+                  ? '#0D2B22'
+                  : state === 'standby'
+                    ? '#2B1F06'
+                    : 'transparent',
+            }}
+          >
+            <span
+              style={{
+                width: 6,
+                height: 6,
+                borderRadius: '50%',
+                background: color,
+                flexShrink: 0,
+              }}
+            />
+            {dept}
+          </span>
+        );
+      })}
+      <button
+        data-testid="cue-lights-standby-btn"
+        aria-label="Send STANDBY to departments"
+        onClick={() => onStandby(true)}
+        style={{
+          padding: `2px ${tokens.space.s}px`,
+          background: 'none',
+          color: tokens.color.yellow,
+          border: `1px solid ${tokens.color.yellow}`,
+          borderRadius: tokens.radius.s,
+          fontSize: 11,
+          fontWeight: 700,
+          cursor: 'pointer',
+          fontFamily: tokens.font.ui,
+          letterSpacing: '0.04em',
+        }}
+      >
+        STANDBY
+      </button>
+      {hasAnyActive && (
+        <button
+          data-testid="cue-lights-clear-btn"
+          aria-label="Clear standby"
+          onClick={() => onStandby(false)}
+          style={{
+            padding: `2px ${tokens.space.s}px`,
+            background: 'none',
+            color: tokens.color.ink_secondary,
+            border: `1px solid ${tokens.color.border}`,
+            borderRadius: tokens.radius.s,
+            fontSize: 11,
+            fontWeight: 700,
+            cursor: 'pointer',
+            fontFamily: tokens.font.ui,
+          }}
+        >
+          CLEAR
+        </button>
       )}
     </div>
   );
@@ -195,8 +311,19 @@ export function SMMasterView({ cuelistId }: SMMasterViewProps) {
 
   const [search, setSearch] = useState('');
   const [showHelp, setShowHelp] = useState(false);
+  const [showPreShowCheck, setShowPreShowCheck] = useState(false);
+  const [showProposalQueue, setShowProposalQueue] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [editingCue, setEditingCue] = useState<Cue | null>(null);
+
+  // Proposals: observe pending count for badge
+  const [pendingProposals, setPendingProposals] = useState(() => pendingProposalCount(conn.doc));
+  useEffect(() => {
+    const arr = conn.doc.getArray('proposals');
+    const refresh = () => setPendingProposals(pendingProposalCount(conn.doc));
+    arr.observe(refresh);
+    return () => arr.unobserve(refresh);
+  }, [conn.doc]);
 
   // ── Inline editing state ───────────────────────────────────────────────────
   const [inlineEdit, setInlineEdit] = useState<{ cueId: string; field: InlineEditField } | null>(null);
@@ -341,6 +468,10 @@ export function SMMasterView({ cuelistId }: SMMasterViewProps) {
     setDragOverCueId(null);
   }, [draggingCueId, dragOverCueId, cues, reorderCues]);
 
+  // ── Cue lights state (B006-007) ───────────────────────────────────────────
+  // Per-cue, per-dept: cue_id → dept → CueLightState
+  const [cueLightState, setCueLightState] = useState<Record<string, Record<string, CueLightState>>>({});
+
   const [rejectedReason, setRejectedReason] = useState<string | null>(null);
   const rejectionSeqRef = useRef(0);
 
@@ -382,6 +513,41 @@ export function SMMasterView({ cuelistId }: SMMasterViewProps) {
       setRejectedReason(key);
       const t = setTimeout(() => setRejectedReason(null), 2000);
       return () => clearTimeout(t);
+    });
+  }, [conn.sideChannel]);
+
+  // Cue lights: track standby.broadcast — update per-dept state
+  useEffect(() => {
+    return conn.sideChannel.on('standby.broadcast', (event) => {
+      setCueLightState((prev) => {
+        const next = { ...prev };
+        const cueState = { ...(next[event.cue_id] ?? {}) };
+        for (const dept of event.departments) {
+          const current = cueState[dept] ?? 'idle';
+          if (event.standby) {
+            if (current === 'idle') cueState[dept] = 'standby';
+          } else {
+            cueState[dept] = 'idle';
+          }
+        }
+        next[event.cue_id] = cueState;
+        return next;
+      });
+    });
+  }, [conn.sideChannel]);
+
+  // Cue lights: track operator.acknowledge — advance dept to acknowledged
+  useEffect(() => {
+    return conn.sideChannel.on('operator.acknowledge', (event) => {
+      setCueLightState((prev) => {
+        const next = { ...prev };
+        const cueState = { ...(next[event.cue_id] ?? {}) };
+        if (cueState[event.department] === 'standby') {
+          cueState[event.department] = 'acknowledged';
+        }
+        next[event.cue_id] = cueState;
+        return next;
+      });
     });
   }, [conn.sideChannel]);
 
@@ -431,6 +597,13 @@ export function SMMasterView({ cuelistId }: SMMasterViewProps) {
     const cueId = armedCueIdRef.current;
     if (!cueId || goInertRef.current) return;
     go(cueId);
+
+    // Clear cue lights for this cue on GO
+    setCueLightState((prev) => {
+      const next = { ...prev };
+      delete next[cueId];
+      return next;
+    });
 
     // Debounce guard: inert for 300ms
     goInertRef.current = true;
@@ -743,6 +916,30 @@ export function SMMasterView({ cuelistId }: SMMasterViewProps) {
         >
           ?
         </button>
+        <button
+          data-testid="preshow-check-btn"
+          aria-label="Pre-show health check"
+          title="Pre-show check"
+          onClick={() => setShowPreShowCheck(true)}
+          style={{
+            background: 'none',
+            border: `1px solid ${tokens.color.border}`,
+            borderRadius: tokens.radius.s,
+            padding: `${tokens.space.xs}px ${tokens.space.s}px`,
+            cursor: 'pointer',
+            fontSize: 11,
+            fontWeight: 700,
+            color: tokens.color.teal,
+            fontFamily: tokens.font.ui,
+            letterSpacing: '0.04em',
+          }}
+        >
+          PRE-SHOW ✓
+        </button>
+        <ProposalBadge
+          count={pendingProposals}
+          onClick={() => setShowProposalQueue(true)}
+        />
       </header>
 
       {/* Playback status strip — TC display embedded via clock prop */}
@@ -1028,9 +1225,25 @@ export function SMMasterView({ cuelistId }: SMMasterViewProps) {
           onAudition={(cueId) => audition(cueId)}
           lastResult={lastAuditioned}
         />
+        {/* Cue lights — per-dept standby/ack status for armed cue */}
+        <CueLightsPanel
+          cueId={armedCueId}
+          departments={armedCue?.department ?? []}
+          deptState={armedCueId ? (cueLightState[armedCueId] ?? {}) : {}}
+          onStandby={(on) => {
+            if (!armedCueId || !armedCue) return;
+            conn.sideChannel.sendStandbyRequest(cuelistId, armedCueId, armedCue.department, on);
+          }}
+        />
       </div>
 
       {showHelp && <HelpOverlay onClose={() => setShowHelp(false)} />}
+      {showPreShowCheck && (
+        <PreShowCheck cuelistId={cuelistId} onClose={() => setShowPreShowCheck(false)} />
+      )}
+      {showProposalQueue && (
+        <ProposalQueue cues={cues} onClose={() => setShowProposalQueue(false)} />
+      )}
       {showConfirmDialog && armedCue && (
         <GoConfirmDialog
           cue={armedCue}

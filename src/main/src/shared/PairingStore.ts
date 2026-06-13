@@ -3,9 +3,19 @@ import type { PersistedStore as PersistedStoreIface } from 'showx-shared';
 import { DeviceRecord, TokenInvalidError } from './pairing/types.js';
 import type { TokenManager } from './pairing/tokenManager.js';
 
+export interface OperatorRecord {
+  device_id: string;
+  display_name: string;
+  owned_departments: string[];
+  role: 'sm' | 'operator';
+  status: 'active' | 'revoked';
+  last_seen_at: number | null;
+}
+
 export interface PairingStore {
   init(): Promise<void>;
   listDevices(): DeviceRecord[];
+  listOperatorRecords(): OperatorRecord[];
   getDevice(deviceId: string): DeviceRecord | null;
   addDevice(d: Omit<DeviceRecord, 'created_at' | 'last_seen'>): Promise<DeviceRecord>;
   updateLastSeen(deviceId: string, now?: number): Promise<void>;
@@ -57,6 +67,17 @@ export class PairingStoreImpl implements PairingStore {
 
   listDevices(): DeviceRecord[] {
     return [...this.devices.values()];
+  }
+
+  listOperatorRecords(): OperatorRecord[] {
+    return [...this.devices.values()].map((d) => ({
+      device_id: d.device_id,
+      display_name: d.display_name,
+      owned_departments: d.owned_departments,
+      role: d.owned_departments.includes('SM') ? 'sm' : 'operator',
+      status: d.revoked_at !== undefined ? 'revoked' : 'active',
+      last_seen_at: d.last_seen,
+    }));
   }
 
   getDevice(deviceId: string): DeviceRecord | null {

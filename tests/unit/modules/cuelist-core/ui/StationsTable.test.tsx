@@ -3,7 +3,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 
 afterEach(cleanup);
-import { StationsTable, type Awareness } from '../../../../../src/modules/cuelist-core/src/ui/StationsTable.js';
+import { StationsTable, type Awareness, type OperatorRecord } from '../../../../../src/modules/cuelist-core/src/ui/StationsTable.js';
 
 const now = new Date().toISOString();
 
@@ -93,5 +93,105 @@ describe('StationsTable', () => {
     expect(screen.getByText('Owned')).toBeTruthy();
     expect(screen.getByText('Watched')).toBeTruthy();
     expect(screen.getByText('Last seen')).toBeTruthy();
+  });
+});
+
+const makeOperator = (overrides: Partial<OperatorRecord> = {}): OperatorRecord => ({
+  device_id: 'dev-1',
+  display_name: 'Alice SM',
+  owned_departments: ['SM'],
+  role: 'sm',
+  status: 'active',
+  last_seen_at: Date.now() - 30_000,
+  ...overrides,
+});
+
+describe('StationsTable — operators / Paired Devices section', () => {
+  it('does not render Paired Devices section when operators prop is absent', () => {
+    render(<StationsTable stations={[]} canKick={false} onKick={vi.fn()} />);
+    expect(screen.queryByText('Paired Devices')).toBeNull();
+  });
+
+  it('does not render Paired Devices section when operators array is empty', () => {
+    render(<StationsTable stations={[]} canKick={false} onKick={vi.fn()} operators={[]} />);
+    expect(screen.queryByText('Paired Devices')).toBeNull();
+  });
+
+  it('renders Paired Devices section heading when operators array is non-empty', () => {
+    render(<StationsTable stations={[]} canKick={false} onKick={vi.fn()} operators={[makeOperator()]} />);
+    expect(screen.getByText('Paired Devices')).toBeTruthy();
+  });
+
+  it('renders operator display_name and role label', () => {
+    render(
+      <StationsTable
+        stations={[]}
+        canKick={false}
+        onKick={vi.fn()}
+        operators={[makeOperator({ display_name: 'Alice SM', role: 'sm' })]}
+      />,
+    );
+    expect(screen.getByText('Alice SM')).toBeTruthy();
+    expect(screen.getAllByText('SM').length).toBeGreaterThan(0);
+  });
+
+  it('renders "active" status for active operator', () => {
+    render(
+      <StationsTable stations={[]} canKick={false} onKick={vi.fn()} operators={[makeOperator({ status: 'active' })]} />,
+    );
+    expect(screen.getByText('active')).toBeTruthy();
+  });
+
+  it('renders "revoked" status for revoked operator', () => {
+    render(
+      <StationsTable
+        stations={[]}
+        canKick={false}
+        onKick={vi.fn()}
+        operators={[makeOperator({ status: 'revoked' })]}
+      />,
+    );
+    expect(screen.getByText('revoked')).toBeTruthy();
+  });
+
+  it('shows Revoke button for active operator when canKick=true', () => {
+    render(
+      <StationsTable
+        stations={[]}
+        canKick={true}
+        onKick={vi.fn()}
+        operators={[makeOperator({ status: 'active' })]}
+        onRevoke={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole('button', { name: /revoke/i })).toBeTruthy();
+  });
+
+  it('hides Revoke button for revoked operator', () => {
+    render(
+      <StationsTable
+        stations={[]}
+        canKick={true}
+        onKick={vi.fn()}
+        operators={[makeOperator({ status: 'revoked' })]}
+        onRevoke={vi.fn()}
+      />,
+    );
+    expect(screen.queryByRole('button', { name: /revoke/i })).toBeNull();
+  });
+
+  it('calls onRevoke with device_id when Revoke button is clicked', () => {
+    const onRevoke = vi.fn();
+    render(
+      <StationsTable
+        stations={[]}
+        canKick={true}
+        onKick={vi.fn()}
+        operators={[makeOperator({ device_id: 'target-dev', status: 'active' })]}
+        onRevoke={onRevoke}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: /revoke/i }));
+    expect(onRevoke).toHaveBeenCalledWith('target-dev');
   });
 });

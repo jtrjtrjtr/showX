@@ -24,10 +24,12 @@ Confirm: shell window loads with title "ShowX". No infinite "Loading..." hang.
 
 | Script | When |
 |---|---|
-| `pnpm dist` | Unsigned arm64 DMG — local testing, CI gate |
-| `pnpm dist:signed` | Signed arm64 DMG — requires Apple Developer ID cert in keychain |
 | `./scripts/build-release.sh 0.4.0` | Full unsigned release with typecheck + tests |
-| `./scripts/build-release.sh 0.4.0 --signed` | Full signed release |
+| `./scripts/build-release.sh 0.4.0 --signed` | Full signed release (falls back to unsigned if no cert) |
+| `./scripts/notarize-release.sh 0.4.0` | Submit to Apple notarization + staple ticket |
+| `./scripts/verify-release.sh 0.4.0` | Final Gatekeeper + signature + SHA-256 verification |
+
+For signed builds and notarization setup, see [signing.md](signing.md).
 
 ## How packaging works
 
@@ -55,12 +57,16 @@ Shell.js packed-mode path detection (`pwaDistPath()`, `modulesRootPath()`) depen
 - Removed missing `build/dmg-background.png` reference from dmg config.
 - Version bumped to 0.4.0 in root `package.json`.
 
-## Signing (B006-002)
+## Signing
 
-Signing is handled in B006-002. For signed builds:
+For signed builds and notarization, see [signing.md](signing.md).
+
+One-liner for signed release:
 ```bash
 export CSC_NAME="Developer ID Application: XLAB s.r.o. (TEAMID)"
-pnpm dist:signed
+./scripts/build-release.sh 0.4.0 --signed
+./scripts/notarize-release.sh 0.4.0
+./scripts/verify-release.sh 0.4.0
 ```
 
 ## Native deps

@@ -8,11 +8,21 @@ export function registerDispatchLogBridge(
 ): () => void {
   ipc.handle('dispatchLog:list', async () => executor.getLog());
 
-  const unsub = executor.onAppend((record) => {
+  const unsubLog = executor.onAppend((record) => {
     BrowserWindow.getAllWindows().forEach((w) => {
       if (!w.isDestroyed()) w.webContents.send('dispatchLog:append', record);
     });
   });
 
-  return unsub;
+  const unsubReply = executor.onReplyStatus((update) => {
+    BrowserWindow.getAllWindows().forEach((w) => {
+      if (!w.isDestroyed()) w.webContents.send('cuelist-core/device-status', {
+        deviceId: update.deviceId,
+        status: update.status,
+        updatedAt: update.updatedAt,
+      });
+    });
+  });
+
+  return () => { unsubLog(); unsubReply(); };
 }

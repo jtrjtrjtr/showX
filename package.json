@@ -1,6 +1,6 @@
 {
-  "name": "showx",
-  "version": "0.4.0",
+  "name": "showx-workspace",
+  "version": "0.5.0",
   "private": true,
   "description": "ShowX — XLAB master FOH product (LAN-first Electron + modular shell). Absorbs BridgeX 0.3.x.",
   "workspaces": [
@@ -32,6 +32,5 @@
     "y-protocols": "^1.0.6",
     "yjs": "^13.6.10",
     "zod": "^3.22.0"
-  },
-  "type": "module"
+  }
 }

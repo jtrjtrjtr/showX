@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { LxOperatorView } from './variants/LxOperatorView.js';
 import { SxOperatorView } from './variants/SxOperatorView.js';
 import { VideoOperatorView } from './variants/VideoOperatorView.js';
@@ -7,9 +7,11 @@ import { PyroOperatorView } from './variants/PyroOperatorView.js';
 import { FsOperatorView } from './variants/FsOperatorView.js';
 import { GenericOperatorView } from './variants/GenericOperatorView.js';
 import { usePlayhead } from '../../hooks/usePlayhead.js';
+import { useCuelist } from '../../hooks/useCuelist.js';
 import { useConnection } from '../../lib/ConnectionProvider.js';
 import { tokens } from './tokens.js';
 import { TimecodeDisplay } from './TimecodeDisplay.js';
+import { OperatorStandbyAlert } from './StandbyPanel.js';
 
 export interface OperatorViewProps {
   cuelistId: string;
@@ -65,7 +67,61 @@ function PlayheadBanner({ cuelistId }: { cuelistId: string }) {
   );
 }
 
+interface ActiveStandby {
+  cue_id: string;
+  cuelist_id: string;
+  department: string;
+}
+
 export function OperatorView({ cuelistId, owned, watched }: OperatorViewProps) {
+  const conn = useConnection();
+  const { cues } = useCuelist(cuelistId);
+
+  const [pendingStandby, setPendingStandby] = useState<ActiveStandby | null>(null);
+  const [acknowledged, setAcknowledged] = useState(false);
+
+  // Stable ref for owned set so the subscription effect doesn't re-fire on every render
+  const ownedSetRef = useRef(new Set(owned));
+  useEffect(() => { ownedSetRef.current = new Set(owned); }, [owned]);
+
+  // Subscribe to standby.broadcast — filter to owned departments only
+  useEffect(() => {
+    return conn.sideChannel.on('standby.broadcast', (event) => {
+      const matchDept = event.departments.find((d) => ownedSetRef.current.has(d));
+      if (!matchDept) return;
+      if (event.standby) {
+        setPendingStandby({ cue_id: event.cue_id, cuelist_id: event.cuelist_id, department: matchDept });
+        setAcknowledged(false);
+      } else {
+        setPendingStandby((ps) => (ps?.cue_id === event.cue_id ? null : ps));
+        setAcknowledged(false);
+      }
+    });
+  }, [conn.sideChannel]);
+
+  // Clear standby alert on GO
+  useEffect(() => {
+    return conn.sideChannel.on('go.dispatched', () => {
+      setPendingStandby(null);
+      setAcknowledged(false);
+    });
+  }, [conn.sideChannel]);
+
+  const handleAcknowledge = useCallback(() => {
+    if (!pendingStandby) return;
+    conn.sideChannel.sendAcknowledgeRequest(
+      pendingStandby.cuelist_id,
+      pendingStandby.cue_id,
+      pendingStandby.department,
+    );
+    setAcknowledged(true);
+  }, [conn.sideChannel, pendingStandby]);
+
+  const cueLabel = useMemo(
+    () => (pendingStandby ? (cues.find((c) => c.id === pendingStandby.cue_id)?.label ?? pendingStandby.cue_id) : null),
+    [pendingStandby, cues],
+  );
+
   function renderVariant() {
     if (owned.length === 1) {
       switch (owned[0]) {
@@ -102,6 +158,14 @@ export function OperatorView({ cuelistId, owned, watched }: OperatorViewProps) {
         <TimecodeDisplay size={32} />
       </div>
       <PlayheadBanner cuelistId={cuelistId} />
+      {pendingStandby && (
+        <OperatorStandbyAlert
+          cueLabel={cueLabel}
+          department={pendingStandby.department}
+          acknowledged={acknowledged}
+          onAcknowledge={handleAcknowledge}
+        />
+      )}
       {renderVariant()}
     </div>
   );

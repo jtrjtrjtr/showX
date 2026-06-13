@@ -5,6 +5,121 @@ import { GoEventChannel } from '@showx/module-cuelist-core/go/goEventChannel.js'
 import type { OperatorContext, AuditionResult } from '@showx/module-cuelist-core/go/goEventChannel.js';
 import { dispatchCue } from '@showx/module-cuelist-core/dispatch/payloadDispatch.js';
 import type { DispatchDeps } from '@showx/module-cuelist-core/dispatch/payloadDispatch.js';
+import { OscPortListener } from '../shared/input/oscListener.js';
+import { getDevicesList } from '@showx/module-cuelist-core/document/devices.js';
+
+// ── DeviceReplyTracker ────────────────────────────────────────────────────────
+
+export interface DeviceReplyUpdate {
+  deviceId: string;
+  status: 'confirmed' | 'ok';
+  updatedAt: number;
+}
+
+type ReplyStatusCb = (update: DeviceReplyUpdate) => void;
+
+const CONFIRMED_TTL_MS = 30_000;
+
+type OscListenerFactory = (port: number, log: Logger) => OscPortListener;
+
+interface ReplyEntry {
+  host: string;
+  listener: OscPortListener;
+  decayTimer: ReturnType<typeof setTimeout> | null;
+}
+
+/**
+ * Tracks per-device OSC reply confirmation.
+ * - Binds a UDP listener on device.reply_port; when OSC arrives from device.host → 'confirmed'.
+ * - After CONFIRMED_TTL_MS with no further reply, decays back to 'ok'.
+ * - Only OSC devices with expects_reply=true + reply_port are registered.
+ * - Fire-and-forget devices (no expects_reply) are never registered → never show 'unconfirmed'.
+ */
+export class DeviceReplyTracker {
+  private portListeners = new Map<number, OscPortListener>();
+  private portRefCount = new Map<number, number>();
+  private entries = new Map<string, ReplyEntry>();
+  private cbs = new Set<ReplyStatusCb>();
+
+  constructor(
+    private readonly log: Logger,
+    private readonly now: () => number = Date.now,
+    private readonly listenerFactory: OscListenerFactory = (port, l) => new OscPortListener(port, l),
+  ) {}
+
+  async register(deviceId: string, host: string, replyPort: number): Promise<void> {
+    if (this.entries.has(deviceId)) return;
+
+    let listener = this.portListeners.get(replyPort);
+    if (!listener) {
+      listener = this.listenerFactory(replyPort, this.log);
+      try {
+        await listener.start();
+      } catch (err) {
+        this.log.warn('reply-tracker: bind failed', { deviceId, replyPort, err: String(err) });
+        return;
+      }
+      this.portListeners.set(replyPort, listener);
+      this.portRefCount.set(replyPort, 0);
+    }
+
+    const capturedHost = host;
+    const capturedDeviceId = deviceId;
+    const msgHandler = (msg: { fromHost: string }): void => {
+      if (msg.fromHost !== capturedHost) return;
+      this.handleReply(capturedDeviceId);
+    };
+
+    listener.addHandler(msgHandler as Parameters<OscPortListener['addHandler']>[0]);
+    this.portRefCount.set(replyPort, (this.portRefCount.get(replyPort) ?? 0) + 1);
+
+    this.entries.set(deviceId, {
+      host,
+      listener,
+      decayTimer: null,
+    });
+
+    this.log.info('reply-tracker: registered', { deviceId, host, replyPort });
+  }
+
+  private handleReply(deviceId: string): void {
+    const entry = this.entries.get(deviceId);
+    if (!entry) return;
+
+    if (entry.decayTimer !== null) clearTimeout(entry.decayTimer);
+
+    const at = this.now();
+    entry.decayTimer = setTimeout(() => {
+      entry.decayTimer = null;
+      this.emit({ deviceId, status: 'ok', updatedAt: this.now() });
+    }, CONFIRMED_TTL_MS);
+
+    this.emit({ deviceId, status: 'confirmed', updatedAt: at });
+  }
+
+  onStatus(cb: ReplyStatusCb): () => void {
+    this.cbs.add(cb);
+    return () => this.cbs.delete(cb);
+  }
+
+  private emit(update: DeviceReplyUpdate): void {
+    for (const cb of this.cbs) {
+      try { cb(update); } catch { /* ignore */ }
+    }
+  }
+
+  async unregisterAll(): Promise<void> {
+    for (const entry of this.entries.values()) {
+      if (entry.decayTimer !== null) clearTimeout(entry.decayTimer);
+    }
+    this.entries.clear();
+    for (const listener of this.portListeners.values()) {
+      await listener.stop();
+    }
+    this.portListeners.clear();
+    this.portRefCount.clear();
+  }
+}
 
 // ── DispatchRecord ─────────────────────────────────────────────────────────────
 
@@ -32,7 +147,7 @@ interface GoExecutorSyncBroker {
 
 /** PairingStore subset — operator authority resolution (operator_id == device_id in 3.x). */
 interface GoExecutorPairing {
-  getDevice(deviceId: string): { owned_departments: string[] } | null;
+  getDevice(deviceId: string): { owned_departments: string[]; revoked_at?: number } | null;
 }
 
 export interface GoExecutorDeps {
@@ -54,6 +169,8 @@ export class GoExecutor {
   private unsubs: Array<() => void> = [];
   private ring: DispatchRecord[] = [];
   private appendListeners = new Set<(r: DispatchRecord) => void>();
+  private replyTracker: DeviceReplyTracker | null = null;
+  private replyStatusListeners = new Set<ReplyStatusCb>();
 
   getLog(): DispatchRecord[] {
     return [...this.ring];
@@ -62,6 +179,11 @@ export class GoExecutor {
   onAppend(cb: (r: DispatchRecord) => void): () => void {
     this.appendListeners.add(cb);
     return () => this.appendListeners.delete(cb);
+  }
+
+  onReplyStatus(cb: ReplyStatusCb): () => void {
+    this.replyStatusListeners.add(cb);
+    return () => this.replyStatusListeners.delete(cb);
   }
 
   private pushRecord(record: DispatchRecord): void {
@@ -76,6 +198,16 @@ export class GoExecutor {
     if (this.channel) this.detach();
 
     const { syncBroker, events, log } = this.deps;
+
+    // Set up reply tracker for OSC devices that opt in to expects_reply
+    this.replyTracker = new DeviceReplyTracker(log);
+    const tracker = this.replyTracker;
+    void this.registerReplyDevices(doc, tracker);
+    tracker.onStatus((update) => {
+      for (const cb of this.replyStatusListeners) {
+        try { cb(update); } catch { /* ignore */ }
+      }
+    });
     const abort = new AbortController();
 
     // Always inject an integration OSC fallback so a FRESH DEMO SHOW dispatches out of the box.
@@ -99,12 +231,18 @@ export class GoExecutor {
       },
       // Authority context from PairingStore: operator_id == device_id (3.x),
       // owned_departments captured at claim (PairingView adds 'SM' for sm-role stations).
-      // Without octx, sm_called cuelists reject every GO with not_sm.
+      // Revoked devices are explicitly blocked before department checks.
       octx: {
-        operatorOwns: (operatorId: string, dept: string): boolean =>
-          this.deps.pairing.getDevice(operatorId)?.owned_departments.includes(dept) ?? false,
-        operatorOwned: (operatorId: string): string[] =>
-          this.deps.pairing.getDevice(operatorId)?.owned_departments ?? [],
+        isRevoked: (operatorId: string): boolean =>
+          this.deps.pairing.getDevice(operatorId)?.revoked_at !== undefined,
+        operatorOwns: (operatorId: string, dept: string): boolean => {
+          const d = this.deps.pairing.getDevice(operatorId);
+          return d?.revoked_at === undefined && (d?.owned_departments.includes(dept) ?? false);
+        },
+        operatorOwned: (operatorId: string): string[] => {
+          const d = this.deps.pairing.getDevice(operatorId);
+          return d?.revoked_at === undefined ? (d?.owned_departments ?? []) : [];
+        },
       } satisfies OperatorContext,
       subscribe: (topic, handler) => {
         const sub = syncBroker.subscribeSideChannel(showId, (m) => {
@@ -168,9 +306,20 @@ export class GoExecutor {
     this.channel = null;
     for (const u of this.unsubs) u();
     this.unsubs = [];
+    void this.replyTracker?.unregisterAll();
+    this.replyTracker = null;
   }
 
   // ── Private helpers ────────────────────────────────────────────────────────
+
+  private async registerReplyDevices(doc: Y.Doc, tracker: DeviceReplyTracker): Promise<void> {
+    const devices = getDevicesList(doc);
+    for (const device of devices) {
+      if (device.expects_reply && device.reply_port && device.host) {
+        await tracker.register(device.device_id, device.host, device.reply_port);
+      }
+    }
+  }
 
   private async handleCueFire(
     showId: string,

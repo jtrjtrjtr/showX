@@ -7,12 +7,12 @@ set -euo pipefail
 #
 # Unsigned (local/CI gate, no cert required):
 #   ./scripts/build-release.sh 0.4.0
-#   → runs: pnpm dist   (CSC_IDENTITY_AUTO_DISCOVERY=false baked into npm script)
 #
-# Signed (B006-002, requires Apple Developer ID cert in keychain):
+# Signed (requires Apple Developer ID cert in keychain):
 #   ./scripts/build-release.sh 0.4.0 --signed
-#   → runs: pnpm dist:signed
-#   Requires: valid Developer ID Application cert; set CSC_NAME env if needed.
+#   Optionally set CSC_NAME to the exact cert name if multiple certs are present:
+#     export CSC_NAME="Developer ID Application: XLAB s.r.o. (TEAMID)"
+#   See docs/dev/signing.md for full setup instructions.
 
 VERSION="${1:-0.4.0}"
 SIGNED=false
@@ -20,36 +20,57 @@ if [[ "${2:-}" == "--signed" ]]; then
   SIGNED=true
 fi
 
-DIST_DIR="releases/$VERSION"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+DIST_DIR="$ROOT_DIR/releases/$VERSION"
+EB="$ROOT_DIR/node_modules/.bin/electron-builder"
 
 echo "=== ShowX release build v${VERSION} (signed=$SIGNED) ==="
 mkdir -p "$DIST_DIR"
 
 # 1. Type-check — hard gate
-pnpm typecheck
+echo "Type-checking..."
+pnpm --filter showx-main typecheck
 
 # 2. Full test suite
-pnpm test
+echo "Running tests..."
+"$ROOT_DIR/node_modules/.bin/vitest" run --config "$ROOT_DIR/vitest.config.ts"
 
-# 3. Build production bundles (skip if already built)
-echo "Building main + pwa..."
-pnpm build:main
-pnpm build:pwa
+# 3. Build production bundles
+echo "Building main process..."
+pnpm --filter showx-main build
+
+echo "Building PWA..."
+pnpm --filter showx-pwa build
 
 # 4. DMG via electron-builder
-# The electron-builder.yml extraMetadata.main: index.js patch ensures the
-# packed package.json points at the in-asar entry (flattened from src/main/dist).
-# The package.json files entry ensures the root package.json is present in the asar.
 if [[ "$SIGNED" == "true" ]]; then
-  echo "Building SIGNED arm64 DMG..."
-  pnpm dist:signed
+  # Detect whether a Developer ID Application cert is available
+  CERT_FOUND=false
+  if security find-identity -v -p codesigning 2>/dev/null | grep -q "Developer ID Application"; then
+    CERT_FOUND=true
+  fi
+
+  if [[ "$CERT_FOUND" == "false" ]]; then
+    echo ""
+    echo "╔══════════════════════════════════════════════════════════════════╗"
+    echo "║  WARNING: --signed requested but no Developer ID Application   ║"
+    echo "║  certificate found in keychain. Falling back to UNSIGNED build. ║"
+    echo "║  See docs/dev/signing.md to import your cert.                   ║"
+    echo "╚══════════════════════════════════════════════════════════════════╝"
+    echo ""
+    CSC_IDENTITY_AUTO_DISCOVERY=false "$EB" --mac dmg --arm64
+  else
+    echo "Developer ID cert found — building SIGNED arm64 DMG..."
+    "$EB" --mac dmg --arm64
+  fi
 else
   echo "Building UNSIGNED arm64 DMG (no cert required)..."
-  pnpm dist
+  CSC_IDENTITY_AUTO_DISCOVERY=false "$EB" --mac dmg --arm64
 fi
 
 # 5. Collect artifact
-DMG_SRC=$(find dist-electron -name "ShowX-*.dmg" | head -1)
+DMG_SRC=$(find "$ROOT_DIR/dist-electron" -name "ShowX-*.dmg" | head -1)
 if [[ -z "$DMG_SRC" ]]; then
   echo "ERROR: DMG not found in dist-electron/" >&2
   exit 1
@@ -64,6 +85,8 @@ echo "DMG:    $DIST_DIR/ShowX-${VERSION}.dmg"
 echo "SHA256: $(cat "$DIST_DIR/ShowX-${VERSION}.dmg.sha256")"
 echo ""
 if [[ "$SIGNED" == "false" ]]; then
-  echo "Unsigned build — for distribution run with --signed (B006-002)."
+  echo "Unsigned build — for external distribution run with --signed."
+  echo "See docs/dev/signing.md for cert setup instructions."
+  echo ""
   echo "Boot verify: SHOWX_PAIRING_TEST_PIN=000000 dist-electron/mac-arm64/ShowX.app/Contents/MacOS/ShowX"
 fi

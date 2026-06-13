@@ -5,6 +5,31 @@ import type { RoutingRule } from '../document/routing.js';
 import type { Device } from '../document/devices.js';
 import type { IpcBridge } from './CuelistCorePanel.js';
 
+interface DeviceHealth {
+  status: 'ok' | 'fail' | 'none';
+  updatedAt: number;
+}
+
+const HEALTH_TTL_MS = 60_000;
+
+function DeviceHealthDot({ deviceId, health }: { deviceId: string; health: Map<string, DeviceHealth> }) {
+  const entry = health.get(deviceId);
+  const now = Date.now();
+  let color: string = tokens.color.gray_300;
+  let label = 'no recent dispatch';
+  if (entry && now - entry.updatedAt < HEALTH_TTL_MS) {
+    if (entry.status === 'ok') { color = tokens.color.teal; label = 'healthy'; }
+    else if (entry.status === 'fail') { color = tokens.color.red; label = 'error'; }
+  }
+  return (
+    <span
+      aria-label={`device health: ${label}`}
+      title={label}
+      style={{ display: 'inline-block', width: 8, height: 8, borderRadius: 4, background: color, flexShrink: 0, marginRight: 6 }}
+    />
+  );
+}
+
 interface RoutingTableProps {
   ipc: IpcBridge;
   mode?: 'rehearsal' | 'show';
@@ -13,6 +38,7 @@ interface RoutingTableProps {
 export function RoutingTable({ ipc, mode }: RoutingTableProps) {
   const [rules, setRules] = useState<RoutingRule[]>([]);
   const [devices, setDevices] = useState<Device[]>([]);
+  const [deviceHealth, setDeviceHealth] = useState<Map<string, DeviceHealth>>(new Map());
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editRule, setEditRule] = useState<RoutingRule | undefined>(undefined);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
@@ -36,13 +62,44 @@ export function RoutingTable({ ipc, mode }: RoutingTableProps) {
 
   useEffect(() => {
     void loadData();
+
+    void ipc.invoke<Array<{ slug: string; status: string; updatedAt: number }>>('health:snapshot')
+      .then((snaps) => {
+        if (!Array.isArray(snaps)) return;
+        setDeviceHealth((prev) => {
+          const next = new Map(prev);
+          for (const s of snaps) {
+            if (typeof s?.slug !== 'string' || !s.slug.startsWith('device:')) continue;
+            const id = s.slug.slice('device:'.length);
+            const status = s.status === 'healthy' ? 'ok' : s.status === 'error' ? 'fail' : 'none';
+            next.set(id, { status: status as DeviceHealth['status'], updatedAt: s.updatedAt });
+          }
+          return next;
+        });
+      })
+      .catch(() => { /* non-fatal */ });
+
     const offRules = ipc.on('cuelist-core/routing-changed', (list) => {
       setRules((list as RoutingRule[]) ?? []);
     });
     const offDevices = ipc.on('cuelist-core/devices-changed', (list) => {
       setDevices((list as Device[]) ?? []);
     });
-    return () => { offRules(); offDevices(); };
+    const offHealth = ipc.on('health:change', (snaps) => {
+      const healthSnaps = snaps as Array<{ slug: string; status: string; updatedAt: number }>;
+      if (!Array.isArray(healthSnaps)) return;
+      setDeviceHealth((prev) => {
+        const next = new Map(prev);
+        for (const s of healthSnaps) {
+          if (!s.slug.startsWith('device:')) continue;
+          const id = s.slug.slice('device:'.length);
+          const status = s.status === 'healthy' ? 'ok' : s.status === 'error' ? 'fail' : 'none';
+          next.set(id, { status: status as DeviceHealth['status'], updatedAt: s.updatedAt });
+        }
+        return next;
+      });
+    });
+    return () => { offRules(); offDevices(); offHealth(); };
   }, [ipc, loadData]);
 
   const handleAdd = () => {
@@ -219,7 +276,8 @@ export function RoutingTable({ ipc, mode }: RoutingTableProps) {
               {!locked && <th style={{ ...th, width: 24 }}></th>}
               <th style={{ ...th, width: 40 }}>#</th>
               <th style={th}>Match</th>
-              <th style={th}>Target Device</th>
+              <th style={th}>Primary Device</th>
+              <th style={th}>Backup Device</th>
               <th style={th}></th>
             </tr>
           </thead>
@@ -242,7 +300,8 @@ export function RoutingTable({ ipc, mode }: RoutingTableProps) {
                 <td style={{ ...td, fontFamily: tokens.font.mono, fontSize: 12 }}>
                   {matchDisplay(rule)}
                 </td>
-                <td style={td}>
+                <td style={{ ...td, display: 'flex', alignItems: 'center' }}>
+                  <DeviceHealthDot deviceId={rule.target_device_id} health={deviceHealth} />
                   <a
                     href="#devices-tab"
                     onClick={(e) => e.preventDefault()}
@@ -251,6 +310,18 @@ export function RoutingTable({ ipc, mode }: RoutingTableProps) {
                   >
                     {deviceLabel(rule.target_device_id)}
                   </a>
+                </td>
+                <td style={{ ...td }}>
+                  {rule.backup_device_id ? (
+                    <span style={{ display: 'flex', alignItems: 'center' }}>
+                      <DeviceHealthDot deviceId={rule.backup_device_id} health={deviceHealth} />
+                      <span style={{ fontSize: 12, color: tokens.color.ink_secondary }}>
+                        {deviceLabel(rule.backup_device_id)}
+                      </span>
+                    </span>
+                  ) : (
+                    <span style={{ fontSize: 12, color: tokens.color.ink_disabled }}>—</span>
+                  )}
                 </td>
                 <td style={{ ...td, whiteSpace: 'nowrap' }}>
                   {!locked && (

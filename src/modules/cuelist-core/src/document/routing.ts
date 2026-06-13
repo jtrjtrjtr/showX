@@ -17,6 +17,8 @@ export interface RoutingRule {
   sort_key: number;
   match: RoutingRuleMatch;
   target_device_id: string;
+  /** Failover: if set and primary dispatch fails, payload is retried via this device. */
+  backup_device_id?: string;
   notes?: string;
 }
 
@@ -107,10 +109,17 @@ export function addRoutingRule(
   assertEditAllowed(doc, 'structure');
   validateRule(init);
 
-  if (!getDevices(doc).has(init.target_device_id)) {
+  const devices = getDevices(doc);
+  if (!devices.has(init.target_device_id)) {
     throw new ValidationError(
       `target_device_id '${init.target_device_id}' not found in devices`,
       'target_device_id',
+    );
+  }
+  if (init.backup_device_id !== undefined && !devices.has(init.backup_device_id)) {
+    throw new ValidationError(
+      `backup_device_id '${init.backup_device_id}' not found in devices`,
+      'backup_device_id',
     );
   }
 
@@ -125,13 +134,19 @@ export function addRoutingRule(
   m.set('sort_key', sortKey);
   m.set('match', init.match);
   m.set('target_device_id', init.target_device_id);
+  if (init.backup_device_id !== undefined) m.set('backup_device_id', init.backup_device_id);
   m.set('notes', init.notes ?? '');
   m.set('added_by', ctx.actorId);
   m.set('added_at', new Date().toISOString());
 
   doc.transact(() => routing.set(ruleId, m));
 
-  return { rule_id: ruleId, sort_key: sortKey, match: init.match, target_device_id: init.target_device_id, notes: init.notes };
+  return {
+    rule_id: ruleId, sort_key: sortKey, match: init.match,
+    target_device_id: init.target_device_id,
+    ...(init.backup_device_id !== undefined ? { backup_device_id: init.backup_device_id } : {}),
+    notes: init.notes,
+  };
 }
 
 export function updateRoutingRule(
@@ -149,10 +164,17 @@ export function updateRoutingRule(
   const merged = { ...current, ...patch };
   validateRule(merged);
 
-  if (patch.target_device_id && !getDevices(doc).has(patch.target_device_id)) {
+  const devices = getDevices(doc);
+  if (patch.target_device_id && !devices.has(patch.target_device_id)) {
     throw new ValidationError(
       `target_device_id '${patch.target_device_id}' not found in devices`,
       'target_device_id',
+    );
+  }
+  if (patch.backup_device_id !== undefined && !devices.has(patch.backup_device_id)) {
+    throw new ValidationError(
+      `backup_device_id '${patch.backup_device_id}' not found in devices`,
+      'backup_device_id',
     );
   }
 

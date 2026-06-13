@@ -13,6 +13,11 @@ extraResources:
 extraMetadata:
   main: index.js
 
+# Native addons (.node binaries) must live outside the asar so the OS can dlopen() them.
+# Covers @julusian/midi and keytar (and any future native modules).
+asarUnpack:
+  - "**/*.node"
+
 # Build inputs
 # NOTE: package.json is explicitly listed so electron-builder injects it at asar root
 # even with a custom from/to mapping (behavior changed in app-builder-lib 24.x).

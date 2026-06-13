@@ -190,6 +190,7 @@ describe('RoutingTable — delete confirmation', () => {
     (ipc.invoke as ReturnType<typeof vi.fn>)
       .mockResolvedValueOnce(sampleRules)
       .mockResolvedValueOnce(sampleDevices)
+      .mockResolvedValueOnce(null)       // health:snapshot (mount)
       .mockResolvedValueOnce(undefined)  // routing-remove
       .mockResolvedValueOnce([])         // get-routing reload
       .mockResolvedValueOnce(sampleDevices); // get-devices reload

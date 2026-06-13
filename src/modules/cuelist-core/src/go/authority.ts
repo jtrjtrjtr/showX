@@ -2,7 +2,7 @@ import type { GoRequest } from './goEventChannel.js';
 
 export type AuthorityResult =
   | { ok: true; mode: 'sm' | 'cascade' | 'dept' | 'sm_override' }
-  | { ok: false; reason: 'not_sm' | 'not_owner' | 'timecode_only' };
+  | { ok: false; reason: 'not_sm' | 'not_owner' | 'timecode_only' | 'revoked' };
 
 export interface AuthorityCuelist {
   go_authority: 'sm_called' | 'auto_cascade' | 'per_dept' | 'timecode';
@@ -12,6 +12,7 @@ export interface AuthorityCuelist {
 export interface OperatorContext {
   operatorOwns(operator_id: string, dept: string): boolean;
   operatorOwned(operator_id: string): string[];
+  isRevoked?(operator_id: string): boolean;
 }
 
 /**
@@ -25,6 +26,8 @@ export function authorise(
   cuelist: AuthorityCuelist,
   octx?: OperatorContext,
 ): AuthorityResult {
+  if (octx?.isRevoked?.(req.operator_id)) return { ok: false, reason: 'revoked' };
+
   switch (cuelist.go_authority) {
     case 'sm_called':
       if (octx?.operatorOwns(req.operator_id, 'SM')) return { ok: true, mode: 'sm' };

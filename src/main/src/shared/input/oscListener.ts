@@ -1,6 +1,6 @@
 import * as dgram from 'node:dgram';
 import { createRequire } from 'node:module';
-import type { Logger } from '../Logger.js';
+import type { Logger } from 'showx-shared';
 import type { OscMessage } from './types.js';
 
 const _require = createRequire(import.meta.url);

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { tokens } from './tokens.js';
-import { StationsTable, type Awareness } from './StationsTable.js';
+import { StationsTable, type Awareness, type OperatorRecord } from './StationsTable.js';
 import { StatusStrip, type HealthLevel } from './StatusStrip.js';
 import { DevicesTable } from './DevicesTable.js';
 import { RoutingTable } from './RoutingTable.js';
@@ -115,6 +115,7 @@ function TabBar({
 export function CuelistCorePanel({ ipc }: PanelProps) {
   const [showState, setShowState] = useState<ShowState>({ open: false });
   const [stations, setStations] = useState<Awareness[]>([]);
+  const [operators, setOperators] = useState<OperatorRecord[]>([]);
   const [health, setHealth] = useState<HealthLevel>('unknown');
   const [error, setError] = useState<string | null>(null);
   const [recentShows, setRecentShows] = useState<RecentShow[] | null>(null);
@@ -126,6 +127,12 @@ export function CuelistCorePanel({ ipc }: PanelProps) {
     return 'show';
   });
 
+  const refreshOperators = () => {
+    void ipc.invoke<OperatorRecord[]>('pairing:listOperatorRecords').then((r) => {
+      setOperators(Array.isArray(r) ? r : []);
+    }).catch(() => setOperators([]));
+  };
+
   useEffect(() => {
     const offState = ipc.on('cuelist-core/show-state', (s) => setShowState(s as ShowState));
     const offStations = ipc.on('cuelist-core/stations', (s) => setStations(s as Awareness[]));
@@ -136,6 +143,7 @@ export function CuelistCorePanel({ ipc }: PanelProps) {
     void ipc.invoke<RecentShow[]>('cuelist-core:recent-shows-get').then((r) => {
       setRecentShows(Array.isArray(r) ? r : []);
     }).catch(() => setRecentShows([]));
+    refreshOperators();
     return () => {
       offState();
       offStations();
@@ -258,6 +266,8 @@ export function CuelistCorePanel({ ipc }: PanelProps) {
                 stations={stations}
                 canKick={!!showState.isSm}
                 onKick={(id) => void ipc.invoke('cuelist-core/kick-station', id)}
+                operators={operators}
+                onRevoke={(id) => void ipc.invoke('pairing:revokeDevice', id).then(refreshOperators)}
               />
             </section>
           </>

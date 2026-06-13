@@ -97,6 +97,14 @@ export interface PairingChangedEvent {
   deviceId: string;
 }
 
+export interface DeviceStatusEvent {
+  type: 'device-status';
+  device_id: string;
+  status: 'healthy' | 'error' | 'unknown';
+  last_ok_at?: number;
+  last_error?: string;
+}
+
 export interface ShowModeChangeEvent {
   type: 'show-mode-change';
   show_id: string;
@@ -111,6 +119,7 @@ export type ShowxEvent =
   | ModuleStateChangedEvent
   | HealthChangedEvent
   | PairingChangedEvent
+  | DeviceStatusEvent
   | ShowModeChangeEvent
   | CueFireEvent
   | CueCompleteEvent

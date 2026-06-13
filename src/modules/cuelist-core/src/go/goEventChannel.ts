@@ -6,6 +6,8 @@ import { IdempotencyStore } from './idempotencyStore.js';
 import { isHistoricReplay, RingBuffer } from './replayWindow.js';
 import { SequenceCounter } from './sequence.js';
 import { getCuelist, getCues } from '../document/cuelist.js';
+import { CueLights } from '../cuelights/cueLights.js';
+export type { CueLightState, CueLightSnapshot } from '../cuelights/cueLights.js';
 
 // ── CRDT guard — data_model.md §2.11: GO fires are events, NOT CRDT state ────
 
@@ -121,6 +123,35 @@ export interface ResumeRequest {
   topic_filter?: string;
 }
 
+// ── Cue lights wire types (B006-007) ──────────────────────────────────────────
+
+export interface StandbyRequest {
+  topic: 'standby.request';
+  cue_id: string;
+  cuelist_id: string;
+  departments: string[];
+  standby: boolean;
+  station_id: string;
+  operator_id: string;
+}
+
+export interface StandbyBroadcast {
+  topic: 'standby.broadcast';
+  cue_id: string;
+  cuelist_id: string;
+  departments: string[];
+  standby: boolean;
+}
+
+export interface OperatorAcknowledge {
+  topic: 'operator.acknowledge';
+  cue_id: string;
+  cuelist_id: string;
+  department: string;
+  station_id: string;
+  operator_id: string;
+}
+
 // ── Side-channel transport abstraction ────────────────────────────────────────
 //
 // The shell's B001-008 side-channel WSS server is the actual transport.
@@ -179,9 +210,11 @@ export class GoEventChannel {
     'go.rejected': RingBuffer<GoRejected & { _seq: number }>;
     'arm.broadcast': RingBuffer<ArmBroadcast & { _seq: number }>;
     'mode.transition': RingBuffer<ModeTransition & { _seq: number }>;
+    'standby.broadcast': RingBuffer<StandbyBroadcast & { _seq: number }>;
   };
   private unsubs: Array<() => void> = [];
   private pendingPreWaits = new Map<string, ReturnType<typeof setTimeout>>();
+  readonly cueLights = new CueLights();
 
   constructor(private deps: GoChannelDeps, opts?: { idempotencyLruSize?: number; ringCapacity?: number }) {
     this.idem = new IdempotencyStore(opts?.idempotencyLruSize ?? 1000);
@@ -191,6 +224,7 @@ export class GoEventChannel {
       'go.rejected': new RingBuffer<GoRejected & { _seq: number }>(cap),
       'arm.broadcast': new RingBuffer<ArmBroadcast & { _seq: number }>(cap),
       'mode.transition': new RingBuffer<ModeTransition & { _seq: number }>(cap),
+      'standby.broadcast': new RingBuffer<StandbyBroadcast & { _seq: number }>(cap),
     };
   }
 
@@ -202,6 +236,8 @@ export class GoEventChannel {
       this.deps.subscribe('audition.request', (msg) => {
         void this.onAuditionRequest(msg as AuditionRequest);
       }),
+      this.deps.subscribe('standby.request', (msg) => this.onStandbyRequest(msg as StandbyRequest)),
+      this.deps.subscribe('operator.acknowledge', (msg) => this.onOperatorAcknowledge(msg as OperatorAcknowledge)),
     );
     const cc = this.deps.events.subscribe('cue-complete', (e: CueCompleteEvent) =>
       this.onCueComplete(e as CueCompleteExtended),
@@ -273,6 +309,8 @@ export class GoEventChannel {
 
     const publishCueFire = (): void => {
       this.pendingPreWaits.delete(req.cuelist_id);
+      // Clear cue lights when GO fires
+      this.cueLights.clear(req.cue_id);
       this.deps.events.publish({
         type: 'cue-fire',
         seq: this.seq.peek(),
@@ -422,6 +460,27 @@ export class GoEventChannel {
     const seq = this.seq.next();
     this.rings['arm.broadcast'].push({ ...arm, _seq: seq });
     this.deps.broadcast(envelope('arm.broadcast', seq, arm));
+  }
+
+  private onStandbyRequest(req: StandbyRequest): void {
+    this.cueLights.setStandby(req.cue_id, req.departments, req.standby);
+    const broadcast: StandbyBroadcast = {
+      topic: 'standby.broadcast',
+      cue_id: req.cue_id,
+      cuelist_id: req.cuelist_id,
+      departments: req.departments,
+      standby: req.standby,
+    };
+    const seq = this.seq.next();
+    this.rings['standby.broadcast'].push({ ...broadcast, _seq: seq });
+    this.deps.broadcast(envelope('standby.broadcast', seq, broadcast));
+  }
+
+  private onOperatorAcknowledge(req: OperatorAcknowledge): void {
+    this.cueLights.acknowledge(req.cue_id, req.department);
+    const seq = this.seq.next();
+    // Re-broadcast so SM and all clients see the ack
+    this.deps.broadcast(envelope('operator.acknowledge', seq, req));
   }
 
   private onModeChange(e: ShowModeChangeEvent): void {

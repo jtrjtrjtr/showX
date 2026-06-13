@@ -60,6 +60,8 @@ export function registerIpcHandlers(deps: IpcDeps, ipc: IpcMainBridge = ipcMain)
 
   ipc.handle(IPC.PAIRING_LIST_DEVICES, async () => deps.pairing.listDevices());
 
+  ipc.handle(IPC.PAIRING_LIST_OPERATORS, async () => deps.pairing.listOperatorRecords());
+
   ipc.handle(IPC.PAIRING_REVOKE_DEVICE, async (_e, id: string) => {
     await deps.pairing.revokeDevice(id);
     return { ok: true };

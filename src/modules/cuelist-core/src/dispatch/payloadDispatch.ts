@@ -10,8 +10,9 @@ import { dispatchWebhook } from './transports/webhook.js';
 import { dispatchWait } from './transports/wait.js';
 import { dispatchGroup } from './transports/group.js';
 import type { DispatchDeps, SingleDispatchResult } from './types.js';
-import type { RoutingEntry } from './resolveRouting.js';
-import { buildDispatchRoutingTable } from './resolveRouting.js';
+import type { RoutingEntry, TransportDescriptor } from './resolveRouting.js';
+import { buildDispatchRoutingTable, resolveRoutingWithBackup } from './resolveRouting.js';
+import type { ResolveRoutingParams } from './resolveRouting.js';
 
 export type { DispatchDeps } from './types.js';
 
@@ -43,6 +44,36 @@ export interface CueDispatchResult {
 }
 
 const MAX_GROUP_DEPTH = 4;
+
+/**
+ * Returns ResolveRoutingParams for device-routed payload types (osc, msc, lx_ref, midi).
+ * Returns null for webhook/wait/group which don't use device routing.
+ */
+function payloadToResolveParams(p: Payload): ResolveRoutingParams | null {
+  switch (p.type) {
+    case 'osc': return { payloadType: 'osc', deviceId: p.device_id, tag: p.tag ?? undefined };
+    case 'msc': return { payloadType: 'msc', deviceId: p.device_id };
+    case 'lx_ref': return { payloadType: 'lx_ref', deviceId: p.device_id };
+    case 'midi': return { payloadType: 'midi', deviceId: p.device_id };
+    default: return null;
+  }
+}
+
+/** Builds a single-entry routing table that maps deviceId → backupTransport (specificity 4). */
+function buildBackupRoutingTable(
+  backupTransport: TransportDescriptor,
+  deviceId: string,
+): Record<string, RoutingEntry> {
+  return {
+    '__backup__': {
+      id: '__backup__',
+      match: { device_id: deviceId },
+      transport: backupTransport,
+      enabled: true,
+      notes: 'backup',
+    },
+  };
+}
 
 /**
  * Dispatch all payloads for a cue in declaration order.
@@ -164,8 +195,36 @@ export async function dispatchCue(
           details.push({ payload_id: p.id, transport: p.type, result: 'ok' });
           ok_count++;
         } else {
-          details.push({ payload_id: p.id, transport: p.type, result: 'error', error: r.error });
-          failed.push({ payload_id: p.id, error: r.error ?? 'unknown' });
+          // Primary failed — attempt failover to backup if the matched rule has one
+          const resolveParams = payloadToResolveParams(p);
+          let failedToBackup = false;
+          if (resolveParams && resolveParams.deviceId) {
+            const resolution = resolveRoutingWithBackup(effectiveDeps.doc, resolveParams);
+            if (!('error' in resolution) && resolution.backup) {
+              const backupRouting = buildBackupRoutingTable(resolution.backup.transport, resolveParams.deviceId);
+              try {
+                const br = await dispatchOne(p, effectiveDeps, backupRouting, cycleCtx);
+                if (br.ok) {
+                  details.push({ payload_id: p.id, transport: `${p.type}→backup`, result: 'ok' });
+                  ok_count++;
+                } else {
+                  const combinedErr = `primary: ${r.error ?? 'unknown'}; backup: ${br.error ?? 'unknown'}`;
+                  details.push({ payload_id: p.id, transport: p.type, result: 'error', error: combinedErr });
+                  failed.push({ payload_id: p.id, error: combinedErr });
+                }
+                failedToBackup = true;
+              } catch (backupErr) {
+                const combinedErr = `primary: ${r.error ?? 'unknown'}; backup threw: ${String(backupErr)}`;
+                details.push({ payload_id: p.id, transport: p.type, result: 'error', error: combinedErr });
+                failed.push({ payload_id: p.id, error: combinedErr });
+                failedToBackup = true;
+              }
+            }
+          }
+          if (!failedToBackup) {
+            details.push({ payload_id: p.id, transport: p.type, result: 'error', error: r.error });
+            failed.push({ payload_id: p.id, error: r.error ?? 'unknown' });
+          }
         }
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);

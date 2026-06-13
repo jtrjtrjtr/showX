@@ -143,6 +143,27 @@ export interface AuditionResult {
   details: Array<{ payload_id: string; transport: string; result: string; error?: string }>;
 }
 
+// ── Cue lights types (B006-007) ───────────────────────────────────────────────
+
+export type CueLightState = 'idle' | 'standby' | 'acknowledged';
+
+export interface StandbyBroadcast {
+  topic: 'standby.broadcast';
+  cue_id: string;
+  cuelist_id: string;
+  departments: string[];
+  standby: boolean;
+}
+
+export interface OperatorAcknowledge {
+  topic: 'operator.acknowledge';
+  cue_id: string;
+  cuelist_id: string;
+  department: string;
+  station_id: string;
+  operator_id: string;
+}
+
 export type FrameRate = 24 | 25 | 29.97 | 30;
 export type ClockSource = 'internal' | 'mtc' | 'ltc';
 
@@ -169,6 +190,8 @@ type SideChannelEventMap = {
   'audition.result': AuditionResult;
   heartbeat: HeartbeatEvent;
   'clock.anchor': ClockAnchor;
+  'standby.broadcast': StandbyBroadcast;
+  'operator.acknowledge': OperatorAcknowledge;
   connection: SideChannelConnectionState;
 };
 
@@ -268,6 +291,12 @@ export class SideChannelClient {
       case 'clock.anchor':
         this.emitter.emit('clock.anchor', { topic: 'clock.anchor', ...(env.payload as Omit<ClockAnchor, 'topic'>) });
         break;
+      case 'standby.broadcast':
+        this.emitter.emit('standby.broadcast', { topic: 'standby.broadcast', ...(env.payload as Omit<StandbyBroadcast, 'topic'>) });
+        break;
+      case 'operator.acknowledge':
+        this.emitter.emit('operator.acknowledge', { topic: 'operator.acknowledge', ...(env.payload as Omit<OperatorAcknowledge, 'topic'>) });
+        break;
     }
   }
 
@@ -313,6 +342,33 @@ export class SideChannelClient {
       }),
     );
     return requestId;
+  }
+
+  sendStandbyRequest(cuelistId: string, cueId: string, departments: string[], standby: boolean): void {
+    this.ws?.send(
+      JSON.stringify({
+        topic: 'standby.request',
+        cue_id: cueId,
+        cuelist_id: cuelistId,
+        departments,
+        standby,
+        station_id: this.opts.stationId,
+        operator_id: this.opts.operatorId,
+      }),
+    );
+  }
+
+  sendAcknowledgeRequest(cuelistId: string, cueId: string, department: string): void {
+    this.ws?.send(
+      JSON.stringify({
+        topic: 'operator.acknowledge',
+        cue_id: cueId,
+        cuelist_id: cuelistId,
+        department,
+        station_id: this.opts.stationId,
+        operator_id: this.opts.operatorId,
+      }),
+    );
   }
 
   disconnect(): void {

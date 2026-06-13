@@ -2,28 +2,41 @@
 set -euo pipefail
 
 # Submit ShowX DMG to Apple notarization service, wait for approval, staple ticket.
-# Requires: xcrun notarytool, keychain profile named "showx-notary".
+#
+# Requires: xcrun notarytool, keychain profile named "showx-notary" (default).
+# Override profile name: export SHOWX_NOTARY_PROFILE=my-profile
+#
 # Set up profile once with:
 #   xcrun notarytool store-credentials "showx-notary" \
 #     --apple-id <APPLE_ID> --team-id <TEAM_ID> --password <APP_SPECIFIC_PASSWORD>
+#
 # Usage: ./scripts/notarize-release.sh [version]
 
 VERSION="${1:-0.1.0}"
-DIST_DIR="releases/$VERSION"
+NOTARY_PROFILE="${SHOWX_NOTARY_PROFILE:-showx-notary}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+DIST_DIR="$ROOT_DIR/releases/$VERSION"
 DMG="$DIST_DIR/ShowX-${VERSION}.dmg"
 
 if [[ ! -f "$DMG" ]]; then
   echo "ERROR: DMG not found at $DMG" >&2
-  echo "Run ./scripts/build-release.sh ${VERSION} first." >&2
+  echo "Run ./scripts/build-release.sh ${VERSION} --signed first." >&2
   exit 1
 fi
 
-echo "=== Notarizing ShowX v${VERSION} ==="
+# Verify the DMG is signed before submitting — notarization requires a signed binary
+if ! codesign --verify --verbose=1 "$DMG" 2>/dev/null; then
+  echo "ERROR: DMG is not code-signed. Run build-release.sh with --signed first." >&2
+  exit 1
+fi
+
+echo "=== Notarizing ShowX v${VERSION} (profile: $NOTARY_PROFILE) ==="
 
 # Submit to Apple notary service; --wait blocks until notarization completes or fails
 NOTARIZE_OUTPUT="$DIST_DIR/notarize.json"
 xcrun notarytool submit "$DMG" \
-  --keychain-profile "showx-notary" \
+  --keychain-profile "$NOTARY_PROFILE" \
   --wait \
   --output-format json | tee "$NOTARIZE_OUTPUT"
 

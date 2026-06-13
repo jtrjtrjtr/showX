@@ -165,6 +165,45 @@ function matchPrecedenceClass(rule: RoutingRule, params: ResolveRoutingParams): 
   return 2;
 }
 
+// ── Shared candidate resolution ───────────────────────────────────────────────
+
+interface RuleWithTransport {
+  rule: RoutingRule;
+  transport: TransportDescriptor;
+}
+
+/**
+ * Finds the highest-precedence RoutingRule that has a valid device transport.
+ * Returns null if no matching rule or no device transport found.
+ */
+function findBestMatchingRuleWithTransport(
+  rules: RoutingRule[],
+  params: ResolveRoutingParams,
+  devicesRaw: Record<string, Record<string, unknown>>,
+): RuleWithTransport | null {
+  const candidates: Array<{ rule: RoutingRule; cls: 1 | 2 }> = [];
+  for (const rule of rules) {
+    const cls = matchPrecedenceClass(rule, params);
+    if (cls !== null) candidates.push({ rule, cls });
+  }
+  if (candidates.length === 0) return null;
+
+  // Class 1 < Class 2 numerically → ascending sort puts class 1 first.
+  // Within same class, lower sort_key wins.
+  candidates.sort((a, b) => {
+    if (a.cls !== b.cls) return a.cls - b.cls;
+    return a.rule.sort_key - b.rule.sort_key;
+  });
+
+  for (const { rule } of candidates) {
+    const device = devicesRaw[rule.target_device_id];
+    if (!device) continue;
+    const transport = deviceToTransportDescriptor(device);
+    if (transport) return { rule, transport };
+  }
+  return null;
+}
+
 /**
  * New Y.Doc-based resolver implementing B003-101 RoutingRule shape.
  *
@@ -181,35 +220,53 @@ export function resolveRoutingForPayload(
 ): RoutingResolution {
   const rules = getRoutingRules(doc);
   const devicesRaw = doc.getMap('devices').toJSON() as Record<string, Record<string, unknown>>;
+  const match = findBestMatchingRuleWithTransport(rules, params, devicesRaw);
+  return match ? match.transport : { error: 'no_route' };
+}
 
-  interface Candidate {
-    rule: RoutingRule;
-    cls: 1 | 2;
+// ── Backup resolution ─────────────────────────────────────────────────────────
+
+export interface BackupDescriptor {
+  transport: TransportDescriptor;
+  deviceId: string;
+}
+
+export type RoutingResolutionWithBackup =
+  | { error: 'no_route' }
+  | { primary: TransportDescriptor; primaryDeviceId: string; backup?: BackupDescriptor };
+
+/**
+ * Resolves the primary transport for a payload and also returns the backup transport
+ * if the matched rule has backup_device_id set.
+ *
+ * Failover semantics: backup is only used when primary dispatch fails.
+ * Both-send (primary + backup always) is NOT implemented; use separate routing rules for that.
+ */
+export function resolveRoutingWithBackup(
+  doc: Y.Doc,
+  params: ResolveRoutingParams,
+): RoutingResolutionWithBackup {
+  const rules = getRoutingRules(doc);
+  const devicesRaw = doc.getMap('devices').toJSON() as Record<string, Record<string, unknown>>;
+  const match = findBestMatchingRuleWithTransport(rules, params, devicesRaw);
+  if (!match) return { error: 'no_route' };
+
+  let backup: BackupDescriptor | undefined;
+  if (match.rule.backup_device_id) {
+    const backupDevice = devicesRaw[match.rule.backup_device_id];
+    if (backupDevice) {
+      const backupTransport = deviceToTransportDescriptor(backupDevice);
+      if (backupTransport) {
+        backup = { transport: backupTransport, deviceId: match.rule.backup_device_id };
+      }
+    }
   }
-  const candidates: Candidate[] = [];
 
-  for (const rule of rules) {
-    const cls = matchPrecedenceClass(rule, params);
-    if (cls !== null) candidates.push({ rule, cls });
-  }
-
-  if (candidates.length === 0) return { error: 'no_route' };
-
-  // Class 1 < Class 2 numerically, so ascending sort puts class 1 first.
-  // Within same class, lower sort_key wins (already sorted by getRoutingRules, but re-sort for safety).
-  candidates.sort((a, b) => {
-    if (a.cls !== b.cls) return a.cls - b.cls;
-    return a.rule.sort_key - b.rule.sort_key;
-  });
-
-  for (const { rule } of candidates) {
-    const device = devicesRaw[rule.target_device_id];
-    if (!device) continue;
-    const transport = deviceToTransportDescriptor(device);
-    if (transport) return transport;
-  }
-
-  return { error: 'no_route' };
+  return {
+    primary: match.transport,
+    primaryDeviceId: match.rule.target_device_id,
+    ...(backup !== undefined ? { backup } : {}),
+  };
 }
 
 // ── Legacy routing table builder (for payloadDispatch.ts adapter) ─────────────
