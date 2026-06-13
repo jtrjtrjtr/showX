@@ -9,8 +9,15 @@ extraResources:
     filter:
       - "**/*"
 
+# Patched metadata for the packed app — main must be the in-asar path (flattened from src/main/dist)
+extraMetadata:
+  main: index.js
+
 # Build inputs
+# NOTE: package.json is explicitly listed so electron-builder injects it at asar root
+# even with a custom from/to mapping (behavior changed in app-builder-lib 24.x).
 files:
+  - package.json
   - from: src/main/dist
     to: .
     filter:
@@ -24,11 +31,12 @@ directories:
   buildResources: build
   output: dist-electron
 
-# macOS target — signed DMG for Apple Developer ID distribution
+# macOS target
+# For signed release builds: set CSC_NAME env var to the Apple Developer ID cert name
+# For unsigned local/CI builds: CSC_IDENTITY_AUTO_DISCOVERY=false (see dist script)
 mac:
   category: public.app-category.productivity
-  # Replace XXXXXXXXXX with the actual XLAB Apple Developer Team ID
-  identity: "Developer ID Application: XLAB s.r.o. (XXXXXXXXXX)"
+  # identity left unset here — controlled by env CSC_NAME for signed builds (B006-002)
   hardenedRuntime: true
   gatekeeperAssess: false
   entitlements: build/entitlements.mac.plist
@@ -36,12 +44,10 @@ mac:
   target:
     - target: dmg
       arch:
-        - x64
         - arm64
 
 dmg:
   title: "ShowX ${version}"
-  background: build/dmg-background.png
   icon: build/icon.icns
   iconSize: 128
   contents:
