@@ -1,8 +1,8 @@
 {
   "enabled": true,
   "bundle_id": "ShowX-6",
-  "allowed_task_ids": ["B006-001", "B006-003", "B006-005", "B006-007", "B006-009", "B006-010"],
-  "rationale": "F3 'Trust + Cue Lights' open 2026-06-13. F1+F2 impl complete (committed+pushed, automated gate green); gate batched to post-DMG-fix. F3 wave 1 = no-dep tasks: 001 (DMG fix — unblocks gate), 003 (device health), 005 (multi-dest), 007 (cue-lights protocol+SM), 009 (proposals), 010 (authority). B006-011 (F4 design) is architect-owned — NOT in Forge scope; Architect writes it at end of F3. Cascade: 002→001, 004/006→003, 008→007, 012 gate→all. LTC deferred to ShowX-7. Budget $30/phase.",
-  "updated_at": "2026-06-13T20:30:00Z",
+  "allowed_task_ids": ["B006-002", "B006-003", "B006-005", "B006-007", "B006-009", "B006-010"],
+  "rationale": "F3 wave 2 (2026-06-13 ~20:55): B006-001 DMG fix ACCEPTED (architect boot-verify: v0.4.0-arm64.dmg builds, asar correct, app launches as 0.4.0 foreground; visual render → Jindřich GUI session since Architect Bash context is headless). Unlocked B006-002 (signing). 003/005/007/009/010 wave-1 in progress. 004/006→003, 008→007, 012 gate→all. B006-011 (F4 design) architect-written near F3 end. Budget $30/phase.",
+  "updated_at": "2026-06-13T20:55:00Z",
   "updated_by": "architect"
 }
