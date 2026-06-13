@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "project": "showX",
-  "phase": "bundle_ShowX-4_F1_impl_complete_gate_eyeson_pending",
-  "updated_at": "2026-06-13T16:55:00Z",
-  "active_bundle": "ShowX-4",
+  "phase": "bundle_ShowX-5_F2_open_F1_gate_batched",
+  "updated_at": "2026-06-13T17:10:00Z",
+  "active_bundle": "ShowX-5",
   "tasks": [
     {
       "id": "B001-001",
@@ -1704,6 +1704,192 @@
         "B004-009",
         "B004-010",
         "B004-011"
+      ]
+    },
+    {
+      "id": "B005-001",
+      "slug": "master_clock_service",
+      "title": "Master clock service (internal)",
+      "status": "queued",
+      "owner": null,
+      "task_path": "docs/agent_exchange/queued/B005-001_master_clock_service.md",
+      "review_path": null,
+      "created_at": "2026-06-13T17:10:00Z",
+      "started_at": null,
+      "ended_at": null,
+      "reviewed_at": null,
+      "review_round": 0,
+      "spawned_from": "ShowX-5 F2 bundle architect-filed",
+      "depends_on": []
+    },
+    {
+      "id": "B005-002",
+      "slug": "clock_broadcast_pwa_interpolation",
+      "title": "Clock broadcast + PWA interpolation",
+      "status": "queued",
+      "owner": null,
+      "task_path": "docs/agent_exchange/queued/B005-002_clock_broadcast_pwa_interpolation.md",
+      "review_path": null,
+      "created_at": "2026-06-13T17:10:00Z",
+      "started_at": null,
+      "ended_at": null,
+      "reviewed_at": null,
+      "review_round": 0,
+      "spawned_from": "ShowX-5 F2 bundle architect-filed",
+      "depends_on": [
+        "B005-001"
+      ]
+    },
+    {
+      "id": "B005-003",
+      "slug": "big_timecode_display",
+      "title": "Big timecode display component",
+      "status": "queued",
+      "owner": null,
+      "task_path": "docs/agent_exchange/queued/B005-003_big_timecode_display.md",
+      "review_path": null,
+      "created_at": "2026-06-13T17:10:00Z",
+      "started_at": null,
+      "ended_at": null,
+      "reviewed_at": null,
+      "review_round": 0,
+      "spawned_from": "ShowX-5 F2 bundle architect-filed",
+      "depends_on": [
+        "B005-002"
+      ]
+    },
+    {
+      "id": "B005-004",
+      "slug": "timecode_trigger_live",
+      "title": "Timecode trigger live",
+      "status": "queued",
+      "owner": null,
+      "task_path": "docs/agent_exchange/queued/B005-004_timecode_trigger_live.md",
+      "review_path": null,
+      "created_at": "2026-06-13T17:10:00Z",
+      "started_at": null,
+      "ended_at": null,
+      "reviewed_at": null,
+      "review_round": 0,
+      "spawned_from": "ShowX-5 F2 bundle architect-filed",
+      "depends_on": [
+        "B005-001"
+      ]
+    },
+    {
+      "id": "B005-005",
+      "slug": "mtc_decode_chase_in",
+      "title": "MTC decode chase in",
+      "status": "queued",
+      "owner": null,
+      "task_path": "docs/agent_exchange/queued/B005-005_mtc_decode_chase_in.md",
+      "review_path": null,
+      "created_at": "2026-06-13T17:10:00Z",
+      "started_at": null,
+      "ended_at": null,
+      "reviewed_at": null,
+      "review_round": 0,
+      "spawned_from": "ShowX-5 F2 bundle architect-filed",
+      "depends_on": [
+        "B005-001"
+      ]
+    },
+    {
+      "id": "B005-006",
+      "slug": "mtc_generate_out",
+      "title": "MTC generate out",
+      "status": "queued",
+      "owner": null,
+      "task_path": "docs/agent_exchange/queued/B005-006_mtc_generate_out.md",
+      "review_path": null,
+      "created_at": "2026-06-13T17:10:00Z",
+      "started_at": null,
+      "ended_at": null,
+      "reviewed_at": null,
+      "review_round": 0,
+      "spawned_from": "ShowX-5 F2 bundle architect-filed",
+      "depends_on": [
+        "B005-001"
+      ]
+    },
+    {
+      "id": "B005-007",
+      "slug": "showtime_osc_broadcast",
+      "title": "Show time OSC broadcast",
+      "status": "queued",
+      "owner": null,
+      "task_path": "docs/agent_exchange/queued/B005-007_showtime_osc_broadcast.md",
+      "review_path": null,
+      "created_at": "2026-06-13T17:10:00Z",
+      "started_at": null,
+      "ended_at": null,
+      "reviewed_at": null,
+      "review_round": 0,
+      "spawned_from": "ShowX-5 F2 bundle architect-filed",
+      "depends_on": [
+        "B005-001"
+      ]
+    },
+    {
+      "id": "B005-008",
+      "slug": "countdown_view_role",
+      "title": "Countdown view + role",
+      "status": "queued",
+      "owner": null,
+      "task_path": "docs/agent_exchange/queued/B005-008_countdown_view_role.md",
+      "review_path": null,
+      "created_at": "2026-06-13T17:10:00Z",
+      "started_at": null,
+      "ended_at": null,
+      "reviewed_at": null,
+      "review_round": 0,
+      "spawned_from": "ShowX-5 F2 bundle architect-filed",
+      "depends_on": [
+        "B005-003"
+      ]
+    },
+    {
+      "id": "B005-009",
+      "slug": "pi_kiosk_recipe",
+      "title": "Pi kiosk recipe docs",
+      "status": "queued",
+      "owner": null,
+      "task_path": "docs/agent_exchange/queued/B005-009_pi_kiosk_recipe.md",
+      "review_path": null,
+      "created_at": "2026-06-13T17:10:00Z",
+      "started_at": null,
+      "ended_at": null,
+      "reviewed_at": null,
+      "review_round": 0,
+      "spawned_from": "ShowX-5 F2 bundle architect-filed",
+      "depends_on": [
+        "B005-008"
+      ]
+    },
+    {
+      "id": "B005-010",
+      "slug": "architect_e2e_gate_f2",
+      "title": "Architect E2E gate F2 (batched F1)",
+      "status": "queued",
+      "owner": null,
+      "task_path": "docs/agent_exchange/queued/B005-010_architect_e2e_gate_f2.md",
+      "review_path": null,
+      "created_at": "2026-06-13T17:10:00Z",
+      "started_at": null,
+      "ended_at": null,
+      "reviewed_at": null,
+      "review_round": 0,
+      "spawned_from": "ShowX-5 F2 bundle architect-filed",
+      "depends_on": [
+        "B005-001",
+        "B005-002",
+        "B005-003",
+        "B005-004",
+        "B005-005",
+        "B005-006",
+        "B005-007",
+        "B005-008",
+        "B005-009"
       ]
     }
   ]
