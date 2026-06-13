@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "project": "showX",
-  "phase": "bundle_ShowX-5_F2_open_F1_gate_batched",
-  "updated_at": "2026-06-13T19:42:00Z",
+  "phase": "F1_F2_impl_complete_autogate_green_DMG_blocked_gate_batched_to_F3",
+  "updated_at": "2026-06-13T20:20:00Z",
   "active_bundle": "ShowX-5",
   "tasks": [
     {
