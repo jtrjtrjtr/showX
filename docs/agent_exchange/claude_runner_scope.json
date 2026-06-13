@@ -1,8 +1,8 @@
 {
-  "enabled": false,
-  "bundle_id": "ShowX-3.7-CLOSED",
-  "allowed_task_ids": [],
-  "rationale": "ShowX-3.7 complete 2026-06-11 ~21:15. 5/5 (701-704 Forge r1, 705 gate PASSED with eyes-on screenshots). v0.2.1 installed. M1 Operator MVP CELÉ HOTOVÉ. Suite 1509/1509.",
-  "updated_at": "2026-06-11T19:15:00Z",
+  "enabled": true,
+  "bundle_id": "ShowX-4",
+  "allowed_task_ids": ["B004-001", "B004-003", "B004-005", "B004-006", "B004-007", "B004-008", "B004-009", "B004-011"],
+  "rationale": "F1 'Dotáhnout co papírově je' open. Wave 1 = all no-dependency tasks (pre-wait engine, DMX type+dispatch, webhook out, webhook in, disarm, audition, hotkey, payload-UX discoverability). Dependent tasks (002 needs 001, 004 needs 003, 010 needs 001, 012 gate needs all) added as deps accept. Budget ceiling $30/phase — Architect monitors, HALTs + asks if approaching.",
+  "updated_at": "2026-06-13T00:00:00Z",
   "updated_by": "architect"
 }
