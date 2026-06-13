@@ -1,8 +1,8 @@
 {
   "enabled": true,
   "bundle_id": "ShowX-4",
-  "allowed_task_ids": ["B004-001", "B004-003", "B004-005", "B004-006", "B004-007", "B004-008", "B004-009", "B004-011"],
-  "rationale": "F1 'Dotáhnout co papírově je' open. Wave 1 = all no-dependency tasks (pre-wait engine, DMX type+dispatch, webhook out, webhook in, disarm, audition, hotkey, payload-UX discoverability). Dependent tasks (002 needs 001, 004 needs 003, 010 needs 001, 012 gate needs all) added as deps accept. Budget ceiling $30/phase — Architect monitors, HALTs + asks if approaching.",
-  "updated_at": "2026-06-13T00:00:00Z",
+  "allowed_task_ids": ["B004-002", "B004-004", "B004-005", "B004-006", "B004-007", "B004-008", "B004-009", "B004-010", "B004-011"],
+  "rationale": "F1 open. Wave 2 (2026-06-13 ~13:50): B004-001+003 ACCEPTED → unblocked dependents added: B004-002 (pre-wait UI), B004-004 (DMX editor), B004-010 (CSV fix). Remaining wave-1 no-dep tasks (005 done/in-review, 006/007/008/009/011) still in scope. B004-012 gate added once all impl tasks accepted. Budget ceiling $30/phase — Architect monitors.",
+  "updated_at": "2026-06-13T13:50:00Z",
   "updated_by": "architect"
 }

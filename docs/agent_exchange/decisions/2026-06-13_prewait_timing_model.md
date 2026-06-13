@@ -52,7 +52,14 @@ Backward a forward reprezentace jsou pro lineární řetěz **izomorfní**: „c
 - Žádná QLab timeline kompozice více wait fází uvnitř jednoho cue (na to je `wait` payload).
 - Pre-wait se NEpoužije pro timecode triggery (ty řeší F2 master clock).
 
+## SHOW-mode lock semantika (clarification 2026-06-13, po Critic B004-001 r1)
+
+`pre_wait_ms` kopíruje **přesně `duration_hint_ms`**:
+- **Doc layer:** `assertEditAllowed(doc, 'meta')` — stejně jako všechny field settery (`setCueLabel/Description/Trigger/DurationHint`). NE `'structure'`. Obě API (`setCuePreWait` i `updateCueFields`) musí použít `'meta'` — musí souhlasit.
+- **SHOW-mode prevence editace = UI vrstva** (B004-002: inline edit REHEARSAL-only, CueEditDialog field disabled v SHOW), identicky jako duration a trigger UX.
+- Rationale: pre-wait je timing tweak (QLab ho ladí i živě); strukturální zámek (add/delete/reorder) je koncepčně jiný. Critic B004-001 F-1 varianta 1.
+
 ## Důsledky pro F1
-- B004-001: pre_wait do typu + dispatch + cue-fire timing + validace + lazy default.
-- B004-002: pre-wait UI sloupec/edit + armed-waiting countdown stav.
+- B004-001: pre_wait do typu + dispatch + cue-fire timing + validace + lazy default. Lock = `'meta'` (oba API).
+- B004-002: pre-wait UI sloupec/edit + armed-waiting countdown stav. SHOW-lock v UI (jako duration).
 - B004-010: CSV import oprava pre-wait mapování.
