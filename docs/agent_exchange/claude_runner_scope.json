@@ -1,8 +1,8 @@
 {
   "enabled": true,
-  "bundle_id": "ShowX-5",
-  "allowed_task_ids": ["B005-009"],
-  "rationale": "F2 wave 5 (2026-06-13 ~19:42): 001-008 all accepted; B005-008 countdown ACCEPTED → unlocked B005-009 (Pi kiosk recipe docs, last impl task). After 009 accepts, B005-010 E2E gate (architect-owned) batches F1+F2 eyes-on on one v0.4.0 DMG. Budget $30/phase.",
-  "updated_at": "2026-06-13T19:42:00Z",
+  "bundle_id": "ShowX-6",
+  "allowed_task_ids": ["B006-001", "B006-003", "B006-005", "B006-007", "B006-009", "B006-010"],
+  "rationale": "F3 'Trust + Cue Lights' open 2026-06-13. F1+F2 impl complete (committed+pushed, automated gate green); gate batched to post-DMG-fix. F3 wave 1 = no-dep tasks: 001 (DMG fix — unblocks gate), 003 (device health), 005 (multi-dest), 007 (cue-lights protocol+SM), 009 (proposals), 010 (authority). B006-011 (F4 design) is architect-owned — NOT in Forge scope; Architect writes it at end of F3. Cascade: 002→001, 004/006→003, 008→007, 012 gate→all. LTC deferred to ShowX-7. Budget $30/phase.",
+  "updated_at": "2026-06-13T20:30:00Z",
   "updated_by": "architect"
 }
