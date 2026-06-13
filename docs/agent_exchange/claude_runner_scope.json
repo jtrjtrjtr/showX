@@ -1,8 +1,8 @@
 {
-  "enabled": true,
-  "bundle_id": "ShowX-6",
-  "allowed_task_ids": ["B006-008", "B006-009", "B006-010"],
-  "rationale": "F3 wave 4 (2026-06-13 ~22:45): 001-007 accepted; B006-007 cue-lights protocol ACCEPTED → unlocked B006-008 (operator ack UI). 009 (proposals) + 010 (authority) still in scope. B006-011 (F4 design) architect-written next (impl nearly done). B006-012 gate → all. Budget $30/phase.",
-  "updated_at": "2026-06-13T22:45:00Z",
+  "enabled": false,
+  "bundle_id": "ShowX-6-IMPL-COMPLETE",
+  "allowed_task_ids": [],
+  "rationale": "F3 (ShowX-6) impl 11/11 accepted + F4 design delivered. v0.5.0 DMG built, automated gate green (1977 tests). B006-012 gate = visual/interactive part pending Jindřich GUI session (batched F1+F2+F3, checklist docs/JINDRICH_TEST_CHECKLIST_v0.5.0.md) — Architect context headless. Scope DISABLED: no queued Forge tasks remain; runners idle until next bundle (LTC ShowX-7 / F4 ShowX-8) on Jindřich GO. Budget $30/phase honored.",
+  "updated_at": "2026-06-13T23:44:00Z",
   "updated_by": "architect"
 }
