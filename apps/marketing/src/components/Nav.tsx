@@ -4,6 +4,7 @@ import { useI18n } from '../lib/i18n'
 export function Nav() {
   const { t, lang, setLang } = useI18n()
   const items = [
+    { to: '/features', label: t('nav.features') },
     { to: '/try-it', label: t('nav.try-it') },
     { to: '/status', label: t('nav.status') },
     { to: '/downloads', label: t('nav.downloads') },

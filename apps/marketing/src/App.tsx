@@ -8,6 +8,7 @@ import { Downloads } from './pages/Downloads'
 import { Docs } from './pages/Docs'
 import { Scenarios } from './pages/Scenarios'
 import { UserGuide } from './pages/UserGuide'
+import { Features } from './pages/Features'
 
 export function App() {
   return (
@@ -16,6 +17,7 @@ export function App() {
       <main className="flex-1">
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/features" element={<Features />} />
           <Route path="/try-it" element={<TryIt />} />
           <Route path="/get-started" element={<TryIt />} />
           <Route path="/status" element={<Status />} />

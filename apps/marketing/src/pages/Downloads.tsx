@@ -11,79 +11,75 @@ interface Release {
 
 const releases: Release[] = [
   {
-    version: '0.5',
-    name: { cs: 'Internal release', en: 'Internal release' },
-    target: 'End-2026',
-    status: 'development',
-    notes: {
-      cs: 'EventX Bridge module reaches BridgeX 0.3.x feature parity. Electron shell + module loader + 11 shared services + signed + notarized DMG (Apple Developer ID rebrand). Bez public download — výhradně pro 5-10 BridgeX zákazníků na hand-rolled testu.',
-      en: 'EventX Bridge module reaches BridgeX 0.3.x feature parity. Electron shell + module loader + 11 shared services + signed + notarized DMG (Apple Developer ID rebrand). No public download — for 5-10 BridgeX customers on hand-rolled test only.',
-    },
-  },
-  {
-    version: '0.1',
-    name: { cs: '0.1.1 — první použitelná beta', en: '0.1.1 — first usable beta' },
-    target: 'Released 2026-06-07',
+    version: '0.7.0',
+    name: { cs: 'Internal preview — pro testery', en: 'Internal preview — for testers' },
+    target: 'Available now',
     status: 'preview',
     notes: {
-      cs: 'Cuelist Core + REHEARSAL/SHOW + 7 dept Operator views + GO button + cue editor + Routing/Devices UI + real-time playhead broadcast přes Yjs awareness + bundled demo show (25 cues, 3 oddělení, compound + group cue) + first-launch picker (Open Demo / Open / New) + native File menubar. CSV import, JSON export, PDF cue-sheet, Stream Deck Companion. macOS Apple Silicon. Unsigned beta — viz instalační instrukce níže.',
-      en: 'Cuelist Core + REHEARSAL/SHOW + 7-dept Operator views + GO button + cue editor + Routing/Devices UI + real-time playhead broadcast via Yjs awareness + bundled demo show (25 cues, 3 depts, compound + group cue) + first-launch picker (Open Demo / Open / New) + native File menubar. CSV import, JSON export, PDF cue-sheet, Stream Deck Companion. macOS Apple Silicon. Unsigned beta — see install instructions below.',
-    },
-  },
-  {
-    version: '0.2',
-    name: { cs: 'SHOW mode + první placený pilot', en: 'SHOW mode + first paid pilot' },
-    target: 'Q2 2027',
-    status: 'planned',
-    notes: {
-      cs: 'SHOW mode module + edit proposal queue + history snapshots. MSC out, USITT ASCII import, Stream Deck via Companion (komunitní modul). První placený pilot s vybraným venuem.',
-      en: 'SHOW mode module + edit proposal queue + history snapshots. MSC out, USITT ASCII import, Stream Deck via Companion (community module). First paid pilot with a select venue.',
-    },
-  },
-  {
-    version: '0.3',
-    name: { cs: 'Cloud Sync + Custom Router + 5 zákazníků', en: 'Cloud Sync + Custom Router + 5 customers' },
-    target: 'Q3 2027',
-    status: 'planned',
-    notes: {
-      cs: 'Cloud Sync opt-in module. Custom Router rule table (WD-style OSC↔MIDI↔DMX glue). Multi-cuelist per show + Master Timeline read-only (LTC/MTC chase). Cíl: 5 platících zákazníků.',
-      en: 'Cloud Sync opt-in module. Custom Router rule table (WD-style OSC↔MIDI↔DMX glue). Multi-cuelist per show + Master Timeline read-only (LTC/MTC chase). Target: 5 paying customers.',
+      cs: 'Aktuální build. Postaveno napříč F1 (operátorské základy) → F2 (čas: master clock, MTC/LTC chase + generování, timecode cues, odpočtová stanice) → F3 (důvěra: zdraví zařízení, multi-destination záloha, předshow kontrola, cue lights) → F4 (AI showcaller: caller script, generování ze scénáře, klonování hlasu, lokální přehrávání, interrupt). ~2240 testů. macOS Apple Silicon, unsigned interní build.',
+      en: 'Current build. Built across F1 (operator essentials) → F2 (time: master clock, MTC/LTC chase + generate, timecode cues, countdown station) → F3 (trust: device health, multi-destination backup, pre-show check, cue lights) → F4 (AI showcaller: caller script, generate from sheet, voice clone, local playback, interrupt). ~2240 tests. macOS Apple Silicon, unsigned internal build.',
     },
   },
   {
     version: '1.0',
-    name: { cs: 'Public beta', en: 'Public beta' },
-    target: 'Q4 2027',
+    name: { cs: 'Public 1.0', en: 'Public 1.0' },
+    target: 'Later',
     status: 'planned',
     notes: {
-      cs: 'Open signups. Marketing site + docs portal. iPad PWA fully polished. Companion community modul published. Path k 50 paying customers do konce 2027.',
-      en: 'Open signups. Marketing site + docs portal. iPad PWA fully polished. Companion community module published. Path to 50 paying customers by end of 2027.',
+      cs: 'Signed + notarized DMG (Apple Developer ID), rundown vrstva, živý pricing, produktový web a docs portál. Otevřené registrace. Cíl: z testovacího preview na veřejný produkt.',
+      en: 'Signed + notarized DMG (Apple Developer ID), rundown layer, live pricing, product web and docs portal. Open signups. Goal: from tester preview to a public product.',
     },
   },
 ]
 
-const bundleProgress = [
-  { id: 1, title: 'Workspace + TypeScript + ESLint setup', status: 'accepted' },
-  { id: 2, title: 'Shared types (Module, ModuleContext, services)', status: 'accepted' },
-  { id: 3, title: 'Logger + EventBus + HealthBus services', status: 'accepted' },
-  { id: 4, title: 'PersistedStore + SecretStore services', status: 'accepted' },
-  { id: 5, title: 'AssetServer + mDNS services', status: 'accepted' },
-  { id: 6, title: 'SyncBroker (embedded y-websocket)', status: 'accepted' },
-  { id: 7, title: 'OutputDispatcher (OSC + MIDI + DMX)', status: 'accepted' },
-  { id: 8, title: 'InputRegistrar (OSC + MIDI listeners)', status: 'accepted' },
-  { id: 9, title: 'PairingStore + pairing flow API', status: 'accepted' },
-  { id: 10, title: 'Module loader implementation', status: 'accepted' },
-  { id: 11, title: 'Electron main entry + shell skeleton', status: 'accepted' },
-  { id: 12, title: 'PWA workspace (Vite + React + Yjs + IndexedDB)', status: 'accepted' },
-  { id: 13, title: 'CI workflow + parity test harness skeleton', status: 'accepted' },
-]
-
-const statusBadge = (s: string, cs: boolean) => {
-  if (s === 'accepted') return { label: cs ? 'Accepted' : 'Accepted', cls: 'bg-accent text-ink' }
-  if (s === 'in_progress') return { label: cs ? 'In progress' : 'In progress', cls: 'bg-paper text-ink border border-ink/30' }
-  if (s === 'queued') return { label: cs ? 'Queued' : 'Queued', cls: 'border border-rule text-muted' }
-  return { label: s, cls: 'text-muted' }
+interface BuiltLayer {
+  id: string
+  title: { cs: string; en: string }
+  detail: { cs: string; en: string }
 }
+
+const builtLayers: BuiltLayer[] = [
+  {
+    id: 'F1',
+    title: { cs: 'Cuelist Core', en: 'Cuelist Core' },
+    detail: {
+      cs: 'Multi-operator cuelist, per-department views, REHEARSAL ↔ SHOW režim, compound cues, payloady (OSC/MIDI/MSC/DMX Art-Net+sACN/webhook/wait/group/lx_ref), triggery (GO/auto-follow/auto-continue/timecode/hotkey), audition (náhled GO), disarm, panic, cue editor v prohlížeči.',
+      en: 'Multi-operator cuelist, per-department views, REHEARSAL ↔ SHOW mode, compound cues, payloads (OSC/MIDI/MSC/DMX Art-Net+sACN/webhook/wait/group/lx_ref), triggers (GO/auto-follow/auto-continue/timecode/hotkey), audition (preview GO), disarm, panic, in-browser cue editor.',
+    },
+  },
+  {
+    id: 'F2',
+    title: { cs: 'Časová vrstva', en: 'Time layer' },
+    detail: {
+      cs: 'Master clock, velký timecode (HH:MM:SS:FF) na všech pohledech, MTC chase IN + generování OUT, LTC chase IN + generování OUT, timecode-triggered cues, show-time OSC broadcast, odpočtová stanice (kiosk na Raspberry Pi).',
+      en: 'Master clock, big timecode (HH:MM:SS:FF) on every view, MTC chase IN + generate OUT, LTC chase IN + generate OUT, timecode-triggered cues, show-time OSC broadcast, countdown station (Raspberry Pi kiosk).',
+    },
+  },
+  {
+    id: 'F3',
+    title: { cs: 'Důvěra & bezpečí', en: 'Trust & safety' },
+    detail: {
+      cs: 'Zdraví zařízení (green/red z reálných dispatch výsledků), potvrzený stav zařízení, multi-destination patch (primární + záloha, failover), předshow kontrola, cue lights (SM standby → operator potvrdí → GO), návrhy změn v SHOW, oprávnění operátorů.',
+      en: 'Per-device health (green/red from real dispatch outcomes), device feedback, multi-destination patch (primary + backup, failover), pre-show health check, cue lights (SM standby → operator acknowledge → GO), SHOW-mode proposals, per-operator authority.',
+    },
+  },
+  {
+    id: 'F4',
+    title: { cs: 'AI showcaller', en: 'AI showcaller' },
+    detail: {
+      cs: 'Caller script per cue, deterministické generování ze scénáře + agregace souběžných marků, volitelný LLM návrh (Claude), klonování hlasu (ElevenLabs), předgenerování při zkoušce → lokální přehrávání při show, interrupt (TAKE OVER / MUTE < 200 ms), intercom výstup.',
+      en: 'Caller script per cue, deterministic generation from the sheet + aggregation of simultaneous marks, optional LLM draft (Claude), voice clone (ElevenLabs), rehearsal pre-generation → local playback at show, interrupt (TAKE OVER / MUTE < 200 ms), intercom out.',
+    },
+  },
+  {
+    id: 'I/O',
+    title: { cs: 'Protokoly + import/export', en: 'Protocols + import/export' },
+    detail: {
+      cs: 'OSC, MIDI, MSC, DMX Art-Net, DMX sACN, webhook, MTC, LTC, mDNS objevení; Routing UI mapuje payloady → zařízení. CSV import (QLab + Eos), JSON/PDF export, otevření .showx balíčku.',
+      en: 'OSC, MIDI, MSC, DMX Art-Net, DMX sACN, webhook, MTC, LTC, mDNS discovery; Routing UI maps payloads → devices. CSV import (QLab + Eos), JSON/PDF export, open a .showx package.',
+    },
+  },
+]
 
 const releaseStatusBadge = (s: string, cs: boolean) => {
   if (s === 'development') return { label: cs ? 'Vývoj' : 'In development', cls: 'bg-ink text-accent' }
@@ -93,10 +89,8 @@ const releaseStatusBadge = (s: string, cs: boolean) => {
 }
 
 export function Downloads() {
-  const { t, lang } = useI18n()
+  const { lang } = useI18n()
   const cs = lang === 'cs'
-
-  const accepted = bundleProgress.filter(b => b.status === 'accepted').length
 
   return (
     <div>
@@ -105,19 +99,23 @@ export function Downloads() {
         <div className="max-w-[1280px] mx-auto px-6 lg:px-12 pt-24 lg:pt-32 pb-20">
           <div className="grid grid-cols-12 gap-6 items-end">
             <div className="col-span-12 lg:col-span-9 animate-fade-up">
-              <div className="section-label mb-8">{t('dl.label')}</div>
+              <div className="section-label mb-8">{cs ? 'Ke stažení · v0.7.0' : 'Downloads · v0.7.0'}</div>
               <h1 className="display-serif text-display-1 text-ink leading-[0.95]">
-                {t('dl.headline.line1')}<br />
-                <em className="font-light text-accent-deep not-italic">{t('dl.headline.line2')}</em>
+                {cs ? 'Ke stažení.' : 'Downloads.'}<br />
+                <em className="font-light text-accent-deep not-italic">{cs ? 'Pro testery.' : 'For testers.'}</em>
               </h1>
-              <p className="copy text-lg mt-10 max-w-2xl">{t('dl.intro')}</p>
+              <p className="copy text-lg mt-10 max-w-2xl">
+                {cs
+                  ? 'ShowX v0.7.0 je interní preview pro testery — ne veřejný prodej. Jeden DMG, Apple Silicon Mac, a kompletní FOH show-control: cuelist, timecode, cue lights a AI showcaller. Stanice běží v prohlížeči.'
+                  : 'ShowX v0.7.0 is an internal preview for testers — not a public sale. One DMG, an Apple Silicon Mac, and complete FOH show control: cuelist, timecode, cue lights and an AI showcaller. Stations run in any browser.'}
+              </p>
             </div>
           </div>
         </div>
         <div className="absolute -bottom-10 -right-20 display-serif text-[18rem] leading-none text-accent/[0.08] select-none pointer-events-none">04</div>
       </section>
 
-      {/* DOWNLOAD v0.1 — LIVE */}
+      {/* DOWNLOAD v0.7.0 — LIVE */}
       <section className="rule-top bg-accent/10">
         <div className="max-w-[1280px] mx-auto px-6 lg:px-12 py-20">
           <div className="grid grid-cols-12 gap-8 items-start">
@@ -126,40 +124,38 @@ export function Downloads() {
             </div>
             <div className="col-span-12 md:col-span-9">
               <h2 className="display-serif text-display-2 leading-tight">
-                ShowX 0.2.1<br />
+                ShowX v0.7.0<br />
                 <em className="text-accent-deep font-light not-italic">
-                  {cs ? 'beta — dostupné nyní' : 'beta — available now'}
+                  {cs ? 'internal preview — dostupné nyní' : 'internal preview — available now'}
                 </em>
               </h2>
               <p className="copy mt-6 max-w-2xl">
                 {cs
-                  ? 'První použitelná beta. Cuelist Core + REHEARSAL/SHOW + bundled demo show (25 cues) + Routing/Devices UI + real-time playhead broadcast. Klikneš "Open Demo Show" a v 60 vteřinách jsi v reálném cuelist workflow. macOS Apple Silicon. Unsigned beta — Gatekeeper bypass instrukce dole.'
-                  : 'First usable beta. Cuelist Core + REHEARSAL/SHOW + bundled demo show (25 cues) + Routing/Devices UI + real-time playhead broadcast. Click "Open Demo Show" and you\'re in a real cuelist workflow in 60 seconds. macOS Apple Silicon. Unsigned beta — Gatekeeper bypass instructions below.'}
+                  ? 'Kompletní FOH show-control. F1 cuelist + F2 časová vrstva (vč. MTC/LTC chase + generování) + F3 důvěra a cue lights + F4 AI showcaller — vše postaveno. ~2240 testů. macOS Apple Silicon. Unsigned interní build — Gatekeeper bypass níže. Plný návod krok-za-krokem je na /try-it.'
+                  : 'Complete FOH show control. F1 cuelist + F2 time layer (incl. MTC/LTC chase + generate) + F3 trust and cue lights + F4 AI showcaller — all built. ~2240 tests. macOS Apple Silicon. Unsigned internal build — Gatekeeper bypass below. The full step-by-step guide is at /try-it.'}
               </p>
               <div className="mt-8 flex flex-col sm:flex-row gap-4">
                 <a
-                  href="/ShowX-0.2.1-arm64.dmg"
+                  href="/ShowX-0.7.0-arm64.dmg"
                   className="btn-primary"
                   download
                 >
-                  {cs ? 'Stáhnout ShowX 0.2.1 (arm64, ~102 MB)' : 'Download ShowX 0.2.1 (arm64, ~102 MB)'}
+                  {cs ? 'Stáhnout ShowX v0.7.0 (arm64)' : 'Download ShowX v0.7.0 (arm64)'}
                 </a>
-                <a
-                  href="https://github.com/jtrjtrjtr/showX/releases/tag/v0.1.1"
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <Link
+                  to="/try-it"
                   className="text-sm copy underline decoration-1 underline-offset-4 self-center"
                 >
-                  {cs ? 'Release notes na GitHubu' : 'Release notes on GitHub'} →
-                </a>
+                  {cs ? 'Plný návod pro testery /try-it' : 'Full tester guide /try-it'} →
+                </Link>
               </div>
 
               <div className="mt-12 border-l-2 border-accent-deep pl-6 max-w-2xl">
                 <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted mb-3">
-                  {cs ? 'Instalace (unsigned beta)' : 'Install (unsigned beta)'}
+                  {cs ? 'Instalace (unsigned interní build)' : 'Install (unsigned internal build)'}
                 </div>
                 <ol className="copy text-sm space-y-2 list-decimal list-inside">
-                  <li>{cs ? 'Stáhněte DMG (tlačítko výše)' : 'Download the DMG (button above)'}</li>
+                  <li>{cs ? 'Stáhněte ShowX-0.7.0-arm64.dmg (tlačítko výše)' : 'Download ShowX-0.7.0-arm64.dmg (button above)'}</li>
                   <li>{cs ? 'Otevřete DMG, přetáhněte ShowX.app do /Applications' : 'Open the DMG, drag ShowX.app into /Applications'}</li>
                   <li>
                     {cs
@@ -174,11 +170,18 @@ export function Downloads() {
                       : 'Or via terminal:'}{' '}
                     <code className="font-mono text-xs">xattr -dr com.apple.quarantine /Applications/ShowX.app</code>
                   </li>
+                  <li>
+                    {cs
+                      ? 'Pro rychlé párování stanic spusťte s pevným testovacím PINem:'
+                      : 'For fast station pairing, launch with a fixed test PIN:'}{' '}
+                    <code className="font-mono text-xs">SHOWX_PAIRING_TEST_PIN=000000</code>
+                    {cs ? ' → PIN 000000 nikdy nevyprší.' : ' → PIN 000000 never expires.'}
+                  </li>
                 </ol>
                 <p className="copy text-xs text-muted mt-4">
                   {cs
-                    ? '⚠️ Beta. Žádný Apple cert ani notarizace. Production-grade signing přijde v 0.2.'
-                    : '⚠️ Beta. No Apple cert / notarization yet. Production-grade signing arrives in 0.2.'}
+                    ? '⚠️ Interní preview pro testery. Bez Apple cert / notarizace; signed + notarized build a plná hardwarová validace LTC teprve přijdou.'
+                    : '⚠️ Internal preview for testers. No Apple cert / notarization yet; a signed + notarized build and full LTC hardware validation are still pending.'}
                 </p>
               </div>
             </div>
@@ -186,16 +189,73 @@ export function Downloads() {
         </div>
       </section>
 
-      {/* RELEASES */}
+      {/* WHAT'S BUILT */}
       <section className="rule-top">
         <div className="max-w-[1280px] mx-auto px-6 lg:px-12 py-20">
           <div className="grid grid-cols-12 gap-8 mb-12">
             <div className="col-span-12 md:col-span-3">
-              <div className="section-label">{t('dl.roadmap.label')}</div>
+              <div className="section-label">{cs ? 'Co je postaveno' : "What's built"}</div>
             </div>
             <div className="col-span-12 md:col-span-9">
               <h2 className="display-serif text-display-2 leading-tight">
-                {t('dl.roadmap.h')}
+                {cs ? 'F1–F4 + LTC' : 'F1–F4 + LTC'}<br />
+                <em className="text-accent-deep font-light not-italic">
+                  {cs ? 'vše v tomhle buildu' : 'all in this build'}
+                </em>
+              </h2>
+              <p className="copy mt-4 max-w-2xl text-sm">
+                {cs
+                  ? 'Cuelist UI, časová vrstva i AI showcaller jsou hotové — žádné "přijde někdy příště". Tohle je co dostanete v DMG.'
+                  : "The cuelist UI, time layer and AI showcaller are done — no “arrives later”. This is what's in the DMG."}
+              </p>
+            </div>
+          </div>
+          <div className="border border-rule rounded-sm bg-ground overflow-hidden">
+            <table className="w-full">
+              <thead className="bg-paper/40 border-b border-rule">
+                <tr>
+                  <th className="text-left px-4 py-3 font-mono text-[10px] uppercase tracking-[0.18em] text-muted w-16">{cs ? 'Vrstva' : 'Layer'}</th>
+                  <th className="text-left px-4 py-3 font-mono text-[10px] uppercase tracking-[0.18em] text-muted w-44">
+                    {cs ? 'Oblast' : 'Area'}
+                  </th>
+                  <th className="text-left px-4 py-3 font-mono text-[10px] uppercase tracking-[0.18em] text-muted">
+                    {cs ? 'Co obsahuje' : "What's in it"}
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {builtLayers.map(b => (
+                  <tr key={b.id} className="border-b border-rule last:border-b-0 align-top">
+                    <td className="px-4 py-4 font-mono text-xs text-accent-deep">{b.id}</td>
+                    <td className="px-4 py-4 text-sm display-serif">{cs ? b.title.cs : b.title.en}</td>
+                    <td className="px-4 py-4 text-sm copy">{cs ? b.detail.cs : b.detail.en}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="mt-6 flex flex-wrap gap-3">
+            <Link to="/docs" className="btn-ghost">{cs ? 'Funkce + scénáře' : 'Features + scenarios'} →</Link>
+            <Link to="/status" className="btn-ghost">{cs ? 'Live status' : 'Live status'}</Link>
+          </div>
+          <p className="copy text-xs text-muted mt-6 max-w-2xl">
+            {cs
+              ? 'Integrace s EventX (EventX Bridge) je na roadmapě, není součástí tohoto buildu.'
+              : 'EventX integration (EventX Bridge) is on the roadmap, not part of this build.'}
+          </p>
+        </div>
+      </section>
+
+      {/* RELEASES */}
+      <section className="rule-top bg-paper/30">
+        <div className="max-w-[1280px] mx-auto px-6 lg:px-12 py-20">
+          <div className="grid grid-cols-12 gap-8 mb-12">
+            <div className="col-span-12 md:col-span-3">
+              <div className="section-label">{cs ? 'Release roadmap' : 'Release roadmap'}</div>
+            </div>
+            <div className="col-span-12 md:col-span-9">
+              <h2 className="display-serif text-display-2 leading-tight">
+                {cs ? 'Z preview na public 1.0.' : 'From preview to public 1.0.'}
               </h2>
             </div>
           </div>
@@ -230,92 +290,45 @@ export function Downloads() {
       </section>
 
       {/* DEV PREVIEW PATH */}
-      <section className="rule-top bg-paper/30">
+      <section className="rule-top">
         <div className="max-w-[1280px] mx-auto px-6 lg:px-12 py-20">
           <div className="grid grid-cols-12 gap-8 items-start">
             <div className="col-span-12 md:col-span-3">
-              <div className="section-label">{t('dl.dev.label')}</div>
+              <div className="section-label">{cs ? 'Návod' : 'Walkthrough'}</div>
             </div>
             <div className="col-span-12 md:col-span-9">
               <h2 className="display-serif text-display-2 leading-tight">
-                {t('dl.dev.h')}
+                {cs ? 'Od DMG po první cue.' : 'From DMG to first cue.'}
               </h2>
-              <p className="copy mt-6 max-w-2xl">{t('dl.dev.body')}</p>
+              <p className="copy mt-6 max-w-2xl">
+                {cs
+                  ? 'Kompletní 9-krokový návod pro testery: stažení, první spuštění unsigned buildu, testovací PIN, otevření demo show, spárování stanice, volitelné API klíče a ověření výstupu na drátě.'
+                  : 'A complete 9-step tester guide: download, first open of the unsigned build, the test PIN, opening the demo show, pairing a station, optional API keys, and verifying output on the wire.'}
+              </p>
               <div className="mt-8">
-                <Link to="/try-it" className="btn-primary">{t('dl.dev.cta')}</Link>
+                <Link to="/try-it" className="btn-primary">{cs ? 'Otevřít návod /try-it' : 'Open the walkthrough /try-it'} →</Link>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* BUNDLE PROGRESS */}
-      <section className="rule-top">
-        <div className="max-w-[1280px] mx-auto px-6 lg:px-12 py-20">
-          <div className="grid grid-cols-12 gap-8 mb-12">
-            <div className="col-span-12 md:col-span-3">
-              <div className="section-label">{t('dl.bundle.label')}</div>
-            </div>
-            <div className="col-span-12 md:col-span-9">
-              <h2 className="display-serif text-display-2 leading-tight">
-                ShowX-1 Foundation<br />
-                <em className="text-accent-deep font-light not-italic">
-                  {accepted}/{bundleProgress.length} {cs ? 'tasků accepted' : 'tasks accepted'}
-                </em>
-              </h2>
-              <p className="copy mt-4 max-w-2xl text-sm">{t('dl.bundle.body')}</p>
-            </div>
-          </div>
-          <div className="border border-rule rounded-sm bg-ground overflow-hidden">
-            <table className="w-full">
-              <thead className="bg-paper/40 border-b border-rule">
-                <tr>
-                  <th className="text-left px-4 py-3 font-mono text-[10px] uppercase tracking-[0.18em] text-muted w-12">#</th>
-                  <th className="text-left px-4 py-3 font-mono text-[10px] uppercase tracking-[0.18em] text-muted">
-                    {cs ? 'Task' : 'Task'}
-                  </th>
-                  <th className="text-right px-4 py-3 font-mono text-[10px] uppercase tracking-[0.18em] text-muted w-32">
-                    {cs ? 'Stav' : 'Status'}
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {bundleProgress.map(b => {
-                  const badge = statusBadge(b.status, cs)
-                  return (
-                    <tr key={b.id} className="border-b border-rule last:border-b-0">
-                      <td className="px-4 py-3 font-mono text-xs text-muted">{String(b.id).padStart(2, '0')}</td>
-                      <td className="px-4 py-3 text-sm">{b.title}</td>
-                      <td className="px-4 py-3 text-right">
-                        <span className={`text-[10px] uppercase tracking-[0.18em] px-2 py-0.5 rounded-sm font-mono ${badge.cls}`}>
-                          {badge.label}
-                        </span>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-          <div className="mt-6 flex flex-wrap gap-3">
-            <Link to="/status" className="btn-ghost">{cs ? 'Detailní status' : 'Full status'} →</Link>
-            <Link to="/docs" className="btn-ghost">{cs ? 'Bundle docs' : 'Bundle docs'}</Link>
-          </div>
-        </div>
-      </section>
-
-      {/* WHEN DMG */}
+      {/* WHEN SIGNED */}
       <section className="rule-top bg-ink text-cream">
         <div className="max-w-[1280px] mx-auto px-6 lg:px-12 py-20">
           <div className="grid grid-cols-12 gap-8 items-start">
             <div className="col-span-12 md:col-span-3">
-              <div className="section-label text-cream/60">{t('dl.dmg.label')}</div>
+              <div className="section-label text-cream/60">{cs ? 'Co ještě přijde' : "What's still pending"}</div>
             </div>
             <div className="col-span-12 md:col-span-9">
               <h2 className="display-serif text-display-2 text-cream leading-tight">
-                {t('dl.dmg.h')}
+                {cs ? 'Signed build a public 1.0.' : 'A signed build and public 1.0.'}
               </h2>
-              <p className="text-cream/80 mt-6 max-w-3xl text-sm leading-relaxed">{t('dl.dmg.body')}</p>
+              <p className="text-cream/80 mt-6 max-w-3xl text-sm leading-relaxed">
+                {cs
+                  ? 'v0.7.0 je unsigned interní preview pro testery. Signed + notarized DMG (Apple Developer ID), plná hardwarová validace LTC, rundown vrstva a živý pricing přijdou s cestou k public 1.0. Do té doby používejte Gatekeeper bypass z instalace výše.'
+                  : 'v0.7.0 is an unsigned internal preview for testers. A signed + notarized DMG (Apple Developer ID), full LTC hardware validation, a rundown layer and live pricing arrive on the path to public 1.0. Until then, use the Gatekeeper bypass from the install steps above.'}
+              </p>
             </div>
           </div>
         </div>
@@ -327,22 +340,19 @@ export function Downloads() {
           <div className="grid grid-cols-12 gap-8 items-end">
             <div className="col-span-12 md:col-span-8">
               <h2 className="display-serif text-display-2 leading-tight">
-                {cs ? 'Čekat na DMG?' : 'Wait for the DMG?'}<br />
+                {cs ? 'Stáhnout v0.7.0?' : 'Grab v0.7.0?'}<br />
                 <em className="text-accent-deep italic font-light not-italic">
-                  {cs ? 'Nebo si to vyzkoušet teď ze sourcu.' : 'Or try it from source now.'}
+                  {cs ? 'Nebo nejdřív projít návod.' : 'Or walk the guide first.'}
                 </em>
               </h2>
             </div>
             <div className="col-span-12 md:col-span-4 flex md:justify-end flex-wrap gap-3">
-              <Link to="/try-it" className="btn-primary">
-                {cs ? 'Návod /try-it' : 'Walkthrough /try-it'} →
-              </Link>
-              <a
-                href="mailto:hello@xlabproject.net?subject=ShowX%20dev%20preview%20cohort"
-                className="btn-ghost"
-              >
-                {cs ? 'Preview přístup' : 'Preview access'}
+              <a href="/ShowX-0.7.0-arm64.dmg" download className="btn-primary">
+                {cs ? 'Stáhnout DMG' : 'Download DMG'} →
               </a>
+              <Link to="/try-it" className="btn-ghost">
+                {cs ? 'Návod /try-it' : 'Walkthrough /try-it'}
+              </Link>
             </div>
           </div>
         </div>

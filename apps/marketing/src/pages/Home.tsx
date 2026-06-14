@@ -7,17 +7,19 @@ interface StatusRow {
 }
 
 const statusRows: StatusRow[] = [
-  { key: 'foundation', state: 'ok' },
-  { key: 'shell', state: 'ok' },
-  { key: 'pwa', state: 'ok' },
+  { key: 'cuelist', state: 'ok' },
+  { key: 'timecode', state: 'ok' },
+  { key: 'cuelights', state: 'ok' },
+  { key: 'ai', state: 'ok' },
   { key: 'tests', state: 'ok' },
-  { key: 'dmg', state: 'wip' },
-  { key: 'cuelist', state: 'no' },
+  { key: 'dmg', state: 'ok' },
+  { key: 'signing', state: 'wip' },
+  { key: 'ltchw', state: 'wip' },
 ]
 
 const todayItems = ['t1', 't2', 't3', 't4', 't5', 't6'] as const
-const notItems = ['dmg', 'bridge', 'cuelist', 'show', 'cloud', 'repo'] as const
-const bundleCards = ['b1', 'b2', 'b3'] as const
+const notItems = ['signing', 'ltchw', 'keys', 'public', 'repo'] as const
+const bundleCards = ['b1', 'b2', 'b3', 'b4'] as const
 const roadmapKeys = ['t1', 't2', 't3', 't4', 't5', 't6'] as const
 
 export function Home() {
@@ -59,7 +61,7 @@ export function Home() {
               <div className="border border-rule bg-paper/40 rounded-lg p-6">
                 <div className="section-label mb-4 flex items-center justify-between">
                   <span>{t('home.live.status')}</span>
-                  <span className="font-mono text-[10px] text-muted">2026-06-06</span>
+                  <span className="font-mono text-[10px] text-muted">v0.7.0</span>
                 </div>
                 <ul className="space-y-2 text-sm font-mono">
                   {statusRows.map(row => {
@@ -130,7 +132,7 @@ export function Home() {
           </div>
           <div className="mt-10">
             <Link to="/try-it" className="font-mono text-xs uppercase tracking-[0.18em] text-accent-deep hover:text-ink">
-              {cs ? 'Plný 8-krokový návod →' : 'Full 8-step walkthrough →'}
+              {cs ? 'Plný návod k instalaci →' : 'Full install guide →'}
             </Link>
           </div>
         </div>
@@ -197,7 +199,7 @@ export function Home() {
       <section className="rule-top bg-ink text-cream relative overflow-hidden">
         <div className="absolute inset-0 opacity-[0.04] pointer-events-none">
           <div className="display-serif text-[40rem] leading-none text-cream absolute -bottom-40 -right-20 select-none">
-            13
+            F4
           </div>
         </div>
         <div className="max-w-[1280px] mx-auto px-6 lg:px-12 py-24 relative">
@@ -213,7 +215,7 @@ export function Home() {
               </h2>
             </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 text-sm">
             {bundleCards.map((b, i) => (
               <div key={b} className="border border-cream/15 rounded-sm p-6 bg-ink/40">
                 <div className="flex items-baseline justify-between mb-4">

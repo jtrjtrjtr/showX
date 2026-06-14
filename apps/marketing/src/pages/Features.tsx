@@ -1,13 +1,14 @@
 import { useI18n } from '../lib/i18n'
 
-interface Module {
+interface FeatureArea {
   slug: string
-  number: string
+  letter: string
   tier: string
-  name: string
+  name: { cs: string; en: string }
   tagline: { cs: string; en: string }
   body: { cs: string; en: string }
   bullets: { cs: string[]; en: string[] }
+  note?: { cs: string; en: string }
 }
 
 interface CrossFeature {
@@ -18,227 +19,303 @@ interface CrossFeature {
   snippet?: string
 }
 
-const modules: Module[] = [
-  {
-    slug: 'eventx-bridge',
-    number: '01',
-    tier: 'Free',
-    name: 'EventX Bridge',
-    tagline: {
-      cs: 'BridgeX 0.3.x, absorbováno.',
-      en: 'BridgeX 0.3.x, absorbed.',
-    },
-    body: {
-      cs: 'Subscribuje EventX Supabase Realtime changes a dispatchuje je na OSC, MIDI, DMX, WebSocket nebo Webhook. Žádný cuelist, jen mapování channelu na hardware. Pro existující BridgeX zákazníky = nulový migrace overhead.',
-      en: 'Subscribes to EventX Supabase Realtime changes and dispatches them to OSC, MIDI, DMX, WebSocket or Webhook. No cuelist — just channel-to-hardware mapping. For existing BridgeX customers = zero-friction migration.',
-    },
-    bullets: {
-      cs: [
-        'Channel catalog kontrakt s EventX engine',
-        'OSC out (UDP), MIDI out (USB + RTP-MIDI), DMX out (USB + Art-Net + sACN)',
-        'WebSocket + Webhook side-channel',
-        'Žádný UI lock-in: catalog → tabulkový routing',
-      ],
-      en: [
-        'Channel catalog contract with EventX engine',
-        'OSC out (UDP), MIDI out (USB + RTP-MIDI), DMX out (USB + Art-Net + sACN)',
-        'WebSocket + Webhook side-channel',
-        'No UI lock-in: catalog → tabular routing',
-      ],
-    },
-  },
+const areas: FeatureArea[] = [
   {
     slug: 'cuelist-core',
-    number: '02',
+    letter: 'A',
     tier: 'Free / Pro',
-    name: 'Cuelist Core',
+    name: { cs: 'Cuelist Core', en: 'Cuelist Core' },
     tagline: {
-      cs: 'Show file. Cuelist. Cue + payloads.',
-      en: 'Show file. Cuelist. Cue + payloads.',
+      cs: 'Jeden show dokument. Cuelist. Cue + payloady.',
+      en: 'One show doc. Cuelist. Cue + payloads.',
     },
     body: {
-      cs: 'Jeden Show dokument, jeden kanonický Cuelist (0.1), per-department views jako filtr nad sdíleným modelem. Multi-trigger semantics: Manual GO, Auto-Follow, Auto-Continue. Free pro jednoho operátora v REHEARSAL mode; Pro pro multi-op kolaboraci.',
-      en: 'One Show document, one canonical Cuelist (0.1), per-department views as filters over the shared model. Multi-trigger semantics: Manual GO, Auto-Follow, Auto-Continue. Free for single operator REHEARSAL; Pro for multi-op collab.',
+      cs: 'Multi-operator cuelist nad jedním sdíleným show dokumentem. Per-department views (LX/SX/VIDEO/PYRO/FS/AUTO) jsou filtr nad stejným modelem. Compound cue = jedna cue, víc payloadů pro různá oddělení. Přepínání REHEARSAL ↔ SHOW režim. Inline editace, desetinná čísla cue, autoring (přidat/vložit/smazat/táhnout) přímo v prohlížeči.',
+      en: 'A multi-operator cuelist over one shared show document. Per-department views (LX/SX/VIDEO/PYRO/FS/AUTO) are filters over the same model. A compound cue = one cue, multiple department payloads. Toggle REHEARSAL ↔ SHOW mode. Inline editing, decimal cue numbers, authoring (add/insert/delete/drag) right in the browser.',
     },
     bullets: {
       cs: [
-        'Department-tagged cue: LX, SX, VIDEO, AUTO, PYRO, FS, SM, OTHER',
-        'Compound cues: jedna cue, více payloadů (light + sound + video)',
-        'Yjs CRDT collab + presence dots přes embedded broker',
-        'Keyboard-first ergonomie (space = GO, arrows = navigate, Q = standby)',
-        'CSV import + JSON .showx export',
+        'Payloady (autorovatelné v prohlížeči): OSC, MIDI, MSC, DMX (Art-Net + sACN), webhook, wait, group, lx_ref (Eos/MA3/ChamSys/Hog)',
+        'Triggery: manual GO, auto-follow, auto-continue (delay), timecode, hotkey',
+        'Časování: pre-wait (před-čekání), duration, živý odpočet v řádku + elapsed/remaining v hlavičce',
+        'GO ergonomie: armed zelený rámeček, Back, hold-to-GO v SHOW, panic',
+        'Disarm (odjištění) — přeskočí cue a zachová řetěz',
+        'Audition / náhled GO — odpálí cue BEZ reálného výstupu (vidíš, co by poslala)',
+        'Stanice: PWA v prohlížeči (iPad/Mac/Win), mDNS discovery, QR + PIN párování',
+        'Local-first (Yjs CRDT) — show běží dál i když spadne Wi-Fi',
       ],
       en: [
-        'Department-tagged cues: LX, SX, VIDEO, AUTO, PYRO, FS, SM, OTHER',
-        'Compound cues: one cue, multiple payloads (light + sound + video)',
-        'Yjs CRDT collab + presence dots over embedded broker',
-        'Keyboard-first ergonomics (space = GO, arrows = navigate, Q = standby)',
-        'CSV import + JSON .showx export',
+        'Payloads (authorable in the browser): OSC, MIDI, MSC, DMX (Art-Net + sACN), webhook, wait, group, lx_ref (Eos/MA3/ChamSys/Hog)',
+        'Triggers: manual GO, auto-follow, auto-continue (delay), timecode, hotkey',
+        'Timing: pre-wait, duration, live countdown in the row + elapsed/remaining in the header',
+        'GO ergonomics: armed green border, Back, hold-to-GO in SHOW, panic',
+        'Disarm — skip a cue, keep the chain intact',
+        'Audition / preview GO — fire a cue with NO real output (see what it would send)',
+        'Stations: PWA in any browser (iPad/Mac/Win), mDNS discovery, QR + PIN pairing',
+        'Local-first (Yjs CRDT) — run the show even if Wi-Fi drops',
       ],
     },
   },
   {
-    slug: 'show-mode',
-    number: '03',
+    slug: 'time-layer',
+    letter: 'B',
     tier: 'Pro+',
-    name: 'SHOW mode',
+    name: { cs: 'Time layer', en: 'Time layer' },
     tagline: {
-      cs: 'Jeden klik. Show je zamčená.',
-      en: 'One click. Show is locked.',
+      cs: 'Hlavní hodiny. Timecode chase + generování.',
+      en: 'Master clock. Timecode chase + generate.',
     },
     body: {
-      cs: 'SM kliká LOCK SHOW. Cuelist payloads zmrznou na snapshot. Edity strukturálních cue jdou do schvalovací fronty. GO autorita je single-station. history.jsonl loguje každý event. Re-enter REHEARSAL vyžaduje SM auth.',
-      en: 'SM clicks LOCK SHOW. Cuelist payloads freeze to snapshot. Structural edits go to an approval queue. GO authority is single-station. history.jsonl captures every event. Re-entering REHEARSAL requires SM auth.',
+      cs: 'Jeden zdroj času pro celou show. Hlavní hodiny (interní free-run) řídí všechno, velký timecode display (HH:MM:SS:FF) je na všech views — SM, operátor, shell, odpočet. ShowX umí chase i generovat MTC a LTC, fire cues podle timecode a broadcastovat show-time přes OSC do externích displejů a automatizace.',
+      en: 'One source of time for the whole show. The master clock (internal free-run) drives everything; the big timecode display (HH:MM:SS:FF) is on every view — SM, operator, shell, countdown. ShowX can chase and generate MTC and LTC, fire cues on timecode, and broadcast show-time over OSC to external displays and automation.',
     },
     bullets: {
       cs: [
-        'Single-action LOCK SHOW (žádné 2FA v 0.1)',
-        'Edit proposals s SM approval queue',
-        'History snapshots + diff/revert UI (0.2)',
-        'GO event side-channel (mimo CRDT, nikdy se nereplay)',
+        'Hlavní hodiny (master clock) — jeden zdroj pro vše',
+        'Velký timecode display (HH:MM:SS:FF) na všech views',
+        'MTC (MIDI Time Code) chase IN + generování OUT',
+        'LTC (Linear/SMPTE) chase IN + generování OUT',
+        'Cues spouštěné timecodem (fire když hodiny překročí TC)',
+        'Show-time OSC broadcast (řízení externích displejů/automatizace)',
+        'Odpočtová stanice — obří číslice na zeď, běží na Raspberry Pi v Chromium kiosku (recept v docs)',
       ],
       en: [
-        'Single-action LOCK SHOW (no 2FA in 0.1)',
-        'Edit proposals with SM approval queue',
-        'History snapshots + diff/revert UI (0.2)',
-        'GO event side-channel (off-CRDT, never replays)',
+        'Master clock — one source for everything',
+        'Big timecode display (HH:MM:SS:FF) on all views',
+        'MTC (MIDI Time Code) chase IN + generate OUT',
+        'LTC (Linear/SMPTE) chase IN + generate OUT',
+        'Timecode-triggered cues (fire when the clock crosses a TC)',
+        'Show-time OSC broadcast (drive external displays/automation)',
+        'Countdown-only view — giant digits for a wall, runs on a Raspberry Pi in a Chromium kiosk (recipe in docs)',
+      ],
+    },
+    note: {
+      cs: 'LTC vyžaduje audio interface; live-signal lock je ověřený na hardwaru.',
+      en: 'LTC needs an audio interface; live-signal lock is validated on hardware.',
+    },
+  },
+  {
+    slug: 'trust-safety',
+    letter: 'C',
+    tier: 'Pro+',
+    name: { cs: 'Trust & Safety', en: 'Trust & Safety' },
+    tagline: {
+      cs: 'Cue lights. Zdraví zařízení. Failover.',
+      en: 'Cue lights. Device health. Failover.',
+    },
+    body: {
+      cs: 'Software cue lights jsou moderní náhrada za vyřazený ETC CueSystem: SM pošle STANDBY oddělení → operátorská stanice ukáže velké STANDBY + ACKNOWLEDGE → SM vidí, kdo je připravený → GO. K tomu zdraví zařízení per-device (zelená/červená) z reálných výsledků dispatchu, potvrzený stav z OSC odpovědí, primární + záložní cíl s failoverem a předshow kontrola.',
+      en: 'Software cue lights are the modern replacement for the discontinued ETC CueSystem: the SM sends STANDBY to a department → the operator station shows a big STANDBY + ACKNOWLEDGE → the SM sees who is ready → GO. Plus per-device health (green/red) from real dispatch outcomes, confirmed state from OSC replies, primary + backup destination with failover, and a pre-show check.',
+    },
+    bullets: {
+      cs: [
+        'Cue lights protokol: SM standby → operátor potvrzení → SM vidí připravenost → GO',
+        'Zdraví zařízení per-device (zelená/červená) v Routing + na stanicích, z reálného dispatchu',
+        'Potvrzený stav zařízení přes OSC odpověď (kde to gear umí — Eos/QLab)',
+        'Multi-destination patch: primární + záložní cíl, failover',
+        'Předshow kontrola (wizard): zařízení dostupná? assety k dispozici? stanice spárované?',
+        'Návrhy změn v SHOW: operátoři navrhnou edit v zamčeném SHOW, SM schvaluje',
+        'Oprávnění operátorů: kdo smí GO co (SM vs per-department)',
+      ],
+      en: [
+        'Cue lights protocol: SM standby → operator acknowledge → SM sees readiness → GO',
+        'Per-device health (green/red) in Routing + stations, from real dispatch',
+        'Confirmed device state via OSC reply (where the gear supports it — Eos/QLab)',
+        'Multi-destination patch: primary + backup, failover',
+        'Pre-show health check wizard: devices reachable? assets present? stations paired?',
+        'SHOW-mode proposals: operators propose edits during a locked SHOW, the SM accepts',
+        'Per-operator authority: who may GO what (SM vs per-department)',
       ],
     },
   },
   {
-    slug: 'router',
-    number: '04',
+    slug: 'ai-showcaller',
+    letter: 'D',
     tier: 'Pro+',
-    name: 'Custom Router',
+    name: { cs: 'AI Showcaller', en: 'AI Showcaller' },
     tagline: {
-      cs: 'WD-style rule table.',
-      en: 'WD-style rule table.',
+      cs: 'Diferenciátor. Cue lights a hlas jsou stejná data.',
+      en: 'The differentiator. Cue lights and voice are the same data.',
     },
     body: {
-      cs: 'Když Cuelist sémantika nestačí — když potřebujete OSC ←→ MIDI ←→ DMX glue mimo cuelist (např. fader z Eos console na video opacity v Disguise). Tabulkový router s podmínkami a transformy. Reference: Widget Designer node graph minus node graph.',
-      en: 'When Cuelist semantics are not enough — OSC ←→ MIDI ←→ DMX glue beyond cuelist (e.g. Eos fader to Disguise video opacity). Tabular router with conditions and transforms. Reference: Widget Designer node graph minus the node graph.',
+      cs: 'Caller script per cue (standby + go text pro každé oddělení). ShowX generuje hlášky ze scénáře deterministickou šablonou a agreguje souběžné marky („Světla, pyro, zvuk — standby… GO"). Volitelně LLM draft (Claude) pro přirozenější formulaci — vždy editovatelný. Klíčový insight: cue lights a AI caller jsou STEJNÁ data — jedno ukázané jako světlo, druhé vyslovené.',
+      en: 'A caller script per cue (per-department standby + go text). ShowX generates calls from the sheet with a deterministic template and aggregates simultaneous marks ("Lights, pyro, sound — standby… GO"). Optional LLM draft (Claude) for natural phrasing — always editable. Key insight: cue lights and the AI caller are the SAME data — one shown as light, one spoken.',
     },
     bullets: {
       cs: [
-        'IF (incoming OSC /eos/cue/active changes) THEN (send MIDI Note Off ch1 n42)',
-        'Conditional rules s value transforms (clamp, scale, gate)',
-        'Per-show config (uložené v .showx)',
+        'Caller script per cue (standby + go text per oddělení)',
+        'Generování ze scénáře — deterministická šablona + agregace souběžných marků',
+        'LLM draft (Claude) pro přirozené formulace — volitelný, vždy editovatelný',
+        'Klonování hlasu (ElevenLabs) — vlastní hlas showcallera',
+        'Předgenerování při zkoušce → audio zamrzlé do .showx → lokální přehrávání při show (bez internetu, bez latence)',
+        'Interrupt — velké TAKE OVER / MUTE, přeruší AI do <200 ms, showcaller mluví živě',
+        'Intercom výstup — hlas callera do zvoleného audio zařízení (intercom)',
       ],
       en: [
-        'IF (incoming OSC /eos/cue/active changes) THEN (send MIDI Note Off ch1 n42)',
-        'Conditional rules with value transforms (clamp, scale, gate)',
-        'Per-show config (stored in .showx)',
+        'Caller script per cue (per-department standby + go text)',
+        'Generate from the sheet — deterministic template + aggregation of simultaneous marks',
+        'LLM draft (Claude) for natural phrasing — optional, always editable',
+        'Voice clone (ElevenLabs) — the showcaller’s own voice',
+        'Rehearsal pre-generation → audio frozen into the .showx package → local playback at show (no internet, no latency)',
+        'Interrupt — big TAKE OVER / MUTE, cuts the AI in <200 ms so the caller speaks live',
+        'Intercom out — caller voice routed to a chosen audio device (intercom)',
+      ],
+    },
+    note: {
+      cs: 'Klonování hlasu vyžaduje ElevenLabs API klíč; LLM draft vyžaduje Anthropic klíč. Bez nich se tyto funkce elegantně vypnou.',
+      en: 'Voice clone needs an ElevenLabs API key; the LLM draft needs an Anthropic key. Without them those features gracefully disable.',
+    },
+  },
+  {
+    slug: 'protocols-io',
+    letter: 'E',
+    tier: 'Pro+',
+    name: { cs: 'Protocols I/O', en: 'Protocols I/O' },
+    tagline: {
+      cs: 'OSC, MIDI, MSC, DMX, webhook, MTC, LTC, mDNS.',
+      en: 'OSC, MIDI, MSC, DMX, webhook, MTC, LTC, mDNS.',
+    },
+    body: {
+      cs: 'Routing UI mapuje payloady → zařízení, s per-device zdravím. Vše obousměrné tam, kde to dává smysl. Tahle vrstva je společná pro cuelist i time layer.',
+      en: 'The Routing UI maps payloads → devices, with per-device health. Everything bidirectional where it makes sense. This layer is shared by both the cuelist and the time layer.',
+    },
+    bullets: {
+      cs: [
+        'OSC (out + in)',
+        'MIDI (out + in)',
+        'MSC (MIDI Show Control)',
+        'DMX Art-Net + DMX sACN',
+        'Webhook (out + in)',
+        'MTC (in + out), LTC (in + out)',
+        'mDNS discovery',
+        'Routing UI: payload → device mapping + per-device health',
+      ],
+      en: [
+        'OSC (out + in)',
+        'MIDI (out + in)',
+        'MSC (MIDI Show Control)',
+        'DMX Art-Net + DMX sACN',
+        'Webhook (out + in)',
+        'MTC (in + out), LTC (in + out)',
+        'mDNS discovery',
+        'Routing UI: payload → device mapping + per-device health',
       ],
     },
   },
   {
-    slug: 'cloud',
-    number: '05',
-    tier: 'Pro+',
-    name: 'Cloud Sync',
+    slug: 'import-export',
+    letter: 'F',
+    tier: 'Free / Pro',
+    name: { cs: 'Import / Export', en: 'Import / Export' },
     tagline: {
-      cs: 'Opt-in. Nikdy core path.',
-      en: 'Opt-in. Never the core path.',
+      cs: 'CSV in. JSON / PDF out. Otevřený .showx.',
+      en: 'CSV in. JSON / PDF out. Open .showx.',
     },
     body: {
-      cs: 'Když ho zapnete, ShowX přidá druhý Yjs provider mířící na cloud broker. Multi-provider stack zaručí, že edity merge napříč LAN + cloud, a když jeden link umře, show jede dál. Plus Supabase backup + cross-venue account.',
-      en: 'When enabled, ShowX adds a second Yjs provider pointing at a cloud broker. The multi-provider stack ensures edits merge across LAN + cloud, and if one link dies, the show keeps running. Plus Supabase backup + cross-venue account.',
+      cs: 'Naimportuj existující sheet z QLabu nebo Eosu přes CSV (oba dialekty, včetně mapování pre-wait/post-wait), exportuj do JSON nebo PDF. Show file je otevřený .showx package — žádný proprietární binární formát.',
+      en: 'Import an existing QLab or Eos sheet via CSV (both dialects, including pre-wait/post-wait mapping), export to JSON or PDF. The show file is an open .showx package — no proprietary binary format.',
     },
     bullets: {
       cs: [
-        'Yjs multi-provider stack (LAN + cloud transparentně)',
-        'Supabase Postgres backup',
-        'Cross-venue account + remote collab proxy',
-        'Žádná závislost pro venue runtime (zůstává opt-in)',
+        'CSV import (dialekty QLab + Eos, vč. mapování pre-wait/post-wait)',
+        'JSON export',
+        'PDF export',
+        'Otevřený .showx package: Yjs doc + cuelisty + snapshoty + media + history',
       ],
       en: [
-        'Yjs multi-provider stack (LAN + cloud transparently)',
-        'Supabase Postgres backup',
-        'Cross-venue account + remote collab proxy',
-        'No dependency for venue runtime (stays opt-in)',
+        'CSV import (QLab + Eos dialects, incl. pre-wait/post-wait mapping)',
+        'JSON export',
+        'PDF export',
+        'Open .showx package: Yjs doc + cuelists + snapshots + media + history',
       ],
     },
   },
 ]
 
-const crossFeatures: CrossFeature[] = [
+const installSteps: { cs: string; en: string }[] = [
   {
-    slug: 'yjs',
-    number: '01',
-    name: { cs: 'Yjs CRDT kolaborace', en: 'Yjs CRDT collab' },
-    body: {
-      cs: 'Každá stanice drží plnou IndexedDB replikaci Show dokumentu. Edity merge bez konfliktu díky CRDT semantice. Když broker umře, stanice dál fungují lokálně a sync se dohoní při reconnect. Presence dots ukazují, kdo edituje jaký cue.',
-      en: 'Every station holds a full IndexedDB replica of the Show document. Edits merge conflict-free via CRDT semantics. If the broker dies, stations keep working locally and resync on reconnect. Presence dots show who edits which cue.',
-    },
+    cs: 'Stáhni `ShowX-0.7.0-arm64.dmg` (Apple Silicon Mac). Je NEPODEPSANÝ (interní) → první otevření: pravý klik → Otevřít, nebo `xattr -dr com.apple.quarantine /Applications/ShowX.app`.',
+    en: 'Download `ShowX-0.7.0-arm64.dmg` (Apple Silicon Mac). It is UNSIGNED (internal) → first open: right-click → Open, or `xattr -dr com.apple.quarantine /Applications/ShowX.app`.',
   },
   {
+    cs: 'Přetáhni ShowX do Applications.',
+    en: 'Drag ShowX to Applications.',
+  },
+  {
+    cs: 'Spusť. Pro testování použij fixní párovací PIN: spusť s `SHOWX_PAIRING_TEST_PIN=000000` (terminál) → PIN 000000 nikdy nevyprší.',
+    en: 'Launch. For testing, use a fixed pairing PIN: launch with `SHOWX_PAIRING_TEST_PIN=000000` (terminal) → PIN 000000 never expires.',
+  },
+  {
+    cs: 'Otevři show (demo show je součástí) nebo vytvoř novou.',
+    en: 'Open a show (a demo show is included) or create one.',
+  },
+  {
+    cs: 'Na druhém zařízení (nebo v dalším tabu) otevři URL stanice zobrazené v ShowX (mDNS / LAN IP), naskenuj QR nebo zadej PIN a vyber roli (SM / operátor / odpočet).',
+    en: 'On another device (or browser tab), open the station URL shown in ShowX (mDNS / LAN IP), scan the QR or enter the PIN, pick a role (SM / operator / countdown).',
+  },
+  {
+    cs: 'Volitelné klíče: ElevenLabs (AI hlas), Anthropic (LLM draft) — nastav v appce; bez nich se tyto funkce elegantně vypnou.',
+    en: 'Optional keys: ElevenLabs (AI voice), Anthropic (LLM draft) — set them in the app; without them those features gracefully disable.',
+  },
+  {
+    cs: 'Ověř OSC na drátě: `nc -ul 7000`. DMX: capture Art-Net/sACN.',
+    en: 'Verify OSC on the wire: `nc -ul 7000`. DMX: Art-Net/sACN capture.',
+  },
+]
+
+const crossFeatures: CrossFeature[] = [
+  {
     slug: 'compound',
-    number: '02',
+    number: '01',
     name: { cs: 'Compound cues', en: 'Compound cues' },
     body: {
-      cs: 'Jedna cue „Door slam" má tři payloady: SX audio file, LX cue 47 na Eos, VIDEO marker v Disguise. Každé oddělení vidí svůj payload v per-department view. Stage Manager vidí všechny tři vedle sebe. GO spustí všechny tři naráz, nebo s offsetem podle trigger pravidel.',
-      en: 'One cue "Door slam" carries three payloads: SX audio file, LX cue 47 on Eos, VIDEO marker in Disguise. Each department sees its own payload in its per-department view. The Stage Manager sees all three side by side. GO fires all three at once, or with offsets per trigger rules.',
+      cs: 'Jedna cue „Door slam" nese tři payloady: SX audio, LX cue 47 na Eos, VIDEO marker v Disguise. Každé oddělení vidí svůj payload ve svém per-department view. Stage Manager vidí všechny tři vedle sebe. GO spustí všechny tři naráz, nebo s offsety podle trigger pravidel.',
+      en: 'One cue "Door slam" carries three payloads: SX audio, LX cue 47 on Eos, VIDEO marker in Disguise. Each department sees its own payload in its per-department view. The Stage Manager sees all three side by side. GO fires all three at once, or with offsets per trigger rules.',
     },
     snippet: `{
   "id": "01J8H7K2V9...",
-  "label": "Q 47",
+  "label": "Q 47 — Door slam",
   "department": ["LX", "SX", "VIDEO"],
   "trigger": { "mode": "manual" },
   "payloads": [
-    { "type": "lx_ref",   "console": "eos", "list": 1, "cue": 47 },
-    { "type": "osc",      "device": "qlab", "address": "/cue/door_slam/start" },
-    { "type": "osc",      "device": "disguise", "address": "/d3/showcontrol/cue", "args": [1,47,0] }
+    { "type": "lx_ref", "console": "eos", "list": 1, "cue": 47 },
+    { "type": "osc", "device": "qlab", "address": "/cue/door_slam/start" },
+    { "type": "osc", "device": "disguise", "address": "/d3/showcontrol/cue", "args": [1,47,0] }
   ]
 }`,
   },
   {
-    slug: 'go-semantics',
-    number: '03',
-    name: { cs: 'GO event semantika', en: 'GO event semantics' },
+    slug: 'cue-lights-voice',
+    number: '02',
+    name: { cs: 'Cue lights = AI hlas', en: 'Cue lights = AI voice' },
     body: {
-      cs: 'GO události NEJSOU součást CRDT stavu. Letí přes side-channel WSS topic. Důvod: kdyby GO byl součást Yjs dokumentu, reconnect po síťové výpadce by mohl znovu „odpálit" cue ze stavu. GO je událost, ne stav. Tahle separace je tvrdě uzamčená v specu.',
-      en: 'GO events are NOT part of the CRDT state. They travel on a side-channel WSS topic. Reason: if GO lived inside the Yjs document, a reconnect could replay a cue from state. GO is an event, not state. The separation is hard-locked in the spec.',
+      cs: 'Cue lights a AI showcaller čtou stejná data. Standby pro oddělení se ukáže jako velké STANDBY na stanici toho oddělení (operátor potvrdí) A zároveň se vysloví hlasem callera. Jeden zdroj pravdy, dvě modality. Proto agregace souběžných marků („Světla, pyro, zvuk — standby… GO") platí pro obojí.',
+      en: 'Cue lights and the AI showcaller read the same data. A department standby shows as a big STANDBY on that department’s station (operator acknowledges) AND is spoken by the caller voice. One source of truth, two modalities. That is why the aggregation of simultaneous marks ("Lights, pyro, sound — standby… GO") applies to both.',
+    },
+  },
+  {
+    slug: 'local-first',
+    number: '03',
+    name: { cs: 'Local-first běh show', en: 'Local-first show runtime' },
+    body: {
+      cs: 'Každá stanice drží plnou Yjs CRDT replikaci show dokumentu. Edity merge bez konfliktu. Když spadne Wi-Fi nebo broker, stanice fungují dál lokálně a dohoní sync při reconnect. AI hlas se předgeneruje při zkoušce a zamrzne do .showx, takže při show se přehrává lokálně — bez internetu, bez latence. To je smysl „LAN-first".',
+      en: 'Every station holds a full Yjs CRDT replica of the show document. Edits merge conflict-free. If Wi-Fi or the broker drops, stations keep running locally and resync on reconnect. The AI voice is pre-generated at rehearsal and frozen into the .showx, so at show time it plays locally — no internet, no latency. That is what "LAN-first" means.',
     },
   },
   {
     slug: 'showx-format',
     number: '04',
-    name: { cs: 'Open .showx file format', en: 'Open .showx file format' },
+    name: { cs: 'Otevřený .showx package', en: 'Open .showx package' },
     body: {
-      cs: 'Show file je package directory — žádný proprietární binární formát. JSON manifest, JSONL history audit log, optional script PDFs, lokální asset cache. Když ze ShowX odejdete, váš show jde s vámi. Když XLAB zítra zmizí, show se otevře v textovém editoru.',
-      en: 'The show file is a package directory — no proprietary binary format. JSON manifest, JSONL history audit log, optional script PDFs, local asset cache. Walk away from ShowX, the show walks with you. If XLAB disappeared tomorrow, the show opens in a text editor.',
+      cs: 'Show file je adresář, ne proprietární binárka. Yjs doc + cuelisty + snapshoty + media + history audit log. Když ze ShowX odejdeš, show jde s tebou. Když XLAB zítra zmizí, show se otevře v textovém editoru.',
+      en: 'The show file is a directory, not a proprietary binary. Yjs doc + cuelists + snapshots + media + a history audit log. Walk away from ShowX, the show walks with you. If XLAB disappeared tomorrow, the show opens in a text editor.',
     },
     snippet: `hamlet_2026-06-17.showx/
 ├── manifest.json        # show meta, devices, cuelists, cues
 ├── history.jsonl        # append-only audit log
-├── routing.json         # venue-scoped channel→hardware map
+├── snapshots/           # SHOW-mode payload snapshots
 ├── scripts/             # optional prompt-book PDFs
-│   └── act1.pdf
-└── assets/              # local audio/video cache (refs only)`,
-  },
-  {
-    slug: 'usitt-import',
-    number: '05',
-    name: { cs: 'USITT ASCII import (0.2)', en: 'USITT ASCII import (0.2)' },
-    body: {
-      cs: 'Jediný skutečný cross-vendor lighting interchange standard. ShowX 0.2 import: vezme Eos / MA / Vista USITT export, seedne LX department cues do nového showu. SM si může v REHEARSAL přidat SX a VIDEO payloady k existujícím cue.',
-      en: 'The only true cross-vendor lighting interchange standard. ShowX 0.2 import: takes an Eos / MA / Vista USITT export and seeds LX-department cues into a fresh show. SM can attach SX and VIDEO payloads to existing cues in REHEARSAL.',
-    },
-  },
-  {
-    slug: 'streamdeck',
-    number: '06',
-    name: { cs: 'Stream Deck přes Companion', en: 'Stream Deck via Companion' },
-    body: {
-      cs: 'ShowX neships vlastní Stream Deck plugin. Místo toho ships dokumentovanou OSC dictionary, kterou Companion komunitní modul může připojit. Jeden Stream Deck → Companion → OSC do ShowX → GO/standby/next list. Companion komunita = volný GTM kanál.',
-      en: 'ShowX does not ship a native Stream Deck plugin. Instead, it ships a documented OSC dictionary that a Companion community module can attach to. One Stream Deck → Companion → OSC into ShowX → GO/standby/next list. The Companion community is a free GTM channel.',
-    },
-    snippet: `# ShowX OSC dictionary (excerpt)
-/showx/cuelist/go              [cuelist_id]
-/showx/cuelist/pause           [cuelist_id]
-/showx/cuelist/resume          [cuelist_id]
-/showx/cue/standby             [cuelist_id, cue_id]
-/showx/show/lock               [show_id, operator_id]`,
+└── assets/              # local audio/video + pre-gen AI voice`,
   },
 ]
 
@@ -253,41 +330,56 @@ export function Features() {
         <div className="max-w-[1280px] mx-auto px-6 lg:px-12 pt-24 lg:pt-32 pb-20">
           <div className="grid grid-cols-12 gap-6 items-end">
             <div className="col-span-12 lg:col-span-9 animate-fade-up">
-              <div className="section-label mb-8">{t('features.label')}</div>
+              <div className="section-label mb-8">
+                {cs ? 'Funkce · v0.7.0 internal preview' : 'Features · v0.7.0 internal preview'}
+              </div>
               <h1 className="display-serif text-display-1 text-ink leading-[0.95]">
-                {t('features.headline.line1')}<br />
-                <em className="font-light text-accent-deep not-italic">{t('features.headline.line2')}</em>
+                {cs ? 'Všechno, co' : 'Everything'}<br />
+                <em className="font-light text-accent-deep not-italic">
+                  {cs ? 'je postavené.' : 'that is built.'}
+                </em>
               </h1>
-              <p className="copy text-lg mt-10 max-w-2xl">{t('features.intro')}</p>
+              <p className="copy text-lg mt-10 max-w-2xl">
+                {cs
+                  ? 'LAN-first FOH show-control na Macu — cuelist, timecode, cue lights a AI showcaller. Stanice běží v prohlížeči, žádná instalace pro operátory. Tohle je kompletní inventář funkcí postavených ve v0.7.0 (interní preview, ~2240 testů), seskupený podle oblastí A–F. Pro testery: konkrétně a upřímně, včetně toho, co potřebuje hardware nebo klíče.'
+                  : 'LAN-first FOH show control on a Mac — cuelist, timecode, cue lights and an AI showcaller. Stations run in any browser, zero install for operators. This is the full inventory of features built in v0.7.0 (internal preview, ~2240 tests), grouped by area A–F. For testers: concrete and honest, including what needs hardware or keys.'}
+              </p>
             </div>
           </div>
         </div>
         <div className="absolute -bottom-10 -right-20 display-serif text-[18rem] leading-none text-accent/[0.08] select-none pointer-events-none">02</div>
       </section>
 
-      {/* MODULES */}
+      {/* FEATURE AREAS */}
       <section className="rule-top">
         <div className="max-w-[1280px] mx-auto px-6 lg:px-12 py-20">
-          <div className="section-label mb-10">{cs ? 'Pět modulů' : 'Five modules'}</div>
+          <div className="section-label mb-10">
+            {cs ? 'Šest oblastí · A–F' : 'Six areas · A–F'}
+          </div>
           <div className="space-y-20">
-            {modules.map(m => (
-              <article key={m.slug} id={m.slug} className="grid grid-cols-12 gap-8 scroll-mt-24">
+            {areas.map(a => (
+              <article key={a.slug} id={a.slug} className="grid grid-cols-12 gap-8 scroll-mt-24">
                 <div className="col-span-12 md:col-span-3">
-                  <div className="font-mono text-xs text-accent-deep mb-3">{m.number}</div>
-                  <div className="badge bg-ink text-accent border-ink mb-4 inline-block">{m.tier}</div>
-                  <h2 className="display-serif text-3xl mb-2">{m.name}</h2>
-                  <p className="text-sm italic text-muted">{cs ? m.tagline.cs : m.tagline.en}</p>
+                  <div className="font-mono text-xs text-accent-deep mb-3">{a.letter}</div>
+                  <div className="badge bg-ink text-accent border-ink mb-4 inline-block">{a.tier}</div>
+                  <h2 className="display-serif text-3xl mb-2">{cs ? a.name.cs : a.name.en}</h2>
+                  <p className="text-sm italic text-muted">{cs ? a.tagline.cs : a.tagline.en}</p>
                 </div>
                 <div className="col-span-12 md:col-span-9">
-                  <p className="copy">{cs ? m.body.cs : m.body.en}</p>
+                  <p className="copy">{cs ? a.body.cs : a.body.en}</p>
                   <ul className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3 text-sm">
-                    {(cs ? m.bullets.cs : m.bullets.en).map((b, i) => (
+                    {(cs ? a.bullets.cs : a.bullets.en).map((b, i) => (
                       <li key={i} className="flex items-start gap-3">
                         <span className="font-mono text-[10px] text-accent-deep mt-1.5">●</span>
                         <span className="copy">{b}</span>
                       </li>
                     ))}
                   </ul>
+                  {a.note && (
+                    <p className="mt-6 text-sm text-muted border-l-2 border-accent pl-4">
+                      {cs ? a.note.cs : a.note.en}
+                    </p>
+                  )}
                 </div>
               </article>
             ))}
@@ -295,17 +387,19 @@ export function Features() {
         </div>
       </section>
 
-      {/* CROSS-CUTTING */}
+      {/* HOW THE PIECES FIT */}
       <section className="rule-top bg-paper/30">
         <div className="max-w-[1280px] mx-auto px-6 lg:px-12 py-24">
           <div className="grid grid-cols-12 gap-8 mb-16">
             <div className="col-span-12 md:col-span-3">
-              <div className="section-label">{cs ? 'Cross-cutting' : 'Cross-cutting'}</div>
+              <div className="section-label">{cs ? 'Jak to drží pohromadě' : 'How it fits'}</div>
             </div>
             <div className="col-span-12 md:col-span-9">
               <h2 className="display-serif text-display-2 leading-tight">
-                {cs ? 'Šest funkcí napříč' : 'Six capabilities across'}<br />
-                <span className="text-accent-deep italic font-light">{cs ? 'všemi moduly.' : 'every module.'}</span>
+                {cs ? 'Čtyři principy napříč' : 'Four principles across'}<br />
+                <span className="text-accent-deep italic font-light">
+                  {cs ? 'celým produktem.' : 'the whole product.'}
+                </span>
               </h2>
             </div>
           </div>
@@ -330,19 +424,52 @@ export function Features() {
         </div>
       </section>
 
-      {/* CTA */}
+      {/* INSTALL GUIDE FOR TESTERS */}
+      <section className="rule-top">
+        <div className="max-w-[1280px] mx-auto px-6 lg:px-12 py-24">
+          <div className="grid grid-cols-12 gap-8 mb-12">
+            <div className="col-span-12 md:col-span-3">
+              <div className="section-label">{cs ? 'Pro testery' : 'For testers'}</div>
+            </div>
+            <div className="col-span-12 md:col-span-9">
+              <h2 className="display-serif text-display-2 leading-tight">
+                {cs ? 'Instalace v sedmi krocích.' : 'Install in seven steps.'}
+              </h2>
+              <p className="copy mt-6 max-w-2xl">
+                {cs
+                  ? 'v0.7.0 je interní preview, ne veřejný prodej. Build je nepodepsaný; podepsaný/notarizovaný build a plná hardwarová validace LTC se teprve dodělávají.'
+                  : 'v0.7.0 is an internal preview, not public sale. The build is unsigned; a signed/notarized build and full LTC hardware validation are still pending.'}
+              </p>
+            </div>
+          </div>
+          <ol className="grid grid-cols-12 gap-x-8 gap-y-6">
+            {installSteps.map((s, i) => (
+              <li key={i} className="col-span-12 md:col-span-6 flex items-start gap-4 scroll-mt-24">
+                <span className="font-mono text-sm text-accent-deep mt-0.5 shrink-0">{String(i + 1).padStart(2, '0')}</span>
+                <span className="copy text-sm">{cs ? s.cs : s.en}</span>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </section>
+
+      {/* ROADMAP + CTA */}
       <section className="rule-top">
         <div className="max-w-[1280px] mx-auto px-6 lg:px-12 py-24">
           <div className="grid grid-cols-12 gap-8 items-center">
             <div className="col-span-12 md:col-span-8">
               <h2 className="display-serif text-display-2 leading-tight">
-                {cs ? 'Tohle je 0.1 surface.' : 'This is the 0.1 surface.'}<br />
-                <span className="text-muted italic font-light">{cs ? '0.2 přidává cloud sync, MSC out, USITT import.' : '0.2 adds cloud sync, MSC out, USITT import.'}</span>
+                {cs ? 'Tohle je v0.7.0 — postaveno teď.' : 'This is v0.7.0 — built now.'}<br />
+                <span className="text-muted italic font-light">
+                  {cs
+                    ? 'Na roadmapě 1.0: rundown vrstva, ceny live, produktový web. (EventX integrace zatím ne.)'
+                    : 'On the 1.0 roadmap: rundown layer, pricing live, product web. (EventX integration not yet.)'}
+                </span>
               </h2>
             </div>
             <div className="col-span-12 md:col-span-4 flex flex-wrap gap-3">
-              <a href="mailto:hello@xlabproject.net?subject=ShowX%20beta" className="btn-primary">
-                {t('home.cta.beta')}
+              <a href="mailto:hello@xlabproject.net?subject=ShowX%20preview" className="btn-primary">
+                {t('nav.preview')}
               </a>
             </div>
           </div>
