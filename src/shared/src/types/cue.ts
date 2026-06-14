@@ -3,7 +3,9 @@
 
 import type { Payload, PayloadType } from './payload.js';
 import type { DepartmentTag } from './department.js';
+import type { CallerLineGroup } from './caller.js';
 export type { DepartmentTag } from './department.js';
+export type { CallerLineGroup } from './caller.js';
 
 export type TriggerKind = 'manual' | 'auto_follow' | 'auto_continue' | 'timecode' | 'hotkey';
 
@@ -37,6 +39,8 @@ export interface Cue {
   pre_wait_ms?: number;
   /** QLab-style disarm: if false, cue is skipped on GO (no dispatch) but chain advances. Lazy default true. */
   armed?: boolean;
+  /** Per-cue caller script for AI Showcaller (F4). Lazy default null = no caller for this cue. */
+  caller_lines?: CallerLineGroup | null;
 }
 
 export interface CueCatalogEntry {

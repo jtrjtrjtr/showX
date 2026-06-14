@@ -277,7 +277,7 @@ describe('Shell', () => {
     expect(shell.isShutDown()).toBe(true);
   });
 
-  it('IPC handlers registered for all 8 invoke channels when skipWindow=false', async () => {
+  it('IPC handlers registered for core invoke channels when skipWindow=false', async () => {
     const ipcBridge = { handle: vi.fn() };
     const shell = new Shell({ ...mocks, skipWindow: false, ipcBridge });
     await shell.boot();
@@ -286,7 +286,11 @@ describe('Shell', () => {
       (c: unknown[]) => c[0],
     ) as string[];
 
-    const invokeChannels = Object.values(IPC).filter((ch) => ch !== IPC.HEALTH_CHANGE);
+    // Caller channels (caller:*) are optional — only registered when ElevenLabs deps provided.
+    const OPTIONAL_PREFIXES = ['caller:'];
+    const invokeChannels = Object.values(IPC).filter(
+      (ch) => ch !== IPC.HEALTH_CHANGE && !OPTIONAL_PREFIXES.some((p) => ch.startsWith(p)),
+    );
     for (const ch of invokeChannels) {
       expect(registered).toContain(ch);
     }

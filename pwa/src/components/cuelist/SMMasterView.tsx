@@ -25,6 +25,7 @@ import { HelpOverlay } from './HelpOverlay.js';
 import { PreShowCheck } from './PreShowCheck.js';
 import { ProposalBadge, ProposalQueue } from './ProposalQueue.js';
 import { pendingProposalCount } from '../../../../src/modules/cuelist-core/src/document/proposals.js';
+import { InterruptButton } from '../caller/InterruptButton.js';
 
 // ── AuditionBar ───────────────────────────────────────────────────────────────
 // Dry-run control: SM fires the selected/armed cue with no real output.
@@ -203,6 +204,11 @@ function CueLightsPanel({ cueId, departments, deptState, onStandby }: CueLightsP
 
 interface SMMasterViewProps {
   cuelistId: string;
+  /** Optional: wire up AI caller interrupt control. When callerEnabled=true, shows TAKE OVER / MUTE button. */
+  callerEnabled?: boolean;
+  callerManual?: boolean;
+  onCallerInterrupt?: () => void;
+  onCallerResume?: () => void;
 }
 
 function getNextCues(cues: Cue[], playheadCueId: string | null, count: number): Cue[] {
@@ -231,7 +237,7 @@ function EmptyState({ onAdd }: { onAdd?: () => void }) {
   );
 }
 
-export function SMMasterView({ cuelistId }: SMMasterViewProps) {
+export function SMMasterView({ cuelistId, callerEnabled = false, callerManual = false, onCallerInterrupt, onCallerResume }: SMMasterViewProps) {
   const conn = useConnection();
   const { cuelist, cues, updateFields, addCue, insertCueAfter, removeCue, reorderCues, setArmed } = useCuelist(cuelistId);
   const { mode, transition } = useMode();
@@ -1216,6 +1222,17 @@ export function SMMasterView({ cuelistId }: SMMasterViewProps) {
             externalHoldFraction={spaceHoldFraction > 0 ? spaceHoldFraction : undefined}
           />
         </div>
+        {/* AI caller interrupt — shown when caller is enabled; SM can mute/take-over instantly */}
+        {callerEnabled && onCallerInterrupt && onCallerResume && (
+          <div style={{ marginTop: tokens.space.s }}>
+            <InterruptButton
+              onInterrupt={onCallerInterrupt}
+              onResume={onCallerResume}
+              isManual={callerManual}
+              callerEnabled={callerEnabled}
+            />
+          </div>
+        )}
         {/* Audition row — dry-run the selected (or armed) cue; SM only */}
         <AuditionBar
           targetCueId={selectedCueId ?? armedCueId}

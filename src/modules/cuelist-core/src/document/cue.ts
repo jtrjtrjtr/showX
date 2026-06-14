@@ -1,5 +1,5 @@
 import * as Y from 'yjs';
-import type { Cue, DepartmentTag, Trigger } from 'showx-shared';
+import type { Cue, DepartmentTag, Trigger, CallerLineGroup } from 'showx-shared';
 import { uuidv7 } from './uuid.js';
 import { getCuelist, getCues } from './cuelist.js';
 import { ValidationError } from './payload.js';
@@ -314,6 +314,21 @@ export function setCueArmed(
   });
 }
 
+export function setCueCallerLines(
+  doc: Y.Doc,
+  cuelistId: string,
+  cueId: string,
+  callerLines: CallerLineGroup | null,
+  modifiedBy: string,
+): void {
+  assertEditAllowed(doc, 'meta');
+  const cue = findCue(doc, cuelistId, cueId);
+  doc.transact(() => {
+    cue.set('caller_lines', callerLines);
+    touchModified(cue, modifiedBy);
+  });
+}
+
 // ── Batch text-field update ────────────────────────────────────────────────────
 
 export interface CueFieldPatch {
@@ -326,6 +341,8 @@ export interface CueFieldPatch {
   cue_number?: string | null;
   /** QLab pre-wait: non-negative integer ms. Default 0. */
   pre_wait_ms?: number;
+  /** Per-cue caller script for AI Showcaller. Null clears. */
+  caller_lines?: CallerLineGroup | null;
 }
 
 /**
@@ -393,6 +410,7 @@ export function updateCueFields(
       cue.set('cue_number', patch.cue_number !== null ? patch.cue_number.trim() : null);
     }
     if (patch.pre_wait_ms !== undefined) cue.set('pre_wait_ms', patch.pre_wait_ms);
+    if (patch.caller_lines !== undefined) cue.set('caller_lines', patch.caller_lines);
     touchModified(cue, modifiedBy);
   });
 }

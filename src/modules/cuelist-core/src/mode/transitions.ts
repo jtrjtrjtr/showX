@@ -3,10 +3,17 @@ import type { ShowMode, ModuleContext, ShowModeChangeEvent } from 'showx-shared'
 import { writeSnapshot, type SnapshotResult } from './snapshot.js';
 import { appendHistoryEvent } from '../persistence/historyJsonl.js';
 import { getCuelists, getCues } from '../document/cuelist.js';
+import { preGenerateCallerAudio, type TtsInterface, type PreGenLogger } from '../caller/preGenerate.js';
 
 import { getMode } from './modeState.js';
 export { getMode } from './modeState.js';
 export type Mode = ShowMode;
+
+export interface PreGenOptions {
+  ttsClient: TtsInterface;
+  voiceId: string | null | undefined;
+  logger?: PreGenLogger;
+}
 
 export interface TransitionContext {
   doc: Y.Doc;
@@ -14,6 +21,8 @@ export interface TransitionContext {
   byOperatorId: string;
   operatorRole?: 'stage_manager' | 'operator' | 'director' | 'watcher';
   ctx?: Pick<ModuleContext, 'events'>;
+  /** Optional: pre-generate caller audio on REHEARSAL→SHOW. Skipped gracefully if absent. */
+  preGen?: PreGenOptions;
 }
 
 export type TransitionResult =
@@ -58,6 +67,16 @@ export async function transitionMode(
       return { ok: false, reason: 'package_unwritable' };
     }
     snapshotId = snap.snapshotId;
+
+    // Pre-generate caller audio before payload freeze (non-blocking: errors logged, not thrown)
+    if (params.preGen) {
+      const { ttsClient, voiceId, logger } = params.preGen;
+      await preGenerateCallerAudio(doc, active, pkgPath, ttsClient, voiceId, logger).catch(
+        (err: unknown) => {
+          logger?.warn('caller.pregen.transition_hook_error', { error: String(err) });
+        },
+      );
+    }
 
     const frozenAt = new Date().toISOString();
     doc.transact(() => {

@@ -1,9 +1,10 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
-import type { Cue } from 'showx-shared';
+import type { Cue, CallerLineGroup } from 'showx-shared';
 import type { CueFieldPatch } from '../../hooks/useCuelist.js';
 import { tokens } from './tokens.js';
 import { PayloadList } from './PayloadList.js';
+import { CallerLinesEditor } from './CallerLinesEditor.js';
 
 export interface CueEditDialogProps {
   cue: Cue;
@@ -28,6 +29,9 @@ export function CueEditDialog({ cue, onSave, onCancel, cuelistId, locked = false
   const [preWaitSecs, setPreWaitSecs] = useState(() =>
     cue.pre_wait_ms && cue.pre_wait_ms > 0 ? (cue.pre_wait_ms / 1000).toFixed(1) : '',
   );
+  const [callerLines, setCallerLines] = useState<CallerLineGroup | null>(
+    cue.caller_lines ?? null,
+  );
   const [labelError, setLabelError] = useState(false);
   const labelRef = useRef<HTMLInputElement>(null);
 
@@ -48,8 +52,8 @@ export function CueEditDialog({ cue, onSave, onCancel, cuelistId, locked = false
     const rawPre = preWaitSecs.trim();
     const pre_wait_ms =
       rawPre === '' ? 0 : Math.max(0, Math.round(parseFloat(rawPre) * 1000));
-    onSave({ label: label.trim(), description, standby_note: standbyNote, duration_hint_ms, pre_wait_ms });
-  }, [label, description, standbyNote, durationSecs, preWaitSecs, onSave]);
+    onSave({ label: label.trim(), description, standby_note: standbyNote, duration_hint_ms, pre_wait_ms, caller_lines: callerLines });
+  }, [label, description, standbyNote, durationSecs, preWaitSecs, callerLines, onSave]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -201,6 +205,41 @@ export function CueEditDialog({ cue, onSave, onCancel, cuelistId, locked = false
             aria-label="Pre-wait in seconds"
           />
         </Field>
+
+        <div data-testid="caller-script-section">
+          <div
+            style={{
+              fontSize: 12,
+              fontWeight: 600,
+              color: tokens.color.ink_secondary,
+              fontFamily: tokens.font.ui,
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
+              marginBottom: tokens.space.s,
+            }}
+          >
+            Caller script
+          </div>
+          {locked && (
+            <div
+              data-testid="caller-lines-locked-notice"
+              style={{
+                fontSize: 12,
+                color: tokens.color.ink_disabled,
+                fontStyle: 'italic',
+                marginBottom: tokens.space.s,
+                fontFamily: tokens.font.ui,
+              }}
+            >
+              Caller script locked in SHOW mode
+            </div>
+          )}
+          <CallerLinesEditor
+            value={callerLines}
+            onChange={setCallerLines}
+            disabled={locked}
+          />
+        </div>
 
         <div style={{ display: 'flex', gap: tokens.space.m, justifyContent: 'flex-end', marginTop: tokens.space.s }}>
           <button

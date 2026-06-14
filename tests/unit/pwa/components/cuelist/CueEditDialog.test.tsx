@@ -74,6 +74,7 @@ describe('CueEditDialog', () => {
       standby_note: '',
       duration_hint_ms: null,
       pre_wait_ms: 0,
+      caller_lines: null,
     });
   });
 
@@ -252,6 +253,62 @@ describe('CueEditDialog', () => {
     render(<CueEditDialog cue={cue} onSave={vi.fn()} onCancel={vi.fn()} locked={false} />);
     const input = screen.getByTestId('cue-edit-prewait') as HTMLInputElement;
     expect(input.disabled).toBe(false);
+  });
+
+  // ── Caller script section ──────────────────────────────────────────────────
+
+  it('renders the Caller script section heading', () => {
+    render(<CueEditDialog cue={makeCue()} onSave={vi.fn()} onCancel={vi.fn()} />);
+    expect(screen.getByTestId('caller-script-section')).toBeInTheDocument();
+    expect(screen.getByTestId('caller-lines-editor')).toBeInTheDocument();
+  });
+
+  it('pre-fills caller_lines from cue prop', () => {
+    const cue = makeCue({ caller_lines: { standby: { LX: 'LX standby' }, go: 'Go LX' } });
+    render(<CueEditDialog cue={cue} onSave={vi.fn()} onCancel={vi.fn()} />);
+    expect((screen.getByTestId('caller-standby-LX') as HTMLInputElement).value).toBe('LX standby');
+    expect((screen.getByTestId('caller-go-input') as HTMLInputElement).value).toBe('Go LX');
+  });
+
+  it('caller_lines included in save patch', () => {
+    const onSave = vi.fn();
+    const cue = makeCue({ label: 'Q1' });
+    render(<CueEditDialog cue={cue} onSave={onSave} onCancel={vi.fn()} />);
+    fireEvent.change(screen.getByTestId('caller-standby-SX'), { target: { value: 'SX standby' } });
+    fireEvent.change(screen.getByTestId('caller-go-input'), { target: { value: 'GO' } });
+    fireEvent.click(screen.getByTestId('cue-edit-save'));
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({
+        caller_lines: expect.objectContaining({ standby: expect.objectContaining({ SX: 'SX standby' }), go: 'GO' }),
+      }),
+    );
+  });
+
+  it('caller_lines null in save patch when no caller lines set', () => {
+    const onSave = vi.fn();
+    const cue = makeCue({ label: 'Q1' });
+    render(<CueEditDialog cue={cue} onSave={onSave} onCancel={vi.fn()} />);
+    fireEvent.click(screen.getByTestId('cue-edit-save'));
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ caller_lines: null }));
+  });
+
+  it('shows locked notice in caller script section when locked=true', () => {
+    const cue = makeCue({ label: 'Q1' });
+    render(<CueEditDialog cue={cue} onSave={vi.fn()} onCancel={vi.fn()} locked={true} />);
+    expect(screen.getByTestId('caller-lines-locked-notice')).toBeInTheDocument();
+  });
+
+  it('no locked notice in caller script section when locked=false', () => {
+    const cue = makeCue({ label: 'Q1' });
+    render(<CueEditDialog cue={cue} onSave={vi.fn()} onCancel={vi.fn()} locked={false} />);
+    expect(screen.queryByTestId('caller-lines-locked-notice')).toBeNull();
+  });
+
+  it('caller standby inputs disabled when locked=true', () => {
+    const cue = makeCue({ label: 'Q1' });
+    render(<CueEditDialog cue={cue} onSave={vi.fn()} onCancel={vi.fn()} locked={true} />);
+    expect((screen.getByTestId('caller-standby-LX') as HTMLInputElement).disabled).toBe(true);
+    expect((screen.getByTestId('caller-go-input') as HTMLInputElement).disabled).toBe(true);
   });
 
   // ── Payloads section position ────────────────────────────────────────────────

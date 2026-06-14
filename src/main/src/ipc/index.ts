@@ -7,6 +7,8 @@ import type { PinManager } from '../shared/pairing/pinManager.js';
 import type { Logger } from '../shared/Logger.js';
 import type { ShellConfigStore } from '../Shell.js';
 import { registerShowActions } from './showActions.js';
+import { registerCallerBridge, type CallerBridgeDeps } from './callerBridge.js';
+import { registerLlmDraftBridge, type LlmDraftBridgeDeps } from './llmDraftBridge.js';
 
 export type { ShellConfigStore } from '../Shell.js';
 
@@ -24,6 +26,10 @@ export interface IpcDeps {
   logger: Logger;
   /** Returns the port the AssetServer is listening on. Used by TEST_GET_PORT. */
   assetPort?: () => number;
+  /** AI Showcaller (F4) — ElevenLabs TTS. Optional until Shell wires ElevenLabsClient. */
+  caller?: CallerBridgeDeps;
+  /** AI Showcaller (F4) — LLM draft via Claude. Optional until Shell wires LlmDraftClient. */
+  llmDraft?: LlmDraftBridgeDeps;
 }
 
 export function registerIpcHandlers(deps: IpcDeps, ipc: IpcMainBridge = ipcMain): void {
@@ -77,6 +83,14 @@ export function registerIpcHandlers(deps: IpcDeps, ipc: IpcMainBridge = ipcMain)
   if (deps.assetPort) {
     const assetPort = deps.assetPort;
     ipc.handle(IPC.TEST_GET_PORT, async () => assetPort());
+  }
+
+  if (deps.caller) {
+    registerCallerBridge(deps.caller, ipc);
+  }
+
+  if (deps.llmDraft) {
+    registerLlmDraftBridge(deps.llmDraft, ipc);
   }
 
   registerShowActions(deps.shellConfig, ipc);

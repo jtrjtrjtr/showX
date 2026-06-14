@@ -1,8 +1,8 @@
 {
   "enabled": true,
   "bundle_id": "ShowX-7",
-  "allowed_task_ids": ["B007-001", "B007-004"],
-  "rationale": "F4 'AI Showcaller' open 2026-06-14 (Jindřich 'jed f4' — direct, LTC deferred). F1+F2+F3 impl complete (v0.5.0, automated gate green, visual gate pending Jindřich GUI — batched). F4 wave 1 = no-dep tasks: B007-001 (caller_lines model+UI) + B007-004 (ElevenLabs Node client+voice clone). Cascade: 002/003→001, 005→002+004, 006→005, 007/008→006, 009 gate→all. New deps: ElevenLabs JS/REST + Anthropic (LLM draft). Budget $30/phase.",
-  "updated_at": "2026-06-14T00:05:00Z",
+  "allowed_task_ids": ["B007-007", "B007-008"],
+  "rationale": "F4 wave 5 (2026-06-14 ~04:29): 001-006 accepted; B007-006 playback ACCEPTED → unlocked B007-007 (interrupt) + B007-008 (intercom out). 009 gate (architect, batched F1-F4) → after 007+008. ElevenLabs ToS/cost note for Jindřich at gate. Budget $30/phase.",
+  "updated_at": "2026-06-14T04:29:00Z",
   "updated_by": "architect"
 }

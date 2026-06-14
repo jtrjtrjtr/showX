@@ -8,3 +8,4 @@ export * from './types/cue.js';
 export * from './types/show.js';
 export * from './types/events.js';
 export * from './types/timecode.js';
+export type { CallerLineGroup } from './types/caller.js';
