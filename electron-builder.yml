@@ -9,9 +9,14 @@ extraResources:
     filter:
       - "**/*"
 
-# Patched metadata for the packed app — main must be the in-asar path (flattened from src/main/dist)
+# Patched metadata for the packed app.
+# main: the in-asar path (src/main/dist flattened to asar root).
+# type: module — the compiled main (index.js) is ESM (`import ...`). Without this the
+# packed package.json defaults to CommonJS and Electron throws
+# "Cannot use import statement outside a module" at boot. (Root pkg stays type-less for dev.)
 extraMetadata:
   main: index.js
+  type: module
 
 # Native addons (.node binaries) must live outside the asar so the OS can dlopen() them.
 # Covers @julusian/midi and keytar (and any future native modules).
