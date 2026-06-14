@@ -36,6 +36,20 @@ files:
     to: pwa
     filter:
       - "**/*"
+  # Workspace packages the compiled main imports by bare specifier
+  # (@showx/module-cuelist-core/<subpath>, showx-shared). pnpm symlinks don't survive
+  # packaging, so mount each package (package.json + dist) under node_modules/<name> so
+  # Node ESM resolves them via their exports maps. Lesson: feedback_electron_workspace_imports_packed.
+  - from: src/modules/cuelist-core
+    to: node_modules/@showx/module-cuelist-core
+    filter:
+      - package.json
+      - dist/**/*
+  - from: src/shared
+    to: node_modules/showx-shared
+    filter:
+      - package.json
+      - dist/**/*
 
 directories:
   buildResources: build
