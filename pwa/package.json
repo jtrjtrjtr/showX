@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "typecheck": "tsc --noEmit",
+    "typecheck": "pnpm --filter showx-shared build && pnpm --filter @showx/module-cuelist-core build && tsc --noEmit",
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview"
