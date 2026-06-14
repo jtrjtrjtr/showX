@@ -96,6 +96,11 @@ export function StationsPanel() {
 
   const urlLan = buildStationUrl(info, info.lan_ip);
   const urlMdns = buildStationUrl(info, info.mdns_name);
+  // Same-Mac station MUST use localhost: it is a secure context, so Web Crypto
+  // (crypto.subtle, used by pairing) works. http://<lan-ip> is NOT a secure context
+  // → crypto.subtle is undefined → pairing fails with "Network error". The LAN/mDNS
+  // URLs + QR codes above are for OTHER devices (separate https/secure-context work).
+  const urlLocal = buildStationUrl(info, 'localhost');
 
   return (
     <div data-testid="stations-panel" style={sectionStyle}>
@@ -138,7 +143,7 @@ export function StationsPanel() {
           <button
             data-testid="open-station-browser"
             style={btnStyle}
-            onClick={() => openExternal(urlLan)}
+            onClick={() => openExternal(urlLocal)}
           >
             Open station in this Mac's browser
           </button>
