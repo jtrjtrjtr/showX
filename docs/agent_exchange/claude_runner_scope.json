@@ -1,8 +1,8 @@
 {
-  "enabled": false,
-  "bundle_id": "ShowX-7-IMPL-COMPLETE",
-  "allowed_task_ids": [],
-  "rationale": "F4 (ShowX-7) impl 8/8 accepted. v0.6.0 DMG built, automated gate green (2133 tests, no leak). B007-009 gate = visual/audio part pending Jindřich GUI session (batched F1+F2+F3+F4, checklist docs/JINDRICH_TEST_CHECKLIST_v0.6.0_F4.md). Scope DISABLED: no queued Forge tasks; runners idle until next bundle (LTC / F5 / F6) on Jindřich GO. Added packageJsonIntegrity guard test to stop recurring root-package.json clobber. Budget $30/phase honored.",
-  "updated_at": "2026-06-14T05:24:00Z",
+  "enabled": true,
+  "bundle_id": "ShowX-8",
+  "allowed_task_ids": ["B008-001"],
+  "rationale": "LTC bundle open 2026-06-14 (Jindřich: LTC completion; out+in; native deps OK; no HW test now). F1-F4 impl complete (v0.6.0, visual gate pending Jindřich). LTC wave 1 = B008-001 (native deps audify+libltc-wrapper + asarUnpack + audio device enum) — everything depends on it. Cascade: 002+003→001, 004→002+003, 005 gate→all. Decode verified via synthetic round-trip (no HW); live signal → Jindřich/Kobbi. packageJsonIntegrity guard active (B008-001 must not clobber root pkg). Budget $30/phase.",
+  "updated_at": "2026-06-14T05:45:00Z",
   "updated_by": "architect"
 }
