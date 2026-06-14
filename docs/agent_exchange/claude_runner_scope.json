@@ -1,8 +1,8 @@
 {
-  "enabled": true,
-  "bundle_id": "ShowX-8",
-  "allowed_task_ids": ["B008-001"],
-  "rationale": "LTC bundle open 2026-06-14 (Jindřich: LTC completion; out+in; native deps OK; no HW test now). F1-F4 impl complete (v0.6.0, visual gate pending Jindřich). LTC wave 1 = B008-001 (native deps audify+libltc-wrapper + asarUnpack + audio device enum) — everything depends on it. Cascade: 002+003→001, 004→002+003, 005 gate→all. Decode verified via synthetic round-trip (no HW); live signal → Jindřich/Kobbi. packageJsonIntegrity guard active (B008-001 must not clobber root pkg). Budget $30/phase.",
-  "updated_at": "2026-06-14T05:45:00Z",
+  "enabled": false,
+  "bundle_id": "ShowX-8-COMPLETE",
+  "allowed_task_ids": [],
+  "rationale": "LTC bundle (ShowX-8) COMPLETE 2026-06-14: 5/5 accepted. v0.7.0 DMG built (native audify+libltc-wrapper rebuilt via cmake, asarUnpack OK). Headless gate fully passed: typecheck, 2240 tests, native module load, synthetic LTC encode→decode round-trip, DMG. ONLY live-signal lock (real LTC source/console) pending Jindřich/Kobbi hardware session. Scope DISABLED: no queued tasks; runners idle until next bundle (F5 EventX Bridge / F6) on Jindřich GO. cmake build req documented (docs/dev/native-build-cmake.md). Budget $30/phase honored.",
+  "updated_at": "2026-06-14T14:42:00Z",
   "updated_by": "architect"
 }

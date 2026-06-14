@@ -287,7 +287,11 @@ describe('Shell', () => {
     ) as string[];
 
     // Caller channels (caller:*) are optional — only registered when ElevenLabs deps provided.
-    const OPTIONAL_PREFIXES = ['caller:'];
+    // LTC gen channels (ltc:gen:*) are optional — only registered when LtcGenerator is wired.
+    // LTC dec channels (ltc:dec:*) are optional — only registered when LtcReceiver is wired.
+    // Clock source channels (clock:source:*) are optional — only registered when clock is wired.
+    // clock:lock:change is a push channel, not an invoke handler — not in IPC handle set.
+    const OPTIONAL_PREFIXES = ['caller:', 'ltc:gen:', 'ltc:dec:', 'clock:source:', 'clock:lock:'];
     const invokeChannels = Object.values(IPC).filter(
       (ch) => ch !== IPC.HEALTH_CHANGE && !OPTIONAL_PREFIXES.some((p) => ch.startsWith(p)),
     );

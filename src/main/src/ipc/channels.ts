@@ -26,4 +26,18 @@ export const IPC = {
   CALLER_PREGEN: 'caller:pregen',
   // AI Showcaller (F4) — Media manifest (with file:// URLs) for playback engine
   CALLER_MEDIA_MANIFEST: 'caller:media:manifest',
+  // Audio devices (LTC — B008-001)
+  AUDIO_DEVICES_LIST: 'audio:devices:list',
+  // LTC generate (B008-002)
+  LTC_GEN_ENABLE: 'ltc:gen:enable',
+  LTC_GEN_DISABLE: 'ltc:gen:disable',
+  LTC_GEN_STATUS: 'ltc:gen:status',
+  // LTC decode / chase (B008-003)
+  LTC_DEC_ENABLE: 'ltc:dec:enable',
+  LTC_DEC_DISABLE: 'ltc:dec:disable',
+  LTC_DEC_STATUS: 'ltc:dec:status',
+  // Clock source UI (B008-004)
+  CLOCK_SOURCE_SET: 'clock:source:set',
+  CLOCK_SOURCE_GET: 'clock:source:get',
+  CLOCK_LOCK_CHANGE: 'clock:lock:change',
 } as const;

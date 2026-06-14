@@ -3,6 +3,7 @@ import { CuelistCorePanel, FirstLaunchPicker, RecentShowsList } from '../../../s
 import { createIpcBridge, getShellApi } from '../lib/uiPanelBridge.js';
 import { StationsPanel } from './StationsPanel.js';
 import { DispatchLogPanel } from './DispatchLogPanel.js';
+import { ClockSourceSettings } from './cuelist/ClockSourceSettings.js';
 import type { IpcBridge, ShellState } from '../lib/uiPanelBridge.js';
 
 function Loading() {
@@ -64,7 +65,7 @@ export function ShellRouter() {
       mainContent = <FirstLaunchPicker ipc={ipcBridge} />;
     }
   } else {
-    mainContent = <CuelistCorePanel ipc={ipcBridge} />;
+    mainContent = <CuelistCorePanel ipc={ipcBridge} clockPanel={<ClockSourceSettings />} />;
   }
 
   return (

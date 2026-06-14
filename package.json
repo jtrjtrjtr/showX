@@ -1,6 +1,6 @@
 {
   "name": "showx-workspace",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "private": true,
   "description": "ShowX — XLAB master FOH product (LAN-first Electron + modular shell). Absorbs BridgeX 0.3.x.",
   "workspaces": [
@@ -64,6 +64,8 @@
   "main": "src/main/dist/index.js",
   "dependencies": {
     "@julusian/midi": "^3.5.0",
+    "audify": "1.10.1",
+    "libltc-wrapper": "1.1.2",
     "bonjour-service": "^1.2.1",
     "cors": "^2.8.5",
     "dmxnet": "^0.9.0",

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type ReactNode } from 'react';
 import { tokens } from './tokens.js';
 import { StationsTable, type Awareness, type OperatorRecord } from './StationsTable.js';
 import { StatusStrip, type HealthLevel } from './StatusStrip.js';
@@ -26,6 +26,7 @@ interface ShowState {
 
 interface PanelProps {
   ipc: IpcBridge;
+  clockPanel?: ReactNode;
 }
 
 type ActiveTab = 'show' | 'devices' | 'routing';
@@ -112,7 +113,7 @@ function TabBar({
   );
 }
 
-export function CuelistCorePanel({ ipc }: PanelProps) {
+export function CuelistCorePanel({ ipc, clockPanel }: PanelProps) {
   const [showState, setShowState] = useState<ShowState>({ open: false });
   const [stations, setStations] = useState<Awareness[]>([]);
   const [operators, setOperators] = useState<OperatorRecord[]>([]);
@@ -274,7 +275,15 @@ export function CuelistCorePanel({ ipc }: PanelProps) {
         )}
 
         {activeTab === 'devices' && (
-          <DevicesTable ipc={ipc} mode={showState.mode} />
+          <>
+            <DevicesTable ipc={ipc} mode={showState.mode} />
+            {clockPanel && (
+              <section style={{ marginTop: tokens.space.xl }}>
+                <h2 style={{ color: tokens.color.ink, marginBottom: tokens.space.s }}>Clock</h2>
+                {clockPanel}
+              </section>
+            )}
+          </>
         )}
 
         {activeTab === 'routing' && (

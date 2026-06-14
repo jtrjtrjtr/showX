@@ -6,9 +6,16 @@ import type { PairingStore } from '../shared/PairingStore.js';
 import type { PinManager } from '../shared/pairing/pinManager.js';
 import type { Logger } from '../shared/Logger.js';
 import type { ShellConfigStore } from '../Shell.js';
+import type { MasterClock } from 'showx-shared';
 import { registerShowActions } from './showActions.js';
 import { registerCallerBridge, type CallerBridgeDeps } from './callerBridge.js';
 import { registerLlmDraftBridge, type LlmDraftBridgeDeps } from './llmDraftBridge.js';
+import { registerAudioDevicesBridge } from './audioDevicesBridge.js';
+import { registerLtcGeneratorBridge } from './ltcGeneratorBridge.js';
+import type { LtcGenerator } from '../shared/output/ltcGenerator.js';
+import { registerLtcDecoderBridge } from './ltcDecoderBridge.js';
+import type { LtcReceiver } from '../shared/input/ltcDecoder.js';
+import { registerClockSourceBridge } from './clockSourceBridge.js';
 
 export type { ShellConfigStore } from '../Shell.js';
 
@@ -30,6 +37,12 @@ export interface IpcDeps {
   caller?: CallerBridgeDeps;
   /** AI Showcaller (F4) — LLM draft via Claude. Optional until Shell wires LlmDraftClient. */
   llmDraft?: LlmDraftBridgeDeps;
+  /** LTC generate (B008-002). Optional until Shell creates LtcGenerator. */
+  ltcGenerator?: LtcGenerator;
+  /** LTC decode / chase (B008-003). Optional until Shell creates LtcReceiver. */
+  ltcReceiver?: LtcReceiver;
+  /** Master clock — enables clock:source:* IPC (B008-004). Optional for test compat. */
+  clock?: MasterClock;
 }
 
 export function registerIpcHandlers(deps: IpcDeps, ipc: IpcMainBridge = ipcMain): void {
@@ -94,4 +107,25 @@ export function registerIpcHandlers(deps: IpcDeps, ipc: IpcMainBridge = ipcMain)
   }
 
   registerShowActions(deps.shellConfig, ipc);
+  registerAudioDevicesBridge({ logger: deps.logger }, ipc);
+
+  if (deps.ltcGenerator) {
+    registerLtcGeneratorBridge({ ltcGenerator: deps.ltcGenerator }, ipc);
+  }
+
+  if (deps.ltcReceiver) {
+    registerLtcDecoderBridge({ ltcReceiver: deps.ltcReceiver }, ipc);
+  }
+
+  if (deps.clock) {
+    registerClockSourceBridge(
+      {
+        clock: deps.clock,
+        shellConfig: deps.shellConfig,
+        ltcGenerator: deps.ltcGenerator,
+        ltcReceiver: deps.ltcReceiver,
+      },
+      ipc,
+    );
+  }
 }

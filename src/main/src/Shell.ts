@@ -42,6 +42,8 @@ import { ActiveShowDoc, setActiveShowDoc } from './runtime/index.js';
 import { GoExecutor } from './runtime/GoExecutor.js';
 import { MasterClockImpl, ClockBroadcaster } from './shared/Clock.js';
 import type { MasterClock } from 'showx-shared';
+import { LtcGenerator, defaultEncoderFactory, defaultOutputStreamFactory } from './shared/output/ltcGenerator.js';
+import { LtcReceiver, defaultDecoderFactory, defaultInputStreamFactory } from './shared/input/ltcDecoder.js';
 
 // ── Shell config store ──────────────────────────────────────────────────────
 
@@ -240,6 +242,8 @@ export class Shell {
   private output!: OutputDispatcher;
   private clock!: MasterClock;
   private clockBroadcaster: ClockBroadcaster | null = null;
+  private ltcGenerator: LtcGenerator | null = null;
+  private ltcReceiver: LtcReceiver | null = null;
   private input: InputRegistrarImpl | null = null;
   private modules: ModuleLoader | null = null;
   private activeShow: ActiveShowDoc | null = null;
@@ -314,6 +318,24 @@ export class Shell {
     this.clockBroadcaster = new ClockBroadcaster(
       this.clock,
       (showId, msg) => this.sync.publishSideChannel(showId, msg),
+    );
+
+    // 8c. LTC native services (audify + libltc-wrapper) — graceful when unavailable
+    this.ltcGenerator = new LtcGenerator(
+      this.clock,
+      48000,
+      defaultEncoderFactory(),
+      defaultOutputStreamFactory(),
+      this.logger,
+    );
+    this.ltcReceiver = new LtcReceiver(
+      this.clock,
+      48000,
+      25,
+      undefined,
+      defaultDecoderFactory(),
+      defaultInputStreamFactory(),
+      this.logger,
     );
 
     // 9. ActiveShowDoc singleton — init here so pairing claim can return show_id
@@ -422,6 +444,9 @@ export class Shell {
         shellConfig: this.shellConfig,
         logger: this.logger,
         assetPort: () => this.assets.port(),
+        clock: this.clock,
+        ltcGenerator: this.ltcGenerator ?? undefined,
+        ltcReceiver: this.ltcReceiver ?? undefined,
       }, this.deps.ipcBridge);
       registerUiPanelBridge(this.shellConfig, this.activeShow, this.deps.ipcBridge);
       registerDeviceBridge(this.activeShow, this.deps.ipcBridge, this.logger);
