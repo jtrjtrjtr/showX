@@ -320,7 +320,11 @@ export function SMMasterView({ cuelistId, callerEnabled = false, callerManual = 
   const [showPreShowCheck, setShowPreShowCheck] = useState(false);
   const [showProposalQueue, setShowProposalQueue] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-  const [editingCue, setEditingCue] = useState<Cue | null>(null);
+  // Store only the cue ID; derive the LIVE cue from the reactive `cues` each render.
+  // Storing a snapshot froze the cue → adds/edits (payloads, device) wrote to the doc
+  // but the open dialog never reflected them ("add does nothing" / device stuck "none").
+  const [editingCueId, setEditingCueId] = useState<string | null>(null);
+  const editingCue = editingCueId ? (cues.find((c) => c.id === editingCueId) ?? null) : null;
 
   // Proposals: observe pending count for badge
   const [pendingProposals, setPendingProposals] = useState(() => pendingProposalCount(conn.doc));
@@ -767,8 +771,7 @@ export function SMMasterView({ cuelistId, callerEnabled = false, callerManual = 
       },
       KeyE: () => {
         if (mode === 'rehearsal' && playheadCueId) {
-          const cue = cues.find((c) => c.id === playheadCueId);
-          if (cue) setEditingCue(cue);
+          setEditingCueId(playheadCueId);
         }
       },
       // Single-key inline editing on selected row (rehearsal + SM only)
@@ -792,13 +795,13 @@ export function SMMasterView({ cuelistId, callerEnabled = false, callerManual = 
       Escape: () => {
         if (inlineEdit) {
           setInlineEdit(null);
-        } else if (!editingCue) {
+        } else if (!editingCueId) {
           unarm();
         }
       },
       Slash: () => setShowHelp((v) => !v),
     }),
-    [armedCueId, playheadCueId, selectedCueId, mode, cues, editingCue, inlineEdit, go, standby, arm, unarm, advance, retreat, handleGo, handleBack],
+    [armedCueId, playheadCueId, selectedCueId, mode, cues, editingCueId, inlineEdit, go, standby, arm, unarm, advance, retreat, handleGo, handleBack],
   );
 
   useKeyboardShortcuts(shortcuts);
@@ -1030,7 +1033,7 @@ export function SMMasterView({ cuelistId, callerEnabled = false, callerManual = 
                   standby(cue.id);
                   arm(cue.id);
                 }}
-                onEdit={() => setEditingCue(cue)}
+                onEdit={() => setEditingCueId(cue.id)}
                 onTriggerUpdate={(trigger) => {
                   updateFields(cue.id, { trigger }, String(conn.doc.clientID));
                 }}
@@ -1275,9 +1278,9 @@ export function SMMasterView({ cuelistId, callerEnabled = false, callerManual = 
           locked={mode === 'show'}
           onSave={(patch) => {
             updateFields(editingCue.id, patch, String(conn.doc.clientID));
-            setEditingCue(null);
+            setEditingCueId(null);
           }}
-          onCancel={() => setEditingCue(null)}
+          onCancel={() => setEditingCueId(null)}
         />
       )}
     </div>
