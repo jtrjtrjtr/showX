@@ -1,8 +1,8 @@
 {
-  "enabled": true,
-  "bundle_id": "ShowX-7",
-  "allowed_task_ids": ["B007-007", "B007-008"],
-  "rationale": "F4 wave 5 (2026-06-14 ~04:29): 001-006 accepted; B007-006 playback ACCEPTED → unlocked B007-007 (interrupt) + B007-008 (intercom out). 009 gate (architect, batched F1-F4) → after 007+008. ElevenLabs ToS/cost note for Jindřich at gate. Budget $30/phase.",
-  "updated_at": "2026-06-14T04:29:00Z",
+  "enabled": false,
+  "bundle_id": "ShowX-7-IMPL-COMPLETE",
+  "allowed_task_ids": [],
+  "rationale": "F4 (ShowX-7) impl 8/8 accepted. v0.6.0 DMG built, automated gate green (2133 tests, no leak). B007-009 gate = visual/audio part pending Jindřich GUI session (batched F1+F2+F3+F4, checklist docs/JINDRICH_TEST_CHECKLIST_v0.6.0_F4.md). Scope DISABLED: no queued Forge tasks; runners idle until next bundle (LTC / F5 / F6) on Jindřich GO. Added packageJsonIntegrity guard test to stop recurring root-package.json clobber. Budget $30/phase honored.",
+  "updated_at": "2026-06-14T05:24:00Z",
   "updated_by": "architect"
 }

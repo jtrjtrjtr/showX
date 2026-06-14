@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "project": "showX",
-  "phase": "bundle_ShowX-7_F4_open",
-  "updated_at": "2026-06-14T05:03:00Z",
+  "phase": "F1_F2_F3_F4_impl_complete_v0.6.0_DMG_built_automated_gate_green_visual_pending_jindrich",
+  "updated_at": "2026-06-14T05:24:00Z",
   "active_bundle": "ShowX-7",
   "tasks": [
     {
@@ -2249,15 +2249,15 @@
       "id": "B007-009",
       "slug": "architect_e2e_gate_f4",
       "title": "Architect E2E gate F4 (batched)",
-      "status": "queued",
-      "owner": null,
+      "status": "in_progress",
+      "owner": "architect",
       "task_path": "docs/agent_exchange/queued/B007-009_architect_e2e_gate_f4.md",
       "review_path": null,
       "created_at": "2026-06-14T00:05:00Z",
-      "started_at": null,
+      "started_at": "2026-06-14T05:24:00Z",
       "ended_at": null,
       "reviewed_at": null,
-      "review_round": 0,
+      "review_round": 1,
       "spawned_from": "ShowX-7 F4 bundle architect-filed",
       "depends_on": [
         "B007-001",
