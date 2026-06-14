@@ -72,11 +72,16 @@ function b64(buf: ArrayBuffer): string {
   return btoa(bin);
 }
 
-function unb64(s: string): ArrayBuffer {
+// Returns a Uint8Array (TypedArray) rather than a raw ArrayBuffer. Web Crypto
+// accepts any BufferSource; passing a TypedArray is validated via ArrayBuffer.isView()
+// (a realm-safe brand check), whereas a raw ArrayBuffer is checked with `instanceof
+// ArrayBuffer`, which FAILS cross-realm (jsdom-created buffer vs Node's webcrypto in CI)
+// → "3rd argument is not instance of ArrayBuffer". Uint8Array sidesteps that.
+function unb64(s: string): Uint8Array {
   const bin = atob(s);
   const buf = new Uint8Array(bin.length);
   for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
-  return buf.buffer;
+  return buf;
 }
 
 async function getOrCreateDeviceKey(): Promise<CryptoKey> {
@@ -101,7 +106,11 @@ async function encryptToken(token: string): Promise<{ iv: string; cipher: string
 
 async function decryptToken(iv: string, cipher: string): Promise<string> {
   const key = await getOrCreateDeviceKey();
-  const dec = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(iv) }, key, unb64(cipher));
+  const dec = await crypto.subtle.decrypt(
+    { name: 'AES-GCM', iv: unb64(iv) as BufferSource },
+    key,
+    unb64(cipher) as BufferSource,
+  );
   return new TextDecoder().decode(dec);
 }
 
