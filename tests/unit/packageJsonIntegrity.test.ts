@@ -13,6 +13,11 @@ import { resolve } from 'node:path';
  * electron-builder via `extraMetadata.main` + `files: - package.json`, NOT by
  * editing the source root. This test fails fast if the source root is clobbered,
  * so Critic catches it before accept instead of the Architect catching it at the gate.
+ *
+ * The `afterAllArtifactBuild` hook in electron-builder.yml (scripts/restore-pkg-after-build.mjs)
+ * auto-restores the source if app-builder-lib drift is detected. This test is the
+ * CI gate that verifies no clobbering slipped through into a committed state.
+ * (Task #1144, 2026-06-15 — eiffel fix)
  */
 describe('root package.json integrity', () => {
   const root = JSON.parse(
@@ -23,6 +28,13 @@ describe('root package.json integrity', () => {
     expect(root.name).toBe('showx-workspace');
     // dev entry (electron . at repo root). Packed override = extraMetadata.main.
     expect(root.main).toBe('src/main/dist/index.js');
+  });
+
+  it('does NOT have type:module (clobber sentinel)', () => {
+    // The packed-app asar package.json has type:module (via extraMetadata).
+    // If the SOURCE root has it too, app-builder-lib drift has clobbered the file.
+    // This is the exact regression caught in task #1144 (2026-06-15).
+    expect(root.type, 'type:module on root = drift clobber!').toBeUndefined();
   });
 
   it('keeps the essential scripts', () => {

@@ -14,6 +14,13 @@ extraResources:
 # type: module — the compiled main (index.js) is ESM (`import ...`). Without this the
 # packed package.json defaults to CommonJS and Electron throws
 # "Cannot use import statement outside a module" at boot. (Root pkg stays type-less for dev.)
+#
+# IMPORTANT — app-builder-lib drift guard (2026-06-15):
+# Older versions of app-builder-lib (and/or certain pnpm lifecycle combinations)
+# have been observed writing the extraMetadata patch back to the SOURCE workspace
+# root package.json (stripping scripts + devDependencies). The afterAllArtifactBuild
+# hook in this file restores package.json from HEAD to guard against this.
+# The packageJsonIntegrity unit test catches the regression in CI.
 extraMetadata:
   main: index.js
   type: module
@@ -54,6 +61,11 @@ files:
 directories:
   buildResources: build
   output: dist-electron
+
+# afterAllArtifactBuild: restore the workspace root package.json if it was clobbered by
+# app-builder-lib's extraMetadata write-back (observed with certain pnpm+electron-builder
+# combinations). The script is a no-op if package.json is already at the correct HEAD.
+afterAllArtifactBuild: scripts/restore-pkg-after-build.mjs
 
 # macOS target
 # For signed release builds: set CSC_NAME env var to the Apple Developer ID cert name
