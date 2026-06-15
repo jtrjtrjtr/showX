@@ -241,12 +241,18 @@ export function StationRouter({ session: sessionProp }: StationRouterProps) {
   const [closedByShell, setClosedByShell] = useState(false);
   const [switchingTitle, setSwitchingTitle] = useState<string | null>(null);
 
-  // Validate stored session on mount
+  // Validate stored session on mount.
+  // 5-second timeout prevents an indefinite "Connecting…" hang when the Electron
+  // server is unreachable (wrong network, server still starting, etc.).
   useEffect(() => {
     if (!storedOnMount) return;
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+
     fetch(`http://${storedOnMount.host}:${storedOnMount.port}/api/pairing/validate`, {
       headers: { Authorization: `Bearer ${storedOnMount.token}` },
+      signal: controller.signal,
     })
       .then((r) => r.json() as Promise<{ valid: boolean }>)
       .then((data) => {
@@ -259,10 +265,13 @@ export function StationRouter({ session: sessionProp }: StationRouterProps) {
         }
       })
       .catch(() => {
-        // Network error — fall back to prop (usually null)
+        // Network error or timeout — fall back to prop (usually null → DiscoveryView)
         setResolvedSession(sessionProp);
       })
-      .finally(() => setValidating(false));
+      .finally(() => {
+        clearTimeout(timeoutId);
+        setValidating(false);
+      });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Clear the switching overlay after 2 seconds max

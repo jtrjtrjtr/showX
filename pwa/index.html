@@ -8,7 +8,13 @@
     <title>ShowX</title>
   </head>
   <body>
-    <div id="root"></div>
+    <!-- Inline loading screen — visible immediately while the Vite JS bundle loads.
+         React replaces this content when it mounts. No external resources needed. -->
+    <div id="root">
+      <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0a0a0a;color:#4b5563;font-family:system-ui,sans-serif;font-size:14px;letter-spacing:0.01em">
+        Loading…
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

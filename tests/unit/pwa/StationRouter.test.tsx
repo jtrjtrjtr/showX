@@ -184,4 +184,77 @@ describe('StationRouter', () => {
     // Restore
     seedCuelist('cuelist-1');
   });
+
+  describe('validation fetch (v0.1.4 loading-hang fix)', () => {
+    // jsdom in this project does not expose functional localStorage.
+    // Provide an in-memory Storage implementation for localStorage-dependent tests.
+    function makeStorage(): Storage {
+      const store = new Map<string, string>();
+      return {
+        getItem: (key: string) => store.get(key) ?? null,
+        setItem: (key: string, value: string) => { store.set(key, value); },
+        removeItem: (key: string) => { store.delete(key); },
+        clear: () => { store.clear(); },
+        key: (index: number) => [...store.keys()][index] ?? null,
+        get length() { return store.size; },
+      };
+    }
+
+    beforeEach(() => {
+      vi.stubGlobal('localStorage', makeStorage());
+    });
+
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    it('shows station-validating while fetch is in-flight', () => {
+      // Fetch never resolves — simulates an in-flight request
+      vi.stubGlobal('fetch', vi.fn(() => new Promise(() => {})));
+      localStorage.setItem('showx_session_v1', JSON.stringify({ ...baseSession }));
+
+      render(<StationRouter session={null} />);
+      // While validating (storedOnMount is non-null), shows "Connecting…"
+      expect(screen.getByTestId('station-validating')).toBeInTheDocument();
+    });
+
+    it('falls back to discovery when validation returns invalid', async () => {
+      vi.stubGlobal('fetch', vi.fn(() =>
+        Promise.resolve({ ok: true, json: () => Promise.resolve({ valid: false }) } as Response),
+      ));
+      localStorage.setItem('showx_session_v1', JSON.stringify({ ...baseSession }));
+
+      render(<StationRouter session={null} />);
+      // sessionProp is null → after invalid validation, DiscoveryView
+      await waitFor(() => {
+        expect(screen.getByTestId('discovery-view')).toBeInTheDocument();
+      });
+    });
+
+    it('falls back to discovery on network error', async () => {
+      vi.stubGlobal('fetch', vi.fn(() => Promise.reject(new Error('network error'))));
+      localStorage.setItem('showx_session_v1', JSON.stringify({ ...baseSession }));
+
+      render(<StationRouter session={null} />);
+      await waitFor(() => {
+        expect(screen.getByTestId('discovery-view')).toBeInTheDocument();
+      });
+    });
+
+    it('AbortController is constructed — timeout guard is wired', () => {
+      // Verify the component creates an AbortController (the 5s timeout is wired).
+      // We do this by checking that fetch() receives a signal option.
+      let capturedInit: RequestInit | undefined;
+      vi.stubGlobal('fetch', vi.fn(((_url: string, init?: RequestInit) => {
+        capturedInit = init;
+        return new Promise(() => {}); // never resolves
+      }) as typeof fetch));
+      localStorage.setItem('showx_session_v1', JSON.stringify({ ...baseSession }));
+
+      render(<StationRouter session={null} />);
+      // fetch should have been called with a signal (from AbortController)
+      expect(capturedInit?.signal).toBeDefined();
+      expect(capturedInit?.signal).toBeInstanceOf(AbortSignal);
+    });
+  });
 });
