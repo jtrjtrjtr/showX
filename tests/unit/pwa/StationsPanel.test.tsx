@@ -88,4 +88,72 @@ describe('StationsPanel', () => {
 
     vi.unstubAllGlobals();
   });
+
+  // Regression: secure-context bug — "Open station in this Mac's browser" must use
+  // localhost, NOT the LAN IP. http://<lan-ip> is not a secure context, so
+  // crypto.subtle (used by pairing AES-GCM) is undefined → pairing fails with
+  // "Network error". Fixed in StationsPanel.tsx (urlLocal = buildStationUrl(info, 'localhost')).
+  it('open-station-browser button calls openExternal with localhost URL (not LAN IP)', async () => {
+    const mockInfo = {
+      lan_ip: '192.168.1.42',
+      port: 5300,
+      mdns_name: 'my-mac.local',
+      test_pin: null,
+    };
+    vi.stubGlobal('fetch', vi.fn(async () => ({ json: async () => mockInfo })));
+
+    // Inject showxApi directly on window without replacing the whole object
+    // (replacing window breaks React DOM internals in jsdom)
+    const openExternalMock = vi.fn(async () => undefined);
+    const win = window as unknown as Record<string, unknown>;
+    win['showxApi'] = { shell: { openExternal: openExternalMock } };
+
+    render(<StationsPanel />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('open-station-browser')).toBeInTheDocument();
+    });
+
+    screen.getByTestId('open-station-browser').click();
+
+    // Button must open with localhost — not the LAN IP
+    expect(openExternalMock).toHaveBeenCalledOnce();
+    const calledUrl: string = openExternalMock.mock.calls[0][0] as string;
+    expect(calledUrl).toMatch(/^http:\/\/localhost:/);
+    expect(calledUrl).not.toContain('192.168.1.42');
+
+    delete win['showxApi'];
+    vi.unstubAllGlobals();
+  });
+
+  it('open-station-browser button includes test_pin in localhost URL when env pin set', async () => {
+    const mockInfo = {
+      lan_ip: '10.0.0.5',
+      port: 5300,
+      mdns_name: 'dev-mac.local',
+      test_pin: '000000',
+    };
+    vi.stubGlobal('fetch', vi.fn(async () => ({ json: async () => mockInfo })));
+
+    const openExternalMock = vi.fn(async () => undefined);
+    const win = window as unknown as Record<string, unknown>;
+    win['showxApi'] = { shell: { openExternal: openExternalMock } };
+
+    render(<StationsPanel />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('open-station-browser')).toBeInTheDocument();
+    });
+
+    screen.getByTestId('open-station-browser').click();
+
+    expect(openExternalMock).toHaveBeenCalledOnce();
+    const calledUrl: string = openExternalMock.mock.calls[0][0] as string;
+    expect(calledUrl).toMatch(/^http:\/\/localhost:/);
+    expect(calledUrl).toContain('?pin=000000');
+    expect(calledUrl).not.toContain('10.0.0.5');
+
+    delete win['showxApi'];
+    vi.unstubAllGlobals();
+  });
 });
