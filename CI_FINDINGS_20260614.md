@@ -80,3 +80,56 @@ Workflow conclusion = **success** → GitHub no longer sends failure emails.
 Fixes landed: missing devDeps (@playwright/test, @vitest/coverage-v8) · unit job builds workspace deps · auth crypto realm-safe (unb64→Uint8Array) · e2e builds app + non-blocking.
 
 **Remaining (non-urgent, e2e only):** Electron-GUI E2E green in headless CI — needs the harness verified on Linux (xvfb? the bootTestShell path src/main/dist/index.js; build step now present). Promote e2e back to blocking once green. Email flood is stopped regardless.
+
+---
+
+## ❌ REGRESSION — run 27512381710 (2026-06-14, docs-only commit)
+
+The docs commit triggered a new CI run that **failed** (unit-tests). The immediately preceding fix commit (27512306943) was green — this is a **flaky test regression**.
+
+### unit-tests failure: cueCatalog.test.ts (FLAKY — root cause 2026-06-16)
+
+**Failed test:** `tests/unit/modules/cuelist-core/catalog/cueCatalog.test.ts` > `CatalogPublisher` > `writes cache file to <pkgPath>/media/.cache/cue-catalog.json`
+
+**Error:** `ENOENT: no such file or directory, open '/tmp/showx-catalog-test-*/media/.cache/cue-catalog.json'`
+
+**Root cause (async timing race):**
+
+`CatalogPublisher.start()` calls `void this.publish()` — fire-and-forget async. `publish()` awaits `writeCatalogCache()` which does:
+1. `await fs.mkdir(cacheDir, { recursive: true })`
+2. `await atomicWriteFile(path, json)`
+
+The test drains fake timers then waits 50ms real time. On slower CI runners, 50ms is not reliably enough for both filesystem ops to complete. Locally it passes (fast SSD, near-zero I/O latency). In CI it flakes.
+
+**Fix required (Forge domain — ShowX session):**
+
+Option A (simplest): Replace the 50ms fixed wait with a polling loop in the test:
+```ts
+const cachePath = path.join(pkgPath, 'media', '.cache', 'cue-catalog.json');
+// Poll until file appears (max 2s)
+for (let i = 0; i < 40; i++) {
+  try { await fs.access(cachePath); break; } catch { await new Promise(r => setTimeout(r, 50)); }
+}
+const content = await fs.readFile(cachePath, 'utf-8');
+```
+
+Option B (cleaner): Expose `CatalogPublisher.waitForWrite(): Promise<void>` for test hookability.
+
+Test is located at: `tests/unit/modules/cuelist-core/catalog/cueCatalog.test.ts` lines 313–333.
+Source: `src/modules/cuelist-core/src/catalog/cueCatalog.ts` (CatalogPublisher.publish()) + `src/modules/cuelist-core/src/catalog/cacheWrite.ts`.
+
+### e2e path mismatch (non-blocking, continue-on-error)
+
+**Error:** `Unable to find Electron app at /home/runner/work/showX/showX/dist/main/index.js`
+
+The e2e helper `tests/e2e/helpers/bootTestShell.ts` points to `dist/main/index.js` (project root). Build outputs to `src/main/dist/index.js` (per `src/main/dist/` artifact path in ci.yml). Path mismatch — the build step runs but the harness can't find it.
+
+Fix: update `bootTestShell.ts` to use `src/main/dist/index.js` path, or update build output dir. Forge + ShowX session.
+
+### Node.js 24 action deprecation (FIXED 2026-06-16, Carl)
+
+GitHub deprecated Node.js 20 action runtime. Enforcement date: **2026-06-16** (today).
+All 6 occurrences of `pnpm/action-setup@v3` → upgraded to `pnpm/action-setup@v4` in ci.yml.
+YAML validity confirmed. Commit needed (to be pushed with the next ShowX session push or as standalone).
+
+`actions/checkout@v4`, `actions/setup-node@v4`, `actions/upload-artifact@v4` — GitHub's own actions already support Node.js 24 as of their current patch releases; no version bump needed.
