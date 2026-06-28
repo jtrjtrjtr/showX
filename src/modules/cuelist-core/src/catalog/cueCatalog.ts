@@ -83,6 +83,13 @@ export interface CatalogPublisherDeps {
 export class CatalogPublisher {
   private timer: ReturnType<typeof setTimeout> | null = null;
   private readonly unsubs: Array<() => void> = [];
+  /**
+   * Tracks the most recently started cache-write promise (always resolved, never
+   * rejects — write errors are caught and logged inside publish()).
+   * Used by waitForWrite() so tests can await deterministic file-I/O completion
+   * without relying on fixed setTimeout delays.
+   */
+  private _lastWritePromise: Promise<void> = Promise.resolve();
 
   constructor(private readonly deps: CatalogPublisherDeps) {}
 
@@ -116,6 +123,17 @@ export class CatalogPublisher {
     }
   }
 
+  /**
+   * Resolves once the most recently kicked-off cache write has settled.
+   * The returned promise never rejects (write errors are caught and logged).
+   *
+   * Intended for tests: await this instead of a fixed setTimeout to get
+   * deterministic, timing-race-free confirmation of file-I/O completion.
+   */
+  waitForWrite(): Promise<void> {
+    return this._lastWritePromise;
+  }
+
   private async publish(): Promise<void> {
     const catalog = computeCueCatalog(this.deps.doc);
     this.deps.events.publish({
@@ -123,10 +141,12 @@ export class CatalogPublisher {
       showId: catalog.show_id,
       catalog,
     });
-    try {
-      await writeCatalogCache(this.deps.pkgPath, catalog);
-    } catch (err) {
+    // Capture the write promise before awaiting so that waitForWrite() always
+    // reflects the latest in-flight write, even under concurrent calls.
+    const writePromise = writeCatalogCache(this.deps.pkgPath, catalog).catch((err) => {
       this.deps.log.warn('catalog cache write failed', { error: String(err) });
-    }
+    });
+    this._lastWritePromise = writePromise;
+    await writePromise;
   }
 }

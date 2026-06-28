@@ -319,9 +319,9 @@ describe('CatalogPublisher', () => {
     await vi.runAllTimersAsync();
     await Promise.resolve();
 
-    // Use real timers briefly to let the filesystem promise settle
-    vi.useRealTimers();
-    await new Promise((r) => setTimeout(r, 50));
+    // Deterministically await the actual fs write rather than a fixed timeout
+    // (fixed delay was flaky on slow CI runners — see CI_FINDINGS_20260614.md §cueCatalog).
+    await publisher.waitForWrite();
 
     const cachePath = path.join(pkgPath, 'media', '.cache', 'cue-catalog.json');
     const content = await fs.readFile(cachePath, 'utf-8');
@@ -347,8 +347,9 @@ describe('CatalogPublisher', () => {
     await vi.advanceTimersByTimeAsync(200);
     await Promise.resolve();
 
-    vi.useRealTimers();
-    await new Promise((r) => setTimeout(r, 50));
+    // Deterministically await the actual fs write rather than a fixed timeout
+    // (fixed delay was flaky on slow CI runners — see CI_FINDINGS_20260614.md §cueCatalog).
+    await publisher.waitForWrite();
 
     const cachePath = path.join(pkgPath, 'media', '.cache', 'cue-catalog.json');
     const content = await fs.readFile(cachePath, 'utf-8');
